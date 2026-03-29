@@ -57,7 +57,7 @@
 
 <script setup>
 import { ref, reactive } from 'vue';
-import axios from 'axios';
+import api from '../api';
 import { useAuthStore } from '../stores/auth';
 import { useRouter } from 'vue-router';
 import EquipmentMap from '../components/EquipmentMap.vue';
@@ -92,7 +92,7 @@ const handleAreaUpdate = (areas) => { areaList.value = areas; };
 
 const handleDeleteArea = async (id) => {
   if (confirm("¿Eliminar zona?")) {
-    await axios.delete(`http://localhost:8080/api/v1/areas/${id}`, {
+    await api.delete(`/api/v1/areas/${id}`, {
       headers: { Authorization: `Bearer ${authStore.token}` }
     });
     mapRef.value.loadData();
@@ -101,7 +101,7 @@ const handleDeleteArea = async (id) => {
 
 const registerEquipment = async () => {
   try {
-    await axios.post('http://localhost:8080/api/v1/equipment', 
+    await api.post('/api/v1/equipment', 
       { ...newEq, latitude: -17.458993, longitude: -70.785376 },
       { headers: { Authorization: `Bearer ${authStore.token}` } }
     );
@@ -115,7 +115,7 @@ const registerEquipment = async () => {
 
 const createUser = async () => {
   try {
-    await axios.post('http://localhost:8080/api/v1/auth/register', newUser, {
+    await api.post('/api/v1/auth/register', newUser, {
       headers: { Authorization: `Bearer ${authStore.token}` }
     });
     message.value = `Usuario "${newUser.username}" creado`;

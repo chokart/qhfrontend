@@ -64,7 +64,7 @@
 
 <script setup>
 import { ref, reactive } from 'vue';
-import axios from 'axios';
+import api from '../api';
 import { useAuthStore } from '../stores/auth';
 
 const props = defineProps({
@@ -106,7 +106,7 @@ const cancelEdit = () => {
 const saveUpdate = async (id) => {
   loading.value = true;
   try {
-    await axios.put(`http://localhost:8080/api/v1/equipment/${id}/status`, editForm, {
+    await api.put(`/api/v1/equipment/${id}/status`, editForm, {
       headers: { Authorization: `Bearer ${authStore.token}` }
     });
     editingId.value = null;

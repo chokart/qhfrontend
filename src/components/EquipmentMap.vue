@@ -40,7 +40,7 @@ import 'leaflet/dist/leaflet.css';
 import 'leaflet-draw/dist/leaflet.draw.css';
 import 'leaflet-draw';
 import * as turf from '@turf/turf';
-import axios from 'axios';
+import api from '../api';
 import { useAuthStore } from '../stores/auth';
 
 const authStore = useAuthStore();
@@ -115,8 +115,8 @@ const loadData = async () => {
   try {
     const config = { headers: { Authorization: `Bearer ${authStore.token}` } };
     const [eqRes, areaRes] = await Promise.all([
-      axios.get('http://localhost:8080/api/v1/equipment', config),
-      axios.get('http://localhost:8080/api/v1/areas', config)
+      api.get('/api/v1/equipment', config),
+      api.get('/api/v1/areas', config)
     ]);
     equipmentList.value = eqRes.data.sort((a, b) => a.id - b.id);
     dynamicAreas.value = areaRes.data;
@@ -206,7 +206,7 @@ onMounted(() => {
       const coords = latlngs.map(ll => [ll.lat, ll.lng]);
       const name = prompt("Nombre de la nueva área:");
       if (name) {
-        await axios.post('http://localhost:8080/api/v1/areas', { name, coordinatesJson: JSON.stringify(coords) }, 
+        await api.post('/api/v1/areas', { name, coordinatesJson: JSON.stringify(coords) }, 
           { headers: { Authorization: `Bearer ${authStore.token}` } });
         loadData();
       }
@@ -219,7 +219,7 @@ onMounted(() => {
     if (selectedEquipmentId.value && !isDrawingMode.value) {
       const area = checkAreaForPoint(e.latlng.lat, e.latlng.lng);
       try {
-        await axios.put(`http://localhost:8080/api/v1/equipment/${selectedEquipmentId.value}/location`, 
+        await api.put(`/api/v1/equipment/${selectedEquipmentId.value}/location`, 
           { latitude: e.latlng.lat, longitude: e.latlng.lng, currentArea: area },
           { headers: { Authorization: `Bearer ${authStore.token}` } });
         loadData();
