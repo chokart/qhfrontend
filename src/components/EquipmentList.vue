@@ -106,9 +106,7 @@ const cancelEdit = () => {
 const saveUpdate = async (id) => {
   loading.value = true;
   try {
-    await api.put(`/api/v1/equipment/${id}/status`, editForm, {
-      headers: { Authorization: `Bearer ${authStore.token}` }
-    });
+    await api.put(`/api/v1/equipment/${id}/status`, editForm);
     editingId.value = null;
     emit('update-required'); // Avisamos al padre para que recargue los datos
   } catch (error) {

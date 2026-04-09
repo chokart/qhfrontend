@@ -92,9 +92,7 @@ const handleAreaUpdate = (areas) => { areaList.value = areas; };
 
 const handleDeleteArea = async (id) => {
   if (confirm("¿Eliminar zona?")) {
-    await api.delete(`/api/v1/areas/${id}`, {
-      headers: { Authorization: `Bearer ${authStore.token}` }
-    });
+    await api.delete(`/api/v1/areas/${id}`);
     mapRef.value.loadData();
   }
 };
@@ -102,8 +100,7 @@ const handleDeleteArea = async (id) => {
 const registerEquipment = async () => {
   try {
     await api.post('/api/v1/equipment', 
-      { ...newEq, latitude: -17.458993, longitude: -70.785376 },
-      { headers: { Authorization: `Bearer ${authStore.token}` } }
+      { ...newEq, latitude: -17.458993, longitude: -70.785376 }
     );
     mapRef.value.loadData();
     Object.assign(newEq, { name: '', color: '#3388ff', status: 'OPERATIVO', comment: '' });
@@ -115,9 +112,7 @@ const registerEquipment = async () => {
 
 const createUser = async () => {
   try {
-    await api.post('/api/v1/auth/register', newUser, {
-      headers: { Authorization: `Bearer ${authStore.token}` }
-    });
+    await api.post('/api/v1/auth/register', newUser);
     message.value = `Usuario "${newUser.username}" creado`;
     isSuccess.value = true;
     Object.assign(newUser, { username: '', password: '', role: 'USER' });

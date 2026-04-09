@@ -113,10 +113,9 @@ const getProSVG = (name, status) => {
 
 const loadData = async () => {
   try {
-    const config = { headers: { Authorization: `Bearer ${authStore.token}` } };
     const [eqRes, areaRes] = await Promise.all([
-      api.get('/api/v1/equipment', config),
-      api.get('/api/v1/areas', config)
+      api.get('/api/v1/equipment'),
+      api.get('/api/v1/areas')
     ]);
     equipmentList.value = eqRes.data.sort((a, b) => a.id - b.id);
     dynamicAreas.value = areaRes.data;

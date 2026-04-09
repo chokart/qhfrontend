@@ -24,7 +24,6 @@ export const useAuthStore = defineStore('auth', {
         localStorage.setItem('token', this.token);
         localStorage.setItem('role', this.role);
         localStorage.setItem('username', this.username);
-        api.defaults.headers.common['Authorization'] = `Bearer ${this.token}`;
         return true;
       } catch (error) {
         console.error('Login error:', error);
@@ -38,7 +37,6 @@ export const useAuthStore = defineStore('auth', {
       localStorage.removeItem('token');
       localStorage.removeItem('role');
       localStorage.removeItem('username');
-      delete api.defaults.headers.common['Authorization'];
     },
   },
 });
