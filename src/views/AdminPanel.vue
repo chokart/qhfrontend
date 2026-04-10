@@ -2,9 +2,14 @@
   <div class="admin-panel">
     <div class="header">
       <h1>Sistema de Ubicación de Equipos</h1>
-      <div class="user-info">
-        <span>Hola, {{ authStore.username }}</span>
-        <button class="logout-btn" @click="handleLogout">Cerrar Sesión</button>
+      <div class="header-actions">
+        <button class="btn-outline" @click="downloadReport">
+          <span>📄</span> Exportar PDF
+        </button>
+        <div class="user-info">
+          <span>Hola, {{ authStore.username }}</span>
+          <button class="logout-btn" @click="handleLogout">Cerrar Sesión</button>
+        </div>
       </div>
     </div>
     
@@ -64,6 +69,7 @@ import EquipmentMap from '../components/EquipmentMap.vue';
 import EquipmentList from '../components/EquipmentList.vue';
 import AreaList from '../components/AreaList.vue';
 import EquipmentSummary from '../components/EquipmentSummary.vue';
+import { generateEquipmentPDF } from '../utils/reportGenerator';
 
 const authStore = useAuthStore();
 const router = useRouter();
@@ -121,6 +127,10 @@ const createUser = async () => {
     isSuccess.value = false;
   }
 };
+
+const downloadReport = () => {
+  generateEquipmentPDF(equipmentList.value);
+};
 </script>
 
 <style scoped>
@@ -142,6 +152,7 @@ const createUser = async () => {
   color: var(--text-main);
   letter-spacing: -0.025em;
 }
+.header-actions { display: flex; align-items: center; gap: 1.5rem; }
 .user-info { display: flex; align-items: center; gap: 1.25rem; background: var(--card-light); padding: 0.5rem 1.25rem; border-radius: 50px; border: 1px solid var(--card-border); box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
 .user-info span { font-size: 0.9rem; font-weight: 500; color: var(--text-muted); }
 
@@ -216,6 +227,23 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
 }
 .btn-primary { background-color: var(--primary); box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.2); }
 .btn-primary:hover { background-color: var(--primary-hover); transform: translateY(-1px); box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.3); }
+
+.btn-outline {
+  background: white;
+  color: var(--primary);
+  border: 1px solid var(--primary);
+  padding: 0.5rem 1.25rem;
+  border-radius: 50px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.btn-outline:hover { background: var(--primary); color: white; }
+
 .btn-success { background-color: var(--success); }
 .btn-success:hover { opacity: 0.9; transform: translateY(-1px); }
 
