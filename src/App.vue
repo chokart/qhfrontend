@@ -6,11 +6,11 @@
 
 <style>
 #app-container {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
+  font-family: 'Inter', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-  margin-top: 0;
+  color: var(--text-main);
+  background-color: var(--bg-dark);
+  min-height: 100vh;
 }
 </style>

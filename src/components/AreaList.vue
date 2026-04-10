@@ -45,16 +45,45 @@ const getCoordCount = (json) => {
 </script>
 
 <style scoped>
-.area-list-card { background: #2f2f2f; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); color: #eee; margin-top: 20px; }
-h2 { margin-top: 0; border-bottom: 1px solid #aa3bff; padding-bottom: 10px; font-size: 18px; color: #aa3bff; }
-.table-container { overflow-x: auto; max-height: 300px; }
-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; }
-th { padding: 12px; border-bottom: 2px solid #444; color: #aaa; font-size: 12px; }
-td { padding: 12px; border-bottom: 1px solid #333; }
-.area-icon { margin-right: 10px; color: #aa3bff; font-size: 18px; }
-.badge { background: #444; padding: 2px 8px; border-radius: 4px; font-size: 11px; }
-.coords-count { color: #777; font-style: italic; }
-.btn-delete-small { background: #ff4757; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 11px; }
-.btn-delete-small:hover { background: #ff6b81; }
-.empty { text-align: center; padding: 20px; color: #777; }
+.area-list-card { 
+  background: var(--card-dark); 
+  padding: 1.5rem; 
+  border-radius: 16px; 
+  box-shadow: 0 4px 20px rgba(0,0,0,0.2); 
+  color: var(--text-main); 
+  border: 1px solid var(--card-border);
+}
+h2 { margin-top: 0; margin-bottom: 1.5rem; font-size: 1.25rem; font-weight: 600; color: var(--primary); }
+.table-container { overflow-x: auto; max-height: 450px; border-radius: 8px; }
+table { width: 100%; border-collapse: separate; border-spacing: 0; text-align: left; }
+th { 
+  padding: 1rem; 
+  background: rgba(15, 23, 42, 0.5);
+  border-bottom: 1px solid var(--card-border); 
+  color: var(--text-muted); 
+  text-transform: uppercase; 
+  font-size: 0.75rem; 
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+td { padding: 1rem; border-bottom: 1px solid var(--card-border); font-size: 0.9rem; }
+tr:hover td { background: rgba(255, 255, 255, 0.02); }
+
+.area-icon { margin-right: 12px; color: var(--primary); font-size: 1.1rem; opacity: 0.8; }
+.badge { background: rgba(255,255,255,0.05); color: var(--text-muted); padding: 0.25rem 0.6rem; border-radius: 4px; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; border: 1px solid var(--card-border); }
+.coords-count { color: var(--text-muted); font-size: 0.8rem; font-style: italic; }
+
+.btn-delete-small { 
+  background: transparent; 
+  color: var(--danger); 
+  border: 1px solid rgba(239, 68, 68, 0.3); 
+  padding: 0.4rem 0.8rem; 
+  border-radius: 6px; 
+  cursor: pointer; 
+  font-size: 0.75rem; 
+  font-weight: 600;
+  transition: all 0.2s;
+}
+.btn-delete-small:hover { background: var(--danger); color: white; border-color: var(--danger); }
+.empty { text-align: center; padding: 3rem; color: var(--text-muted); font-style: italic; }
 </style>

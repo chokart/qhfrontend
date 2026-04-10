@@ -124,28 +124,35 @@ const createUser = async () => {
 </script>
 
 <style scoped>
-.admin-panel { padding: 10px; color: #eee; text-align: left; min-height: 100vh; }
+.admin-panel { padding: 1.5rem; color: var(--text-main); text-align: left; min-height: 100vh; background: var(--bg-dark); }
 .header { 
   display: flex; 
   flex-wrap: wrap;
   justify-content: space-between; 
   align-items: center; 
-  border-bottom: 2px solid #aa3bff; 
-  padding-bottom: 10px; 
-  margin-bottom: 15px;
-  gap: 10px;
+  border-bottom: 1px solid var(--card-border); 
+  padding-bottom: 1.5rem; 
+  margin-bottom: 2rem;
+  gap: 1rem;
 }
-.header h1 { font-size: 1.5rem; margin: 0; }
-.user-info { display: flex; align-items: center; gap: 15px; }
+.header h1 { 
+  font-size: 1.75rem; 
+  font-weight: 700;
+  margin: 0; 
+  background: linear-gradient(to right, var(--primary), #a78bfa);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.user-info { display: flex; align-items: center; gap: 1.5rem; background: var(--card-dark); padding: 0.5rem 1rem; border-radius: 50px; border: 1px solid var(--card-border); }
+.user-info span { font-size: 0.9rem; color: var(--text-muted); }
 
 .main-content { 
   display: flex; 
   flex-direction: column;
-  gap: 20px; 
+  gap: 2rem; 
 }
 
 @media (min-width: 1024px) {
-  .admin-panel { padding: 20px; }
   .main-content { flex-direction: row; align-items: flex-start; }
 }
 
@@ -157,12 +164,12 @@ const createUser = async () => {
 .tables-grid { 
   display: grid; 
   grid-template-columns: 1fr; 
-  gap: 20px; 
-  margin-top: 20px;
+  gap: 2rem; 
+  margin-top: 2rem;
 }
 
-@media (min-width: 768px) {
-  .tables-grid { grid-template-columns: 1fr 1fr; }
+@media (min-width: 1200px) {
+  .tables-grid { grid-template-columns: 1.2fr 0.8fr; }
 }
 
 .forms-section { 
@@ -170,17 +177,62 @@ const createUser = async () => {
   width: 100%;
   display: flex; 
   flex-direction: column; 
-  gap: 20px; 
+  gap: 2rem; 
 }
 
-.card { background: #2f2f2f; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
-form { display: flex; flex-direction: column; gap: 10px; }
-input, select, textarea { padding: 8px; background: #444; border: 1px solid #666; color: white; border-radius: 4px; font-family: inherit; }
-.color-picker { display: flex; align-items: center; gap: 10px; }
-.btn { padding: 10px; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
-.btn-primary { background-color: #aa3bff; }
-.btn-success { background-color: #28a745; }
-.logout-btn { background-color: #ff4757; padding: 5px 10px; border: none; color: white; cursor: pointer; border-radius: 4px; }
-.success { color: #2ed573; margin-top: 10px; font-size: 14px; }
-.error { color: #ff4757; margin-top: 10px; font-size: 14px; }
+.card { 
+  background: var(--card-dark); 
+  padding: 1.5rem; 
+  border-radius: 16px; 
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--card-border);
+  transition: transform 0.2s;
+}
+
+h2 { font-size: 1.25rem; margin-top: 0; margin-bottom: 1.25rem; color: var(--primary); font-weight: 600; }
+form { display: flex; flex-direction: column; gap: 1rem; }
+
+input, select, textarea { 
+  padding: 0.75rem; 
+  background: #0f172a; 
+  border: 1px solid var(--card-border); 
+  color: var(--text-main); 
+  border-radius: 8px; 
+  font-family: inherit;
+  transition: border-color 0.2s;
+}
+input:focus, select:focus, textarea:focus { outline: none; border-color: var(--primary); }
+
+.color-picker { display: flex; align-items: center; gap: 1rem; font-size: 0.9rem; color: var(--text-muted); }
+.color-picker input { width: 40px; height: 40px; padding: 2px; border: none; background: none; cursor: pointer; }
+
+.btn { 
+  padding: 0.75rem; 
+  color: white; 
+  border: none; 
+  border-radius: 8px; 
+  cursor: pointer; 
+  font-weight: 600; 
+  font-size: 0.95rem;
+  transition: all 0.2s;
+}
+.btn-primary { background-color: var(--primary); }
+.btn-primary:hover { background-color: var(--primary-hover); transform: translateY(-1px); }
+.btn-success { background-color: var(--success); }
+.btn-success:hover { opacity: 0.9; transform: translateY(-1px); }
+
+.logout-btn { 
+  background-color: var(--danger); 
+  padding: 0.5rem 1rem; 
+  border: none; 
+  color: white; 
+  cursor: pointer; 
+  border-radius: 50px; 
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+.logout-btn:hover { opacity: 0.9; }
+
+.success { color: var(--success); margin-top: 1rem; font-size: 0.85rem; padding: 0.5rem; background: rgba(16, 185, 129, 0.1); border-radius: 4px; text-align: center; }
+.error { color: var(--danger); margin-top: 1rem; font-size: 0.85rem; padding: 0.5rem; background: rgba(239, 68, 68, 0.1); border-radius: 4px; text-align: center; }
 </style>

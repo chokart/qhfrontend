@@ -140,23 +140,39 @@ const totals = computed(() => {
 </script>
 
 <style scoped>
-.summary-container { display: flex; flex-direction: column; gap: 20px; }
-.summary-card { background: #2f2f2f; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); color: #eee; }
-h2 { margin-top: 0; border-bottom: 1px solid #444; padding-bottom: 10px; font-size: 18px; color: #ffa502; }
+.summary-container { display: flex; flex-direction: column; gap: 2rem; }
+.summary-card { 
+  background: var(--card-dark); 
+  padding: 1.5rem; 
+  border-radius: 16px; 
+  box-shadow: 0 4px 20px rgba(0,0,0,0.2); 
+  color: var(--text-main); 
+  border: 1px solid var(--card-border);
+}
+h2 { margin-top: 0; margin-bottom: 1.25rem; font-size: 1.15rem; font-weight: 600; color: var(--warning); border-bottom: 1px solid var(--card-border); padding-bottom: 0.75rem; }
 .table-container { overflow-x: auto; }
-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-th { padding: 8px; border-bottom: 2px solid #444; color: #aaa; text-transform: uppercase; font-size: 10px; }
-td { padding: 8px; border-bottom: 1px solid #333; }
+table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+th { 
+  padding: 0.75rem; 
+  border-bottom: 2px solid var(--card-border); 
+  color: var(--text-muted); 
+  text-transform: uppercase; 
+  font-size: 0.7rem; 
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+td { padding: 0.75rem; border-bottom: 1px solid var(--card-border); }
 .text-center { text-align: center; }
-.status-op { color: #2ed573; font-weight: bold; }
-.status-sb { color: #ffa502; font-weight: bold; }
-.status-in { color: #ff4757; font-weight: bold; }
-.total-row { background: #3d3d3d; font-weight: bold; color: white; }
-.total-row td { border-top: 2px solid #555; }
+.status-op { color: var(--success); font-weight: 700; }
+.status-sb { color: var(--warning); font-weight: 700; }
+.status-in { color: var(--danger); font-weight: 700; }
 
-.area-count-badge { background: #aa3bff; color: white; padding: 2px 8px; border-radius: 10px; font-weight: bold; }
-.area-equipment-list { font-size: 11px; color: #aaa; font-style: italic; }
-.empty { padding: 20px; color: #777; }
+.total-row { background: rgba(15, 23, 42, 0.6); font-weight: 700; color: white; }
+.total-row td { border-top: 2px solid var(--card-border); }
+
+.area-count-badge { background: var(--primary); color: white; padding: 0.25rem 0.75rem; border-radius: 50px; font-weight: 700; font-size: 0.75rem; }
+.area-equipment-list { font-size: 0.75rem; color: var(--text-muted); line-height: 1.5; padding: 0.5rem 0; }
+.empty { padding: 2rem; color: var(--text-muted); font-style: italic; }
 
 @media (min-width: 1024px) {
   .summary-container { flex-direction: row; }
