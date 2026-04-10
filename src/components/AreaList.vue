@@ -46,44 +46,45 @@ const getCoordCount = (json) => {
 
 <style scoped>
 .area-list-card { 
-  background: var(--card-dark); 
+  background: var(--card-light); 
   padding: 1.5rem; 
-  border-radius: 16px; 
-  box-shadow: 0 4px 20px rgba(0,0,0,0.2); 
+  border-radius: 20px; 
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1); 
   color: var(--text-main); 
   border: 1px solid var(--card-border);
 }
-h2 { margin-top: 0; margin-bottom: 1.5rem; font-size: 1.25rem; font-weight: 600; color: var(--primary); }
-.table-container { overflow-x: auto; max-height: 450px; border-radius: 8px; }
+h2 { margin-top: 0; margin-bottom: 1.5rem; font-size: 1.25rem; font-weight: 700; color: var(--text-main); }
+.table-container { overflow-x: auto; max-height: 500px; border-radius: 12px; border: 1px solid var(--card-border); }
 table { width: 100%; border-collapse: separate; border-spacing: 0; text-align: left; }
 th { 
   padding: 1rem; 
-  background: rgba(15, 23, 42, 0.5);
+  background: #f8fafc;
   border-bottom: 1px solid var(--card-border); 
   color: var(--text-muted); 
   text-transform: uppercase; 
-  font-size: 0.75rem; 
+  font-size: 0.7rem; 
   letter-spacing: 0.05em;
-  font-weight: 600;
+  font-weight: 700;
 }
-td { padding: 1rem; border-bottom: 1px solid var(--card-border); font-size: 0.9rem; }
-tr:hover td { background: rgba(255, 255, 255, 0.02); }
+td { padding: 1rem; border-bottom: 1px solid var(--card-border); font-size: 0.9rem; color: #334155; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: #f1f5f9; }
 
-.area-icon { margin-right: 12px; color: var(--primary); font-size: 1.1rem; opacity: 0.8; }
-.badge { background: rgba(255,255,255,0.05); color: var(--text-muted); padding: 0.25rem 0.6rem; border-radius: 4px; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; border: 1px solid var(--card-border); }
-.coords-count { color: var(--text-muted); font-size: 0.8rem; font-style: italic; }
+.area-icon { margin-right: 12px; color: var(--primary); font-size: 1.1rem; vertical-align: middle; }
+.badge { background: #f1f5f9; color: #475569; padding: 0.25rem 0.6rem; border-radius: 4px; font-size: 0.65rem; font-weight: 700; text-transform: uppercase; border: 1px solid #e2e8f0; }
+.coords-count { color: var(--text-muted); font-size: 0.8rem; font-weight: 500; }
 
 .btn-delete-small { 
-  background: transparent; 
-  color: var(--danger); 
-  border: 1px solid rgba(239, 68, 68, 0.3); 
+  background: #fff; 
+  color: #ef4444; 
+  border: 1px solid #fecaca; 
   padding: 0.4rem 0.8rem; 
-  border-radius: 6px; 
+  border-radius: 8px; 
   cursor: pointer; 
   font-size: 0.75rem; 
-  font-weight: 600;
+  font-weight: 700;
   transition: all 0.2s;
 }
-.btn-delete-small:hover { background: var(--danger); color: white; border-color: var(--danger); }
-.empty { text-align: center; padding: 3rem; color: var(--text-muted); font-style: italic; }
+.btn-delete-small:hover { background: #ef4444; color: white; border-color: #ef4444; }
+.empty { text-align: center; padding: 4rem; color: var(--text-muted); font-style: italic; }
 </style>

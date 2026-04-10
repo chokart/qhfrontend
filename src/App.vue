@@ -10,7 +10,7 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   color: var(--text-main);
-  background-color: var(--bg-dark);
+  background-color: var(--bg-light);
   min-height: 100vh;
 }
 </style>

@@ -43,7 +43,7 @@ const handleListUpdate = (list) => {
 </script>
 
 <style scoped>
-.user-dashboard { padding: 1.5rem; color: var(--text-main); text-align: left; min-height: 100vh; background: var(--bg-dark); }
+.user-dashboard { padding: 1.5rem; color: var(--text-main); text-align: left; min-height: 100vh; background: var(--bg-light); }
 .header {
   display: flex;
   flex-wrap: wrap;
@@ -55,20 +55,19 @@ const handleListUpdate = (list) => {
   gap: 1rem;
 }
 .header h1 { 
-  font-size: 1.75rem; 
-  font-weight: 700;
+  font-size: 1.85rem; 
+  font-weight: 800;
   margin: 0; 
-  background: linear-gradient(to right, var(--success), #34d399);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: var(--text-main);
+  letter-spacing: -0.025em;
 }
-.user-info { display: flex; align-items: center; gap: 1.5rem; background: var(--card-dark); padding: 0.5rem 1rem; border-radius: 50px; border: 1px solid var(--card-border); }
-.user-info span { font-size: 0.9rem; color: var(--text-muted); }
+.user-info { display: flex; align-items: center; gap: 1.25rem; background: var(--card-light); padding: 0.5rem 1.25rem; border-radius: 50px; border: 1px solid var(--card-border); box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+.user-info span { font-size: 0.9rem; font-weight: 500; color: var(--text-muted); }
 
 .main-content { 
   display: flex; 
   flex-direction: column;
-  gap: 2rem; 
+  gap: 2.5rem; 
 }
 
 @media (min-width: 1024px) {
@@ -79,18 +78,19 @@ const handleListUpdate = (list) => {
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  gap: 2.5rem;
 }
 
 .logout-btn { 
-  background-color: var(--danger); 
-  padding: 0.5rem 1rem; 
-  border: none; 
-  color: white; 
+  background-color: #fee2e2; 
+  padding: 0.5rem 1.25rem; 
+  border: 1px solid #fecaca; 
+  color: #ef4444; 
   cursor: pointer; 
   border-radius: 50px; 
-  font-weight: 600;
-  font-size: 0.85rem;
+  font-weight: 700;
+  font-size: 0.8rem;
+  transition: all 0.2s;
 }
-.logout-btn:hover { opacity: 0.9; }
+.logout-btn:hover { background-color: #ef4444; color: white; border-color: #ef4444; }
 </style>

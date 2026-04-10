@@ -3,21 +3,21 @@
   line-height: 1.6;
   font-weight: 400;
 
-  /* Nueva Paleta Profesional */
-  --bg-dark: #0f172a;           /* Slate 900 */
-  --card-dark: #1e293b;         /* Slate 800 */
-  --card-border: #334155;       /* Slate 700 */
-  --primary: #8b5cf6;           /* Violet 500 */
-  --primary-hover: #7c3aed;
+  /* Paleta Light Profesional */
+  --bg-light: #f8fafc;          /* Slate 50 */
+  --card-light: #ffffff;        /* Blanco Puro */
+  --card-border: #e2e8f0;       /* Slate 200 */
+  --primary: #6366f1;           /* Indigo 500 */
+  --primary-hover: #4f46e5;     /* Indigo 600 */
   --success: #10b981;           /* Emerald 500 */
   --danger: #ef4444;            /* Red 500 */
   --warning: #f59e0b;           /* Amber 500 */
-  --text-main: #f1f5f9;         /* Slate 100 */
-  --text-muted: #94a3b8;         /* Slate 400 */
+  --text-main: #0f172a;         /* Slate 900 */
+  --text-muted: #64748b;        /* Slate 500 */
 
-  color-scheme: dark;
+  color-scheme: light;
   color: var(--text-main);
-  background-color: var(--bg-dark);
+  background-color: var(--bg-light);
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -30,7 +30,7 @@ body {
   padding: 0;
   display: block;
   min-height: 100vh;
-  background-color: var(--bg-dark);
+  background-color: var(--bg-light);
 }
 
 #app {
@@ -39,12 +39,12 @@ body {
   padding: 0;
 }
 
-/* Scrollbar personalizada para modo oscuro */
+/* Scrollbar para modo claro */
 ::-webkit-scrollbar {
   width: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: var(--bg-dark);
+  background: var(--bg-light);
 }
 ::-webkit-scrollbar-thumb {
   background: var(--card-border);
