@@ -19,7 +19,7 @@ export const generateEquipmentPDF = (equipmentList) => {
   doc.line(14, 40, 196, 40);
 
   // Generación de la Tabla
-  const tableColumn = ["ID", "Nombre del Equipo", "Área Actual", "Estado", "Última Actualización"];
+  const tableColumn = ["ID", "Nombre del Equipo", "Área Actual", "Estado", "Última Actualización", "Comentarios"];
   const tableRows = [];
 
   equipmentList.forEach(eq => {
@@ -28,7 +28,8 @@ export const generateEquipmentPDF = (equipmentList) => {
       eq.name,
       eq.currentArea || 'Fuera de zona',
       eq.status,
-      eq.lastUpdatedBy ? `${eq.lastUpdatedBy}` : 'N/A'
+      eq.lastUpdatedBy ? `${eq.lastUpdatedBy}` : 'N/A',
+      eq.comment || '-'
     ];
     tableRows.push(rowData);
   });
@@ -41,11 +42,19 @@ export const generateEquipmentPDF = (equipmentList) => {
     theme: 'grid',
     headStyles: {
       fillColor: [99, 102, 241],
-      fontSize: 10,
+      fontSize: 9,
       halign: 'center'
     },
+    columnStyles: {
+      0: { cellWidth: 10 }, // ID
+      1: { cellWidth: 35 }, // Nombre
+      2: { cellWidth: 30 }, // Área
+      3: { cellWidth: 25 }, // Estado
+      4: { cellWidth: 30 }, // Actualizado por
+      5: { cellWidth: 'auto' } // Comentarios (ocupa el resto)
+    },
     bodyStyles: {
-      fontSize: 9,
+      fontSize: 8,
       textColor: [51, 65, 85]
     },
     alternateRowStyles: {
