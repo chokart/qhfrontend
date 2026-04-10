@@ -135,24 +135,24 @@ th {
   border-bottom: 1px solid var(--card-border); 
   color: var(--text-muted); 
   text-transform: uppercase; 
-  font-size: 0.7rem; 
+  font-size: 0.85rem; 
   letter-spacing: 0.05em;
   font-weight: 700;
 }
-td { padding: 1rem; border-bottom: 1px solid var(--card-border); font-size: 0.9rem; color: #334155; }
+td { padding: 1.25rem 1rem; border-bottom: 1px solid var(--card-border); font-size: 1.05rem; color: #334155; }
 tr:last-child td { border-bottom: none; }
 tr:hover td { background: #f1f5f9; }
 
-.area-badge { padding: 0.25rem 0.75rem; border-radius: 50px; font-size: 0.7rem; font-weight: 700; border: 1px solid transparent; }
+.area-badge { padding: 0.35rem 1rem; border-radius: 50px; font-size: 0.8rem; font-weight: 700; border: 1px solid transparent; }
 .in-area { background: #ecfdf5; color: #065f46; border-color: #a7f3d0; }
 .no-area { background: #fff1f2; color: #991b1b; border-color: #fecaca; }
 
-.status-badge { padding: 0.25rem 0.6rem; border-radius: 6px; font-size: 0.65rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.025em; }
+.status-badge { padding: 0.35rem 0.75rem; border-radius: 6px; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.025em; }
 .operativo { background: #dcfce7; color: #166534; }
 .inoperativo { background: #fee2e2; color: #991b1b; }
 .stand_by { background: #fef3c7; color: #92400e; }
 
-.comment-text { display: block; max-width: 200px; color: var(--text-muted); font-size: 0.8rem; line-height: 1.4; }
+.comment-text { display: block; max-width: 250px; color: var(--text-muted); font-size: 0.95rem; line-height: 1.5; }
 
 .edit-select, .edit-textarea { 
   width: 100%; 
@@ -160,24 +160,24 @@ tr:hover td { background: #f1f5f9; }
   color: var(--text-main); 
   border: 1px solid #d1d5db; 
   border-radius: 8px; 
-  padding: 0.5rem; 
-  font-size: 0.85rem; 
+  padding: 0.6rem; 
+  font-size: 0.95rem; 
 }
 
 .btn-edit-small { 
   background: #f1f5f9; 
   color: #475569; 
   border: 1px solid #cbd5e1; 
-  padding: 0.4rem 0.8rem; 
+  padding: 0.5rem 1rem; 
   border-radius: 8px; 
   cursor: pointer; 
-  font-size: 0.75rem; 
+  font-size: 0.85rem; 
   font-weight: 700;
   transition: all 0.2s;
 }
 .btn-edit-small:hover { background: #e2e8f0; color: var(--text-main); border-color: #94a3b8; }
 
-.user-info { display: flex; flex-direction: column; gap: 0.15rem; }
-.time { font-size: 0.7rem; color: var(--text-muted); font-weight: 500; }
+.user-info { display: flex; flex-direction: column; gap: 0.25rem; }
+.time { font-size: 0.8rem; color: var(--text-muted); font-weight: 500; }
 .empty { text-align: center; padding: 4rem; color: var(--text-muted); font-style: italic; }
 </style>

@@ -1,7 +1,7 @@
 <template>
   <div class="user-dashboard">
     <div class="header">
-      <h1>Panel de Seguimiento y Registro</h1>
+      <h1>EQUIPOS PESADOS QH</h1>
       <div class="header-actions">
         <button class="btn-outline" @click="downloadReport">
           <span>📄</span> Exportar PDF
