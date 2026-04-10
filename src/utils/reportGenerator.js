@@ -1,11 +1,11 @@
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 
 export const generateEquipmentPDF = (equipmentList) => {
   const doc = new jsPDF();
   const date = new Date().toLocaleString();
 
-  // Configuración de Estilo para el Encabezado
+  // ... (encabezado igual)
   doc.setFontSize(20);
   doc.setTextColor(40);
   doc.text('Reporte de Estado de Equipos', 14, 22);
@@ -15,7 +15,6 @@ export const generateEquipmentPDF = (equipmentList) => {
   doc.text(`Sistema de Ubicación de Equipos - QH Relavera`, 14, 30);
   doc.text(`Fecha de emisión: ${date}`, 14, 35);
   
-  // Línea divisoria
   doc.setDrawColor(226, 232, 240);
   doc.line(14, 40, 196, 40);
 
@@ -34,13 +33,14 @@ export const generateEquipmentPDF = (equipmentList) => {
     tableRows.push(rowData);
   });
 
-  doc.autoTable({
+  // USAR LA FUNCIÓN autoTable DIRECTAMENTE
+  autoTable(doc, {
     startY: 45,
     head: [tableColumn],
     body: tableRows,
     theme: 'grid',
     headStyles: {
-      fillColor: [99, 102, 241], // Indigo 500 (nuestro color primario)
+      fillColor: [99, 102, 241],
       fontSize: 10,
       halign: 'center'
     },
@@ -63,6 +63,5 @@ export const generateEquipmentPDF = (equipmentList) => {
     doc.text(`Página ${i} de ${pageCount}`, doc.internal.pageSize.width / 2, doc.internal.pageSize.height - 10, { align: 'center' });
   }
 
-  // Descargar el PDF
   doc.save(`Reporte_Equipos_${new Date().getTime()}.pdf`);
 };
