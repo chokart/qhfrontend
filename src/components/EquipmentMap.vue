@@ -217,11 +217,13 @@ const renderMarkers = () => {
         markers.value[eq.id].setLatLng([eq.latitude, eq.longitude]);
         markers.value[eq.id].setIcon(customIcon);
         markers.value[eq.id].setPopupContent(popupContent);
-        markers.value[eq.id].dragging.enable();
+        // Respetar el modo de movimiento actual al refrescar
+        if (isMoveMode.value) markers.value[eq.id].dragging.enable();
+        else markers.value[eq.id].dragging.disable();
       } else {
         markers.value[eq.id] = L.marker([eq.latitude, eq.longitude], { 
           icon: customIcon,
-          draggable: true 
+          draggable: isMoveMode.value // Iniciar según el modo actual
         }).addTo(map.value)
           .bindPopup(popupContent);
 
