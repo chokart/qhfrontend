@@ -20,9 +20,27 @@
       </select>
       
       <div v-if="selectedEquipmentId" class="status-box">
-        <p>Moviendo: <b>{{ selectedEquipmentName }}</b></p>
+        <p>Equipo: <b>{{ selectedEquipmentName }}</b></p>
         <p>Área actual: <b :class="{ highlight: currentAreaName && currentAreaName !== 'Fuera de zona' }">{{ currentAreaName || 'Fuera de zona' }}</b></p>
-        <p class="hint">Haz clic en el mapa para posicionar</p>
+        
+        <div class="edit-mini-form">
+          <select v-model="editStatus" class="mini-input">
+            <option value="OPERATIVO">OPERATIVO</option>
+            <option value="INOPERATIVO">INOPERATIVO</option>
+            <option value="STAND_BY">STAND_BY</option>
+          </select>
+          <textarea v-model="editComment" placeholder="Añadir observación..." class="mini-input mini-textarea"></textarea>
+          <button @click="saveStatus" :disabled="isSaving" class="btn-save-mini">
+            {{ isSaving ? 'Guardando...' : 'Actualizar Estado' }}
+          </button>
+        </div>
+
+        <div class="movement-toggle">
+          <button @click="isMoveMode = !isMoveMode" :class="{ 'btn-move-active': isMoveMode }" class="btn-move">
+            {{ isMoveMode ? '📍 Movimiento: ACTIVADO' : '📍 Movimiento: DESACTIVADO' }}
+          </button>
+          <p class="hint">{{ isMoveMode ? 'Haz clic en el mapa para mover' : 'Habilita para mover equipo' }}</p>
+        </div>
       </div>
 
       <div v-if="authStore.isAdmin" class="admin-controls">
@@ -34,7 +52,7 @@
 </template>
 
 <script setup>
-import { onMounted, ref, computed } from 'vue';
+import { onMounted, ref, computed, watch } from 'vue';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-draw/dist/leaflet.draw.css';
@@ -52,6 +70,43 @@ const markers = ref({});
 const areaLayers = ref({});
 const processedPolygons = ref([]);
 const isDrawingMode = ref(false);
+const isMoveMode = ref(false); // Nuevo: control de modo movimiento
+
+const isSaving = ref(false);
+const editStatus = ref('');
+const editComment = ref('');
+
+// Sincronizar el formulario pequeño cuando cambia el equipo seleccionado
+const syncEditForm = (id) => {
+  const eq = equipmentList.value.find(e => e.id === id);
+  if (eq) {
+    editStatus.value = eq.status;
+    editComment.value = eq.comment || '';
+  }
+};
+
+watch(selectedEquipmentId, (newId) => {
+  if (newId) {
+    syncEditForm(newId);
+  }
+});
+
+const saveStatus = async () => {
+  if (!selectedEquipmentId.value) return;
+  isSaving.value = true;
+  try {
+    await api.put(`/api/v1/equipment/${selectedEquipmentId.value}/status`, {
+      status: editStatus.value,
+      comment: editComment.value
+    });
+    await loadData(); // Refrescar mapa y lista
+    syncEditForm(selectedEquipmentId.value); // Asegurar sincronía local
+  } catch (error) {
+    alert("Error al actualizar estado");
+  } finally {
+    isSaving.value = false;
+  }
+};
 
 const emit = defineEmits(['update-list', 'update-areas']);
 defineExpose({ loadData: () => loadData() });
@@ -154,38 +209,32 @@ const renderMarkers = () => {
         markers.value[eq.id].setLatLng([eq.latitude, eq.longitude]);
         markers.value[eq.id].setIcon(customIcon);
         markers.value[eq.id].setPopupContent(popupContent);
-        // Asegurar que la propiedad draggable esté sincronizada (opcional)
         markers.value[eq.id].dragging.enable();
       } else {
         markers.value[eq.id] = L.marker([eq.latitude, eq.longitude], { 
           icon: customIcon,
-          draggable: true // Habilitamos el arrastre
+          draggable: true 
         }).addTo(map.value)
           .bindPopup(popupContent);
 
-        // Escuchar cuando el usuario termina de arrastrar el equipo
+        // Seleccionar equipo al hacer clic en el marker
+        markers.value[eq.id].on('click', () => {
+          selectedEquipmentId.value = eq.id;
+        });
+
         markers.value[eq.id].on('dragend', async (event) => {
           const marker = event.target;
           const position = marker.getLatLng();
-          
-          // Calculamos automáticamente si cayó en una zona nueva
           const area = checkAreaForPoint(position.lat, position.lng);
           
           try {
             await api.put(`/api/v1/equipment/${eq.id}/location`, 
-              { 
-                latitude: position.lat, 
-                longitude: position.lng, 
-                currentArea: area 
-              },
+              { latitude: position.lat, longitude: position.lng, currentArea: area },
               { headers: { Authorization: `Bearer ${authStore.token}` } }
             );
-            
-            // Recargamos datos para que las tablas y resúmenes se actualicen
             loadData();
           } catch (error) {
-            console.error("Error al actualizar ubicación por arrastre:", error);
-            // Si hay error (ej. conexión), devolvemos el marcador a su posición real
+            console.error(error);
             loadData(); 
           }
         });
@@ -247,7 +296,8 @@ onMounted(() => {
   L.control.scale({ imperial: false, position: 'bottomleft' }).addTo(map.value);
 
   map.value.on('click', async (e) => {
-    if (selectedEquipmentId.value && !isDrawingMode.value) {
+    // Solo mover si hay un equipo seleccionado Y el modo movimiento está activo
+    if (selectedEquipmentId.value && isMoveMode.value && !isDrawingMode.value) {
       const area = checkAreaForPoint(e.latlng.lat, e.latlng.lng);
       try {
         await api.put(`/api/v1/equipment/${selectedEquipmentId.value}/location`, 
@@ -293,11 +343,12 @@ onMounted(() => {
 .btn-save-mini { background: #6366f1; color: white; border: none; padding: 6px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 11px; }
 .btn-save-mini:hover { background: #4f46e5; }
 .btn-save-mini:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.movement-toggle { margin-top: 15px; padding-top: 10px; border-top: 1px solid #444; }
+.btn-move { width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #555; background: #333; color: #ccc; cursor: pointer; font-size: 11px; font-weight: bold; transition: all 0.2s; }
+.btn-move-active { background: #2ed573; color: #000; border-color: #2ed573; box-shadow: 0 0 10px rgba(46, 213, 115, 0.4); }
+
 .highlight { color: #2ed573; font-weight: bold; }
-.hint, .hint-admin { font-size: 11px; color: #aaa; margin-top: 5px; }
-select { width: 100%; padding: 8px; background: #444; color: white; border: 1px solid #666; border-radius: 4px; }
-</style>
-ld; }
 .hint, .hint-admin { font-size: 11px; color: #aaa; margin-top: 5px; }
 select { width: 100%; padding: 8px; background: #444; color: white; border: 1px solid #666; border-radius: 4px; }
 </style>
