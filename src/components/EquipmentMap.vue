@@ -286,8 +286,18 @@ onMounted(() => {
   font-size: 9px; font-weight: bold; color: #000; padding: 1px 4px; border-radius: 3px;
   margin-top: -5px; white-space: nowrap; border: 1px solid rgba(0,0,0,0.3);
 }
-.status-box { margin-top: 12px; padding: 10px; background: #222; border-radius: 6px; font-size: 13px; }
+.status-box { margin-top: 12px; padding: 12px; background: #222; border-radius: 8px; font-size: 13px; border: 1px solid #444; }
+.edit-mini-form { display: flex; flex-direction: column; gap: 8px; margin: 10px 0; padding-top: 10px; border-top: 1px solid #444; }
+.mini-input { width: 100%; background: #333; border: 1px solid #555; color: white; border-radius: 4px; padding: 5px; font-size: 12px; }
+.mini-textarea { height: 40px; resize: none; font-family: inherit; }
+.btn-save-mini { background: #6366f1; color: white; border: none; padding: 6px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 11px; }
+.btn-save-mini:hover { background: #4f46e5; }
+.btn-save-mini:disabled { opacity: 0.5; cursor: not-allowed; }
 .highlight { color: #2ed573; font-weight: bold; }
+.hint, .hint-admin { font-size: 11px; color: #aaa; margin-top: 5px; }
+select { width: 100%; padding: 8px; background: #444; color: white; border: 1px solid #666; border-radius: 4px; }
+</style>
+ld; }
 .hint, .hint-admin { font-size: 11px; color: #aaa; margin-top: 5px; }
 select { width: 100%; padding: 8px; background: #444; color: white; border: 1px solid #666; border-radius: 4px; }
 </style>
