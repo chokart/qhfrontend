@@ -154,9 +154,41 @@ const renderMarkers = () => {
         markers.value[eq.id].setLatLng([eq.latitude, eq.longitude]);
         markers.value[eq.id].setIcon(customIcon);
         markers.value[eq.id].setPopupContent(popupContent);
+        // Asegurar que la propiedad draggable esté sincronizada (opcional)
+        markers.value[eq.id].dragging.enable();
       } else {
-        markers.value[eq.id] = L.marker([eq.latitude, eq.longitude], { icon: customIcon }).addTo(map.value)
+        markers.value[eq.id] = L.marker([eq.latitude, eq.longitude], { 
+          icon: customIcon,
+          draggable: true // Habilitamos el arrastre
+        }).addTo(map.value)
           .bindPopup(popupContent);
+
+        // Escuchar cuando el usuario termina de arrastrar el equipo
+        markers.value[eq.id].on('dragend', async (event) => {
+          const marker = event.target;
+          const position = marker.getLatLng();
+          
+          // Calculamos automáticamente si cayó en una zona nueva
+          const area = checkAreaForPoint(position.lat, position.lng);
+          
+          try {
+            await api.put(`/api/v1/equipment/${eq.id}/location`, 
+              { 
+                latitude: position.lat, 
+                longitude: position.lng, 
+                currentArea: area 
+              },
+              { headers: { Authorization: `Bearer ${authStore.token}` } }
+            );
+            
+            // Recargamos datos para que las tablas y resúmenes se actualicen
+            loadData();
+          } catch (error) {
+            console.error("Error al actualizar ubicación por arrastre:", error);
+            // Si hay error (ej. conexión), devolvemos el marcador a su posición real
+            loadData(); 
+          }
+        });
       }
     }
   });
