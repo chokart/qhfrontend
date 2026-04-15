@@ -37,9 +37,9 @@
 
         <div class="movement-toggle">
           <button @click="isMoveMode = !isMoveMode" :class="{ 'btn-move-active': isMoveMode }" class="btn-move">
-            {{ isMoveMode ? '📍 Movimiento: ACTIVADO' : '📍 Movimiento: DESACTIVADO' }}
+            {{ isMoveMode ? '📍 Arrastre: HABILITADO' : '📍 Arrastre: DESHABILITADO' }}
           </button>
-          <p class="hint">{{ isMoveMode ? 'Haz clic en el mapa para mover' : 'Habilita para mover equipo' }}</p>
+          <p class="hint">{{ isMoveMode ? 'Arrastra los iconos para moverlos' : 'Habilita para permitir arrastre' }}</p>
         </div>
       </div>
 
@@ -89,6 +89,14 @@ watch(selectedEquipmentId, (newId) => {
   if (newId) {
     syncEditForm(newId);
   }
+});
+
+// Nuevo: habilitar/deshabilitar arrastre de todos los markers según el modo
+watch(isMoveMode, (enabled) => {
+  Object.values(markers.value).forEach(marker => {
+    if (enabled) marker.dragging.enable();
+    else marker.dragging.disable();
+  });
 });
 
 const saveStatus = async () => {
@@ -295,18 +303,6 @@ onMounted(() => {
 
   L.control.scale({ imperial: false, position: 'bottomleft' }).addTo(map.value);
 
-  map.value.on('click', async (e) => {
-    // Solo mover si hay un equipo seleccionado Y el modo movimiento está activo
-    if (selectedEquipmentId.value && isMoveMode.value && !isDrawingMode.value) {
-      const area = checkAreaForPoint(e.latlng.lat, e.latlng.lng);
-      try {
-        await api.put(`/api/v1/equipment/${selectedEquipmentId.value}/location`, 
-          { latitude: e.latlng.lat, longitude: e.latlng.lng, currentArea: area },
-          { headers: { Authorization: `Bearer ${authStore.token}` } });
-        loadData();
-      } catch (error) {}
-    }
-  });
   loadData();
 });
 </script>
