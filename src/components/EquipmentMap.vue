@@ -10,44 +10,51 @@
       <div class="legend-item"><span class="dot in"></span> Inoperativo</div>
     </div>
 
-    <div class="map-controls">
-      <h3>Control de Equipos</h3>
-      <select v-model="selectedEquipmentId">
-        <option :value="null">Seleccionar Equipo</option>
-        <option v-for="eq in equipmentList" :key="eq.id" :value="eq.id">
-          {{ eq.name }}
-        </option>
-      </select>
-      
-      <div v-if="selectedEquipmentId" class="status-box">
-        <p>Equipo: <b>{{ selectedEquipmentName }}</b></p>
-        <p>Área actual: <b :class="{ highlight: currentAreaName && currentAreaName !== 'Fuera de zona' }">{{ currentAreaName || 'Fuera de zona' }}</b></p>
-        
-        <div class="edit-mini-form">
-          <select v-model="editStatus" class="mini-input">
-            <option value="OPERATIVO">OPERATIVO</option>
-            <option value="INOPERATIVO">INOPERATIVO</option>
-            <option value="STAND_BY">STAND_BY</option>
-          </select>
-          <textarea v-model="editComment" placeholder="Añadir observación..." class="mini-input mini-textarea"></textarea>
-          <button @click="saveStatus" :disabled="isSaving" class="btn-save-mini">
-            {{ isSaving ? 'Guardando...' : 'Actualizar Estado' }}
-          </button>
-        </div>
-
-        <div class="movement-toggle">
-          <button @click="isMoveMode = !isMoveMode" :class="{ 'btn-move-active': isMoveMode }" class="btn-move">
-            {{ isMoveMode ? '📍 Arrastre: HABILITADO' : '📍 Arrastre: DESHABILITADO' }}
-          </button>
-          <p class="hint">{{ isMoveMode ? 'Arrastra los iconos para moverlos' : 'Habilita para permitir arrastre' }}</p>
-        </div>
+    <div class="map-controls" :class="{ 'controls-collapsed': isCollapsed }">
+      <div class="controls-header" @click="isCollapsed = !isCollapsed">
+        <h3>Control de Equipos</h3>
+        <span class="toggle-icon">{{ isCollapsed ? '🔼' : '🔽' }}</span>
       </div>
-
-      <div v-if="authStore.isAdmin" class="admin-controls">
-        <hr />
-        <p class="hint-admin">Pulsa el icono del cuadrado [ ] para crear nuevas zonas de trabajo</p>
+      
+      <div v-show="!isCollapsed" class="controls-body">
+        <select v-model="selectedEquipmentId" class="main-select">
+          <option :value="null">Seleccionar Equipo</option>
+          <option v-for="eq in equipmentList" :key="eq.id" :value="eq.id">
+            {{ eq.name }}
+          </option>
+        </select>
+        
+        <div v-if="selectedEquipmentId" class="status-box">
+          <p class="eq-name"><b>{{ selectedEquipmentName }}</b></p>
+          <p class="area-tag" :class="{ 'in-area': currentAreaName && currentAreaName !== 'Fuera de zona' }">
+            {{ currentAreaName || 'Fuera de zona' }}
+          </p>
+          
+          <div class="edit-mini-form">
+            <select v-model="editStatus" class="mini-input">
+              <option value="OPERATIVO">OPERATIVO</option>
+              <option value="INOPERATIVO">INOPERATIVO</option>
+              <option value="STAND_BY">STAND_BY</option>
+            </select>
+            <textarea v-model="editComment" placeholder="Observaciones..." class="mini-input mini-textarea"></textarea>
+            <button @click="saveStatus" :disabled="isSaving" class="btn-save-pro">
+              {{ isSaving ? '...' : 'Actualizar' }}
+            </button>
+          </div>
+        </div>
       </div>
     </div>
+
+    <!-- Botón de Candado Flotante (FAB) -->
+    <button 
+      @click="isMoveMode = !isMoveMode" 
+      class="fab-lock" 
+      :class="{ 'unlocked': isMoveMode }"
+      :title="isMoveMode ? 'Bloquear movimiento' : 'Habilitar arrastre'"
+    >
+      <span v-if="isMoveMode">🔓</span>
+      <span v-else>🔒</span>
+    </button>
   </div>
 </template>
 
@@ -70,11 +77,17 @@ const markers = ref({});
 const areaLayers = ref({});
 const processedPolygons = ref([]);
 const isDrawingMode = ref(false);
-const isMoveMode = ref(false); // Nuevo: control de modo movimiento
+const isMoveMode = ref(false);
+const isCollapsed = ref(false); // Nuevo: para colapsar controles en móvil
 
 const isSaving = ref(false);
 const editStatus = ref('');
 const editComment = ref('');
+
+// Colapsar automáticamente en pantallas pequeñas al inicio
+onMounted(() => {
+  if (window.innerWidth < 768) isCollapsed.value = true;
+});
 
 // Sincronizar el formulario pequeño cuando cambia el equipo seleccionado
 const syncEditForm = (id) => {
@@ -310,23 +323,69 @@ onMounted(() => {
 </script>
 
 <style scoped>
-#map-container { position: relative; height: 100%; width: 100%; }
+#map-container { position: relative; height: 100%; width: 100%; overflow: hidden; }
 #map { height: 75vh; width: 100%; border-radius: 12px; min-height: 500px; }
+
+/* FAB Lock */
+.fab-lock {
+  position: absolute; bottom: 80px; right: 15px; z-index: 1000;
+  width: 50px; height: 50px; border-radius: 50%;
+  background: white; border: 2px solid #ddd;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.fab-lock.unlocked { background: #2ed573; border-color: #2ed573; transform: scale(1.1); }
+.fab-lock:active { transform: scale(0.9); }
+
+/* Map Controls - Refined & Mobile Friendly */
 .map-controls {
   position: absolute; top: 10px; right: 10px; z-index: 1000;
-  background: rgba(30, 30, 30, 0.95); padding: 12px; border-radius: 8px;
-  color: white; width: 220px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); border: 1px solid #444;
+  background: rgba(28, 28, 30, 0.95); padding: 0; border-radius: 12px;
+  color: white; width: 240px; box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.1);
+  overflow: hidden; transition: all 0.3s ease;
 }
+.controls-header { padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.05); }
+.controls-header h3 { margin: 0; font-size: 0.9rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: #a1a1aa; }
+.controls-body { padding: 15px; }
+
+.main-select { width: 100%; padding: 10px; background: #2c2c2e; color: white; border: 1px solid #3a3a3c; border-radius: 8px; font-size: 0.9rem; }
+
+.status-box { margin-top: 15px; background: rgba(0,0,0,0.2); border-radius: 10px; padding: 12px; border: 1px solid rgba(255,255,255,0.05); }
+.eq-name { margin: 0 0 8px 0; font-size: 1rem; color: #fff; }
+.area-tag { 
+  display: inline-block; padding: 2px 8px; border-radius: 4px; background: #3a3a3c; 
+  font-size: 0.75rem; font-weight: 600; color: #a1a1aa; margin-bottom: 12px;
+}
+.area-tag.in-area { background: rgba(46, 213, 115, 0.2); color: #2ed573; }
+
+.edit-mini-form { display: flex; flex-direction: column; gap: 10px; }
+.mini-input { width: 100%; background: #2c2c2e; border: 1px solid #3a3a3c; color: white; border-radius: 6px; padding: 8px; font-size: 0.85rem; }
+.mini-textarea { height: 50px; resize: none; }
+.btn-save-pro { background: #6366f1; color: white; border: none; padding: 10px; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 0.85rem; transition: background 0.2s; }
+.btn-save-pro:hover { background: #4f46e5; }
+
 .map-legend {
-  position: absolute; bottom: 20px; right: 10px; z-index: 1000;
-  background: rgba(30, 30, 30, 0.9); padding: 10px; border-radius: 8px;
-  color: white; font-size: 12px; border: 1px solid #444; pointer-events: none;
+  position: absolute; bottom: 20px; left: 10px; z-index: 1000;
+  background: rgba(28, 28, 30, 0.9); padding: 10px; border-radius: 8px;
+  color: white; font-size: 11px; border: 1px solid rgba(255,255,255,0.1); pointer-events: none;
 }
 .legend-item { display: flex; align-items: center; margin-bottom: 4px; gap: 8px; }
-.dot { width: 10px; height: 10px; border-radius: 50%; }
+.dot { width: 8px; height: 8px; border-radius: 50%; }
 .op { background: #2ed573; }
 .sb { background: #ffa502; }
 .in { background: #ff4757; }
+
+/* Media Queries for Mobile */
+@media (max-width: 768px) {
+  #map { height: 60vh; min-height: 400px; }
+  .map-controls { width: calc(100% - 20px); top: auto; bottom: 10px; right: 10px; left: 10px; }
+  .controls-collapsed { width: 180px; left: auto; }
+  .fab-lock { bottom: 120px; } /* Ajustar para que no tape los controles en movil */
+  .map-legend { display: none; } /* Ocultar leyenda en movil para ganar espacio */
+}
 
 :deep(.leaflet-pro-icon) { background: none; border: none; }
 :deep(.pro-icon-wrapper) { display: flex; flex-direction: column; align-items: center; }
@@ -334,19 +393,4 @@ onMounted(() => {
   font-size: 9px; font-weight: bold; color: #000; padding: 1px 4px; border-radius: 3px;
   margin-top: -5px; white-space: nowrap; border: 1px solid rgba(0,0,0,0.3);
 }
-.status-box { margin-top: 12px; padding: 12px; background: #222; border-radius: 8px; font-size: 13px; border: 1px solid #444; }
-.edit-mini-form { display: flex; flex-direction: column; gap: 8px; margin: 10px 0; padding-top: 10px; border-top: 1px solid #444; }
-.mini-input { width: 100%; background: #333; border: 1px solid #555; color: white; border-radius: 4px; padding: 5px; font-size: 12px; }
-.mini-textarea { height: 40px; resize: none; font-family: inherit; }
-.btn-save-mini { background: #6366f1; color: white; border: none; padding: 6px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 11px; }
-.btn-save-mini:hover { background: #4f46e5; }
-.btn-save-mini:disabled { opacity: 0.5; cursor: not-allowed; }
-
-.movement-toggle { margin-top: 15px; padding-top: 10px; border-top: 1px solid #444; }
-.btn-move { width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #555; background: #333; color: #ccc; cursor: pointer; font-size: 11px; font-weight: bold; transition: all 0.2s; }
-.btn-move-active { background: #2ed573; color: #000; border-color: #2ed573; box-shadow: 0 0 10px rgba(46, 213, 115, 0.4); }
-
-.highlight { color: #2ed573; font-weight: bold; }
-.hint, .hint-admin { font-size: 11px; color: #aaa; margin-top: 5px; }
-select { width: 100%; padding: 8px; background: #444; color: white; border: 1px solid #666; border-radius: 4px; }
 </style>
