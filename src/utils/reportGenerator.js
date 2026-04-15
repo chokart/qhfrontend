@@ -60,6 +60,21 @@ export const generateEquipmentPDF = (equipmentList) => {
     alternateRowStyles: {
       fillColor: [248, 250, 252]
     },
+    didParseCell: function (data) {
+      if (data.section === 'body' && data.column.index === 3) {
+        const status = data.cell.raw;
+        if (status === 'INOPERATIVO') {
+          data.cell.styles.textColor = [239, 68, 68]; // Rojo suave
+          data.cell.styles.fontStyle = 'bold';
+        } else if (status === 'OPERATIVO') {
+          data.cell.styles.textColor = [5, 150, 105]; // Verde
+          data.cell.styles.fontStyle = 'bold';
+        } else if (status === 'STAND_BY') {
+          data.cell.styles.textColor = [217, 119, 6]; // Ambar/Naranja
+          data.cell.styles.fontStyle = 'bold';
+        }
+      }
+    },
     margin: { top: 45 },
   });
 
