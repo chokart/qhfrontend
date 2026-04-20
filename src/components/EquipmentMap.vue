@@ -144,6 +144,8 @@ const currentAreaName = computed(() => {
 
 const formatShortName = (name) => {
   if (!name) return '';
+  if (name.startsWith('BATERIA')) return 'B' + name.replace('BATERIA', '').trim();
+  if (name.startsWith('NIDO')) return 'N' + name.replace('NIDO', '').trim();
   if (name.startsWith('Rodillo #')) return 'R' + name.replace('Rodillo #', '');
   if (name.startsWith('Volquete #')) return 'V' + name.replace('Volquete #', '');
   if (name.startsWith('Retroexcavadora')) return 'Rt' + name.replace('Retroexcavadora', '').trim();
@@ -160,7 +162,16 @@ const getProSVG = (name, status) => {
   if (status === 'STAND_BY') mainColor = "#ffa502";
 
   let paths = "";
-  if (name.startsWith("D")) {
+  if (name.startsWith("BATERIA") || name.startsWith("NIDO")) {
+    // Diseño de Hidrociclón / Planta
+    paths = `
+      <path d="M7 5h10l-3 12h-4z" fill="${mainColor}"/>
+      <path d="M10 17h4v4h-4z" fill="#555"/>
+      <path d="M8 3h8v2H8z" fill="#555"/>
+      <path d="M4 7h4v2H4z" fill="#333"/>
+      <circle cx="12" cy="11" r="2" fill="rgba(255,255,255,0.3)"/>
+    `;
+  } else if (name.startsWith("D")) {
     paths = `<path d="M4 18h16v2H4z" fill="#333"/><path d="M6 10h10l2 4H4z" fill="${mainColor}"/><path d="M2 14h20v2H2z" fill="${mainColor}"/><path d="M20 10l2 6h-2z" fill="#555"/>`;
   } else if (name.includes("Exc.")) {
     paths = `<path d="M4 18h12v2H4z" fill="#333"/><path d="M4 12h10v6H4z" fill="${mainColor}"/><path d="M12 14l8-8 2 2-6 8z" fill="#555"/><path d="M20 4l3 3-2 2-3-3z" fill="#333"/>`;
