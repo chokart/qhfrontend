@@ -17,9 +17,26 @@
       </div>
       
       <div v-show="!isCollapsed" class="controls-body">
+        <!-- Filtros Rápidos Integrados -->
+        <div class="filter-section">
+          <p class="filter-title">Filtrar por tipo:</p>
+          <div class="filter-chips">
+            <button 
+              v-for="cat in categories" 
+              :key="cat.id"
+              :class="['chip', { active: selectedFilters.includes(cat.id) }]"
+              @click="toggleFilter(cat.id)"
+              :title="cat.label"
+            >
+              <span class="chip-dot" :style="{ backgroundColor: cat.color }"></span>
+              {{ cat.short }}
+            </button>
+          </div>
+        </div>
+
         <select v-model="selectedEquipmentId" class="main-select">
           <option :value="null">Seleccionar Equipo</option>
-          <option v-for="eq in equipmentList" :key="eq.id" :value="eq.id">
+          <option v-for="eq in filteredEquipment" :key="eq.id" :value="eq.id">
             {{ eq.name }}
           </option>
         </select>
@@ -78,18 +95,48 @@ const areaLayers = ref({});
 const processedPolygons = ref([]);
 const isDrawingMode = ref(false);
 const isMoveMode = ref(false);
-const isCollapsed = ref(false); // Nuevo: para colapsar controles en móvil
+const isCollapsed = ref(false);
 
 const isSaving = ref(false);
 const editStatus = ref('');
 const editComment = ref('');
 
-// Colapsar automáticamente en pantallas pequeñas al inicio
+// Lógica de Filtros
+const selectedFilters = ref([]);
+const categories = [
+  { id: 'TRACTOR', label: 'Tractores', short: 'Trac', color: '#ff4757' },
+  { id: 'EXCAVADORA', label: 'Excavadoras', short: 'Exc', color: '#ffa502' },
+  { id: 'HIDROCICLON', label: 'Hidrociclones', short: 'Hidro', color: '#00cec9' },
+  { id: 'VOLQUETE', label: 'Volquetes', short: 'Volq', color: '#1e272e' },
+  { id: 'RODILLO', label: 'Rodillos', short: 'Rod', color: '#747d8c' }
+];
+
+const toggleFilter = (id) => {
+  const index = selectedFilters.value.indexOf(id);
+  if (index > -1) selectedFilters.value.splice(index, 1);
+  else selectedFilters.value.push(id);
+  renderMarkers();
+};
+
+const getCategory = (name) => {
+  if (name.startsWith('BATERIA') || name.startsWith('NIDO')) return 'HIDROCICLON';
+  if (name.startsWith('D8') || name.startsWith('D9') || name.startsWith('D10')) return 'TRACTOR';
+  if (name.includes('Exc.')) return 'EXCAVADORA';
+  if (name.includes('Cargador')) return 'CARGADOR';
+  if (name.includes('Volquete')) return 'VOLQUETE';
+  if (name.includes('Rodillo')) return 'RODILLO';
+  return 'OTROS';
+};
+
+const filteredEquipment = computed(() => {
+  if (selectedFilters.value.length === 0) return equipmentList.value;
+  return equipmentList.value.filter(eq => selectedFilters.value.includes(getCategory(eq.name)));
+});
+
 onMounted(() => {
   if (window.innerWidth < 768) isCollapsed.value = true;
 });
 
-// Sincronizar el formulario pequeño cuando cambia el equipo seleccionado
 const syncEditForm = (id) => {
   const eq = equipmentList.value.find(e => e.id === id);
   if (eq) {
@@ -99,12 +146,9 @@ const syncEditForm = (id) => {
 };
 
 watch(selectedEquipmentId, (newId) => {
-  if (newId) {
-    syncEditForm(newId);
-  }
+  if (newId) syncEditForm(newId);
 });
 
-// Nuevo: habilitar/deshabilitar arrastre de todos los markers según el modo
 watch(isMoveMode, (enabled) => {
   Object.values(markers.value).forEach(marker => {
     if (enabled) marker.dragging.enable();
@@ -120,8 +164,8 @@ const saveStatus = async () => {
       status: editStatus.value,
       comment: editComment.value
     });
-    await loadData(); // Refrescar mapa y lista
-    syncEditForm(selectedEquipmentId.value); // Asegurar sincronía local
+    await loadData();
+    syncEditForm(selectedEquipmentId.value);
   } catch (error) {
     alert("Error al actualizar estado");
   } finally {
@@ -163,7 +207,6 @@ const getProSVG = (name, status) => {
 
   let paths = "";
   if (name.startsWith("BATERIA") || name.startsWith("NIDO")) {
-    // Diseño de Hidrociclón / Planta
     paths = `
       <path d="M7 5h10l-3 12h-4z" fill="${mainColor}"/>
       <path d="M10 17h4v4h-4z" fill="#555"/>
@@ -219,38 +262,11 @@ const loadData = async () => {
   } catch (error) { console.error(error); }
 };
 
-const props = defineProps({
-  filters: { type: Array, default: () => [] }
-});
-
-const getCategory = (name) => {
-  if (name.startsWith('BATERIA') || name.startsWith('NIDO')) return 'HIDROCICLON';
-  if (name.startsWith('D8') || name.startsWith('D9') || name.startsWith('D10')) return 'TRACTOR';
-  if (name.includes('Exc.')) return 'EXCAVADORA';
-  if (name.includes('Cargador')) return 'CARGADOR';
-  if (name.includes('Volquete')) return 'VOLQUETE';
-  if (name.includes('Rodillo')) return 'RODILLO';
-  return 'OTROS';
-};
-
-const filteredEquipment = computed(() => {
-  if (!props.filters || props.filters.length === 0) return equipmentList.value;
-  return equipmentList.value.filter(eq => props.filters.includes(getCategory(eq.name)));
-});
-
-// Vigilar cambios en los filtros para actualizar los markers
-watch(() => props.filters, () => {
-  renderMarkers();
-}, { deep: true });
-
 const renderMarkers = () => {
-  // Primero, ocultar todos los markers que no cumplen el filtro
   Object.keys(markers.value).forEach(id => {
     const eq = equipmentList.value.find(e => e.id === parseInt(id));
-    if (!eq || (props.filters.length > 0 && !props.filters.includes(getCategory(eq.name)))) {
-      if (map.value.hasLayer(markers.value[id])) {
-        map.value.removeLayer(markers.value[id]);
-      }
+    if (!eq || (selectedFilters.value.length > 0 && !selectedFilters.value.includes(getCategory(eq.name)))) {
+      if (map.value.hasLayer(markers.value[id])) map.value.removeLayer(markers.value[id]);
     }
   });
 
@@ -272,23 +288,19 @@ const renderMarkers = () => {
       `;
 
       if (markers.value[eq.id]) {
-        if (!map.value.hasLayer(markers.value[eq.id])) {
-          markers.value[eq.id].addTo(map.value);
-        }
+        if (!map.value.hasLayer(markers.value[eq.id])) markers.value[eq.id].addTo(map.value);
         markers.value[eq.id].setLatLng([eq.latitude, eq.longitude]);
         markers.value[eq.id].setIcon(customIcon);
         markers.value[eq.id].setPopupContent(popupContent);
-        // Respetar el modo de movimiento actual al refrescar
         if (isMoveMode.value) markers.value[eq.id].dragging.enable();
         else markers.value[eq.id].dragging.disable();
       } else {
         markers.value[eq.id] = L.marker([eq.latitude, eq.longitude], { 
           icon: customIcon,
-          draggable: isMoveMode.value // Iniciar según el modo actual
+          draggable: isMoveMode.value 
         }).addTo(map.value)
           .bindPopup(popupContent);
 
-        // Seleccionar equipo al hacer clic en el marker
         markers.value[eq.id].on('click', () => {
           selectedEquipmentId.value = eq.id;
         });
@@ -297,17 +309,13 @@ const renderMarkers = () => {
           const marker = event.target;
           const position = marker.getLatLng();
           const area = checkAreaForPoint(position.lat, position.lng);
-          
           try {
             await api.put(`/api/v1/equipment/${eq.id}/location`, 
               { latitude: position.lat, longitude: position.lng, currentArea: area },
               { headers: { Authorization: `Bearer ${authStore.token}` } }
             );
             loadData();
-          } catch (error) {
-            console.error(error);
-            loadData(); 
-          }
+          } catch (error) { loadData(); }
         });
       }
     }
@@ -365,7 +373,6 @@ onMounted(() => {
   }
 
   L.control.scale({ imperial: false, position: 'bottomleft' }).addTo(map.value);
-
   loadData();
 });
 </script>
@@ -374,7 +381,6 @@ onMounted(() => {
 #map-container { position: relative; height: 100%; width: 100%; overflow: hidden; }
 #map { height: 75vh; width: 100%; border-radius: 12px; min-height: 500px; }
 
-/* FAB Lock */
 .fab-lock {
   position: absolute; bottom: 80px; right: 15px; z-index: 1000;
   width: 50px; height: 50px; border-radius: 50%;
@@ -387,7 +393,6 @@ onMounted(() => {
 .fab-lock.unlocked { background: #2ed573; border-color: #2ed573; transform: scale(1.1); }
 .fab-lock:active { transform: scale(0.9); }
 
-/* Map Controls - Refined & Mobile Friendly */
 .map-controls {
   position: absolute; top: 10px; right: 10px; z-index: 1000;
   background: rgba(28, 28, 30, 0.95); padding: 0; border-radius: 12px;
@@ -399,6 +404,7 @@ onMounted(() => {
 .controls-header h3 { margin: 0; font-size: 0.9rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: #a1a1aa; }
 .controls-body { padding: 15px; }
 
+/* Filtros */
 .filter-section { margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 10px; }
 .filter-title { font-size: 0.75rem; color: #a1a1aa; margin: 0 0 8px 0; font-weight: 600; }
 .filter-chips { display: flex; flex-wrap: wrap; gap: 5px; }
@@ -438,13 +444,12 @@ onMounted(() => {
 .sb { background: #ffa502; }
 .in { background: #ff4757; }
 
-/* Media Queries for Mobile */
 @media (max-width: 768px) {
   #map { height: 60vh; min-height: 400px; }
   .map-controls { width: calc(100% - 20px); top: auto; bottom: 10px; right: 10px; left: 10px; }
   .controls-collapsed { width: 180px; left: auto; }
-  .fab-lock { bottom: 120px; } /* Ajustar para que no tape los controles en movil */
-  .map-legend { display: none; } /* Ocultar leyenda en movil para ganar espacio */
+  .fab-lock { bottom: 120px; } 
+  .map-legend { display: none; } 
 }
 
 :deep(.leaflet-pro-icon) { background: none; border: none; }
