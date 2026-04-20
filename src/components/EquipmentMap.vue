@@ -399,6 +399,18 @@ onMounted(() => {
 .controls-header h3 { margin: 0; font-size: 0.9rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: #a1a1aa; }
 .controls-body { padding: 15px; }
 
+.filter-section { margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 10px; }
+.filter-title { font-size: 0.75rem; color: #a1a1aa; margin: 0 0 8px 0; font-weight: 600; }
+.filter-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+.chip { 
+  display: flex; align-items: center; gap: 4px; padding: 4px 8px; border-radius: 4px; 
+  background: #2c2c2e; border: 1px solid #3a3a3c; color: #e5e7eb; font-size: 0.7rem; 
+  cursor: pointer; transition: all 0.2s; font-weight: 600;
+}
+.chip:hover { background: #3a3a3c; }
+.chip.active { background: #6366f1; border-color: #6366f1; color: white; }
+.chip-dot { width: 6px; height: 6px; border-radius: 50%; }
+
 .main-select { width: 100%; padding: 10px; background: #2c2c2e; color: white; border: 1px solid #3a3a3c; border-radius: 8px; font-size: 0.9rem; }
 
 .status-box { margin-top: 15px; background: rgba(0,0,0,0.2); border-radius: 10px; padding: 12px; border: 1px solid rgba(255,255,255,0.05); }

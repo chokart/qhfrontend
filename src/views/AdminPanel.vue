@@ -15,22 +15,18 @@
     
     <div class="main-content">
       <div class="map-section">
-        <!-- Filtros Superiores -->
-        <EquipmentFilter v-model="selectedCategories" />
-
         <EquipmentMap 
           ref="mapRef" 
-          :filters="selectedCategories"
           @update-list="handleListUpdate" 
           @update-areas="handleAreaUpdate" 
         />
         <div class="tables-grid">
           <EquipmentList 
-            :equipment="filteredEquipmentList" 
+            :equipment="equipmentList" 
             @update-required="mapRef.loadData()" 
           />
           <AreaList :areas="areaList" @delete="handleDeleteArea" />
-          <EquipmentSummary :equipment="filteredEquipmentList" />
+          <EquipmentSummary :equipment="equipmentList" />
         </div>
       </div>
 
