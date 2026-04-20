@@ -71,6 +71,7 @@ const props = defineProps({
 
 const categorySummary = computed(() => {
   const categories = [
+    { name: 'Hidrociclones', check: (n) => n.startsWith('BATERIA') || n.startsWith('NIDO') },
     { name: 'Tractores D8', check: (n) => n.startsWith('D8') },
     { name: 'Tractores D9', check: (n) => n.startsWith('D9') },
     { name: 'Tractores D10', check: (n) => n.startsWith('D10') },
@@ -93,8 +94,9 @@ const categorySummary = computed(() => {
   const others = { name: 'Otros', operativo: 0, standby: 0, inoperativo: 0, total: 0 };
 
   props.equipment.forEach(eq => {
-    const categoryStats = stats.find(s => categories.find(c => c.name === s.name).check(eq.name));
-    const target = categoryStats || others;
+    // Encontrar la categoría que coincide
+    const matchedCategory = categories.find(c => c.check(eq.name));
+    const target = matchedCategory ? stats.find(s => s.name === matchedCategory.name) : others;
     
     target.total++;
     if (eq.status === 'OPERATIVO') target.operativo++;

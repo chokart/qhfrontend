@@ -15,11 +15,22 @@
     
     <div class="main-content">
       <div class="map-section">
-        <EquipmentMap ref="mapRef" @update-list="handleListUpdate" @update-areas="handleAreaUpdate" />
+        <!-- Filtros Superiores -->
+        <EquipmentFilter v-model="selectedCategories" />
+
+        <EquipmentMap 
+          ref="mapRef" 
+          :filters="selectedCategories"
+          @update-list="handleListUpdate" 
+          @update-areas="handleAreaUpdate" 
+        />
         <div class="tables-grid">
-          <EquipmentList :equipment="equipmentList" @update-required="mapRef.loadData()" />
+          <EquipmentList 
+            :equipment="filteredEquipmentList" 
+            @update-required="mapRef.loadData()" 
+          />
           <AreaList :areas="areaList" @delete="handleDeleteArea" />
-          <EquipmentSummary :equipment="equipmentList" />
+          <EquipmentSummary :equipment="filteredEquipmentList" />
         </div>
       </div>
 
@@ -61,7 +72,7 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue';
+import { ref, reactive, computed } from 'vue';
 import api from '../api';
 import { useAuthStore } from '../stores/auth';
 import { useRouter } from 'vue-router';
@@ -69,6 +80,7 @@ import EquipmentMap from '../components/EquipmentMap.vue';
 import EquipmentList from '../components/EquipmentList.vue';
 import AreaList from '../components/AreaList.vue';
 import EquipmentSummary from '../components/EquipmentSummary.vue';
+import EquipmentFilter from '../components/EquipmentFilter.vue';
 import { generateEquipmentPDF } from '../utils/reportGenerator';
 
 const authStore = useAuthStore();
@@ -77,6 +89,8 @@ const router = useRouter();
 const mapRef = ref(null);
 const equipmentList = ref([]);
 const areaList = ref([]);
+const selectedCategories = ref([]);
+
 const newUser = reactive({ username: '', password: '', role: 'USER' });
 const newEq = reactive({ 
   name: '', 
@@ -95,6 +109,21 @@ const handleLogout = () => {
 
 const handleListUpdate = (list) => { equipmentList.value = list; };
 const handleAreaUpdate = (areas) => { areaList.value = areas; };
+
+const getCategory = (name) => {
+  if (name.startsWith('BATERIA') || name.startsWith('NIDO')) return 'HIDROCICLON';
+  if (name.startsWith('D8') || name.startsWith('D9') || name.startsWith('D10')) return 'TRACTOR';
+  if (name.includes('Exc.')) return 'EXCAVADORA';
+  if (name.includes('Cargador')) return 'CARGADOR';
+  if (name.includes('Volquete')) return 'VOLQUETE';
+  if (name.includes('Rodillo')) return 'RODILLO';
+  return 'OTROS';
+};
+
+const filteredEquipmentList = computed(() => {
+  if (selectedCategories.value.length === 0) return equipmentList.value;
+  return equipmentList.value.filter(eq => selectedCategories.value.includes(getCategory(eq.name)));
+});
 
 const handleDeleteArea = async (id) => {
   if (confirm("¿Eliminar zona?")) {
@@ -129,7 +158,7 @@ const createUser = async () => {
 };
 
 const downloadReport = () => {
-  generateEquipmentPDF(equipmentList.value);
+  generateEquipmentPDF(filteredEquipmentList.value);
 };
 </script>
 

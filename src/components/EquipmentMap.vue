@@ -219,8 +219,42 @@ const loadData = async () => {
   } catch (error) { console.error(error); }
 };
 
+const props = defineProps({
+  filters: { type: Array, default: () => [] }
+});
+
+const getCategory = (name) => {
+  if (name.startsWith('BATERIA') || name.startsWith('NIDO')) return 'HIDROCICLON';
+  if (name.startsWith('D8') || name.startsWith('D9') || name.startsWith('D10')) return 'TRACTOR';
+  if (name.includes('Exc.')) return 'EXCAVADORA';
+  if (name.includes('Cargador')) return 'CARGADOR';
+  if (name.includes('Volquete')) return 'VOLQUETE';
+  if (name.includes('Rodillo')) return 'RODILLO';
+  return 'OTROS';
+};
+
+const filteredEquipment = computed(() => {
+  if (!props.filters || props.filters.length === 0) return equipmentList.value;
+  return equipmentList.value.filter(eq => props.filters.includes(getCategory(eq.name)));
+});
+
+// Vigilar cambios en los filtros para actualizar los markers
+watch(() => props.filters, () => {
+  renderMarkers();
+}, { deep: true });
+
 const renderMarkers = () => {
-  equipmentList.value.forEach(eq => {
+  // Primero, ocultar todos los markers que no cumplen el filtro
+  Object.keys(markers.value).forEach(id => {
+    const eq = equipmentList.value.find(e => e.id === parseInt(id));
+    if (!eq || (props.filters.length > 0 && !props.filters.includes(getCategory(eq.name)))) {
+      if (map.value.hasLayer(markers.value[id])) {
+        map.value.removeLayer(markers.value[id]);
+      }
+    }
+  });
+
+  filteredEquipment.value.forEach(eq => {
     if (eq.latitude && eq.longitude) {
       const customIcon = L.divIcon({
         html: getProSVG(eq.name, eq.status),
@@ -238,6 +272,9 @@ const renderMarkers = () => {
       `;
 
       if (markers.value[eq.id]) {
+        if (!map.value.hasLayer(markers.value[eq.id])) {
+          markers.value[eq.id].addTo(map.value);
+        }
         markers.value[eq.id].setLatLng([eq.latitude, eq.longitude]);
         markers.value[eq.id].setIcon(customIcon);
         markers.value[eq.id].setPopupContent(popupContent);

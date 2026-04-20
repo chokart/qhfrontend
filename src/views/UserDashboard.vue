@@ -14,22 +14,33 @@
     </div>
     
     <div class="main-content">
+      <!-- Filtros Superiores -->
+      <EquipmentFilter v-model="selectedCategories" />
+
       <div class="map-section">
-        <EquipmentMap ref="mapRef" @update-list="handleListUpdate" />
-        <EquipmentList :equipment="equipmentList" @update-required="mapRef.loadData()" />
-        <EquipmentSummary :equipment="equipmentList" style="margin-top: 20px;" />
+        <EquipmentMap 
+          ref="mapRef" 
+          :filters="selectedCategories"
+          @update-list="handleListUpdate" 
+        />
+        <EquipmentList 
+          :equipment="filteredEquipmentList" 
+          @update-required="mapRef.loadData()" 
+        />
+        <EquipmentSummary :equipment="filteredEquipmentList" style="margin-top: 20px;" />
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { useAuthStore } from '../stores/auth';
 import { useRouter } from 'vue-router';
 import EquipmentMap from '../components/EquipmentMap.vue';
 import EquipmentList from '../components/EquipmentList.vue';
 import EquipmentSummary from '../components/EquipmentSummary.vue';
+import EquipmentFilter from '../components/EquipmentFilter.vue';
 import { generateEquipmentPDF } from '../utils/reportGenerator';
 
 const authStore = useAuthStore();
@@ -37,6 +48,7 @@ const router = useRouter();
 
 const mapRef = ref(null);
 const equipmentList = ref([]);
+const selectedCategories = ref([]);
 
 const handleLogout = () => {
   authStore.logout();
@@ -47,8 +59,23 @@ const handleListUpdate = (list) => {
   equipmentList.value = list;
 };
 
+const getCategory = (name) => {
+  if (name.startsWith('BATERIA') || name.startsWith('NIDO')) return 'HIDROCICLON';
+  if (name.startsWith('D8') || name.startsWith('D9') || name.startsWith('D10')) return 'TRACTOR';
+  if (name.includes('Exc.')) return 'EXCAVADORA';
+  if (name.includes('Cargador')) return 'CARGADOR';
+  if (name.includes('Volquete')) return 'VOLQUETE';
+  if (name.includes('Rodillo')) return 'RODILLO';
+  return 'OTROS';
+};
+
+const filteredEquipmentList = computed(() => {
+  if (selectedCategories.value.length === 0) return equipmentList.value;
+  return equipmentList.value.filter(eq => selectedCategories.value.includes(getCategory(eq.name)));
+});
+
 const downloadReport = () => {
-  generateEquipmentPDF(equipmentList.value);
+  generateEquipmentPDF(filteredEquipmentList.value);
 };
 </script>
 
