@@ -3,6 +3,9 @@
     <div class="header">
       <h1>EQUIPOS PESADOS QH</h1>
       <div class="header-actions">
+        <router-link to="/canchas" class="btn-module">
+          <span>📊</span> Niveles Canchas
+        </router-link>
         <button class="btn-outline" @click="downloadReport">
           <span>📄</span> Exportar PDF
         </button>
@@ -113,6 +116,22 @@ const downloadReport = () => {
   gap: 0.5rem;
 }
 .btn-outline:hover { background: var(--primary); color: white; }
+
+.btn-module {
+  background: var(--primary);
+  color: white;
+  text-decoration: none;
+  padding: 0.5rem 1.25rem;
+  border-radius: 50px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s;
+  box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.2);
+}
+.btn-module:hover { background: var(--primary-hover); transform: translateY(-1px); }
 
 .logout-btn { 
   background-color: #fee2e2; 

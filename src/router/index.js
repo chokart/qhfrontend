@@ -3,6 +3,7 @@ import { useAuthStore } from '../stores/auth';
 import Login from '../views/Login.vue';
 import AdminPanel from '../views/AdminPanel.vue';
 import UserDashboard from '../views/UserDashboard.vue';
+import CanchasView from '../views/CanchasView.vue';
 
 const routes = [
   { 
@@ -16,6 +17,12 @@ const routes = [
     component: AdminPanel,
     name: 'Admin',
     meta: { requiresAuth: true, role: 'ADMIN' }
+  },
+  {
+    path: '/canchas',
+    component: CanchasView,
+    name: 'Canchas',
+    meta: { requiresAuth: true }
   },
   { 
     path: '/', 
