@@ -125,18 +125,21 @@ h1 { font-size: 1.5rem; font-weight: 800; color: #0f172a; margin: 0; }
   flex: 1;
   background: white;
   border-radius: 20px;
-  padding: 2rem;
-  overflow-x: auto; /* Scroll horizontal */
+  padding: 1.5rem 1rem;
+  overflow-x: auto; /* Scroll si la pantalla es muy pequeña */
   box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
   display: flex;
   align-items: center;
+  justify-content: center; /* Centrar si sobran espacios */
 }
 
 .canchas-parallel {
   display: flex;
-  gap: 12px;
-  padding-bottom: 1rem;
-  min-width: max-content; /* Asegura que no se rompan las columnas */
+  flex-direction: row-reverse; /* La 1 empieza a la derecha */
+  gap: 6px; /* Espacio más estrecho para que entren más */
+  padding-bottom: 0.5rem;
+  width: 100%;
+  justify-content: center;
 }
 
 .loading-state {

@@ -53,8 +53,8 @@ const getStatusIcon = (status) => {
 
 <style scoped>
 .cancha-card {
-  width: 60px;
-  height: 350px;
+  width: 45px;
+  height: 320px;
   background: white;
   border: 1px solid #e2e8f0;
   border-radius: 8px;
@@ -63,7 +63,8 @@ const getStatusIcon = (status) => {
   position: relative;
   cursor: pointer;
   transition: all 0.2s;
-  flex-shrink: 0; /* No se encogen */
+  flex-shrink: 1; /* Permite que se encojan un poco si es necesario */
+  min-width: 35px;
   overflow: hidden;
 }
 
@@ -74,10 +75,9 @@ const getStatusIcon = (status) => {
   z-index: 10;
 }
 
-/* Colores por estado (en los bordes o fondo sutil) */
+/* Colores por estado */
 .observed { border-color: #ef4444 !important; border-width: 2px; }
 .cicloneando { border-bottom: 4px solid #10b981; }
-.stand-by { border-bottom: 4px solid #64748b; }
 
 .level-indicator {
   flex: 1;
@@ -91,7 +91,6 @@ const getStatusIcon = (status) => {
   width: 100%;
   background: linear-gradient(to top, #4f46e5, #818cf8);
   transition: height 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-  border-top: 2px solid white;
 }
 
 .level-overlay {
@@ -104,27 +103,28 @@ const getStatusIcon = (status) => {
 }
 
 .height-text {
-  font-size: 0.65rem;
+  font-size: 0.55rem;
   font-weight: 800;
   color: #1e293b;
   transform: rotate(-90deg);
-  background: rgba(255,255,255,0.7);
-  padding: 2px 4px;
-  border-radius: 4px;
+  background: rgba(255,255,255,0.8);
+  padding: 1px 3px;
+  border-radius: 3px;
+  white-space: nowrap;
 }
 
 .cancha-label {
-  padding: 0.5rem 0;
+  padding: 0.35rem 0;
   background: white;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
   border-top: 1px solid #f1f5f9;
 }
 
-.number { font-size: 0.75rem; font-weight: 900; color: #475569; }
-.status-icon { font-size: 1rem; }
+.number { font-size: 0.7rem; font-weight: 900; color: #475569; }
+.status-icon { font-size: 0.85rem; }
 
 .comment-dot {
   position: absolute;
