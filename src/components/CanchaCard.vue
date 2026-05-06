@@ -1,239 +1,145 @@
 <template>
-  <div class="cancha-card" :class="{ 'observed': cancha.status === 'OBSERVADA' }">
-    <div class="cancha-header">
-      <span class="cancha-number">Cancha {{ cancha.number }}</span>
-      <span class="cancha-status-badge" :class="cancha.status.toLowerCase().replace(/_/g, '-')">
-        {{ formatStatus(cancha.status) }}
+  <div class="cancha-card" :class="[cancha.status.toLowerCase().replace(/_/g, '-'), { 'observed': cancha.status === 'OBSERVADA' }]">
+    <div class="level-indicator">
+      <div class="level-fill" :style="{ height: levelPercentage + '%' }"></div>
+      <div class="level-overlay">
+        <span class="height-text">{{ cancha.currentHeight }}m</span>
+      </div>
+    </div>
+    
+    <div class="cancha-label">
+      <span class="number">#{{ cancha.number }}</span>
+      <span class="status-icon" :title="formatStatus(cancha.status)">
+        {{ getStatusIcon(cancha.status) }}
       </span>
     </div>
-    
-    <div class="cancha-body">
-      <div class="level-container">
-        <div class="level-fill" :style="{ height: levelPercentage + '%' }">
-          <span class="level-text">{{ cancha.currentHeight }}m</span>
-        </div>
-        <div class="level-marks">
-          <span>1220</span>
-          <span>1215</span>
-          <span>1210</span>
-        </div>
-      </div>
-      
-      <div class="cancha-info">
-        <div class="info-item">
-          <label>Estado:</label>
-          <select v-model="localStatus" @change="updateCancha" class="mini-select">
-            <option v-for="status in statusOptions" :key="status" :value="status">
-              {{ formatStatus(status) }}
-            </option>
-          </select>
-        </div>
-        <div class="info-item">
-          <label>Altura:</label>
-          <input 
-            type="number" 
-            v-model.number="localHeight" 
-            @change="updateCancha" 
-            step="0.1" 
-            max="1220" 
-            class="mini-input"
-          />
-        </div>
-      </div>
-    </div>
-    
-    <div class="cancha-footer">
-      <div class="comment-section">
-        <input 
-          type="text" 
-          v-model="localComment" 
-          @change="updateCancha" 
-          placeholder="Añadir comentario..." 
-          class="comment-input"
-        />
-      </div>
-      <div class="update-info">
-        Por: {{ cancha.lastUpdatedBy }} - {{ formatDate(cancha.updatedAt) }}
-      </div>
-    </div>
+
+    <!-- Comentario rápido si existe -->
+    <div v-if="cancha.comment" class="comment-dot" :title="cancha.comment">!</div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue';
-import api from '../api';
+import { computed } from 'vue';
 
 const props = defineProps({
   cancha: { type: Object, required: true }
 });
 
-const emit = defineEmits(['updated']);
-
-const localStatus = ref(props.cancha.status);
-const localHeight = ref(props.cancha.currentHeight);
-const localComment = ref(props.cancha.comment || '');
-
-const statusOptions = [
-  'CICLONEANDO', 'POR_CICLONEAR', 'POR_COMPACTAR', 'COMPACTADO', 
-  'POR_PREPARAR_BERMA', 'DRENANDO', 'STAND_BY', 'OBSERVADA'
-];
-
 const levelPercentage = computed(() => {
-  const min = 1200; // Base visual
+  const min = 1200; 
   const max = 1220;
   const current = props.cancha.currentHeight;
   const pct = ((current - min) / (max - min)) * 100;
-  return Math.min(Math.max(pct, 5), 100); // Entre 5% y 100% para visibilidad
+  return Math.min(Math.max(pct, 2), 100); 
 });
 
-const formatStatus = (status) => {
-  return status.replace(/_/g, ' ');
-};
+const formatStatus = (status) => status.replace(/_/g, ' ');
 
-const formatDate = (dateStr) => {
-  if (!dateStr) return '';
-  const date = new Date(dateStr);
-  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+const getStatusIcon = (status) => {
+  const icons = {
+    'CICLONEANDO': '🌀',
+    'POR_CICLONEAR': '⏳',
+    'POR_COMPACTAR': '🚜',
+    'COMPACTADO': '✅',
+    'POR_PREPARAR_BERMA': '🚧',
+    'DRENANDO': '💧',
+    'STAND_BY': '🛑',
+    'OBSERVADA': '⚠️'
+  };
+  return icons[status] || '•';
 };
-
-const updateCancha = async () => {
-  try {
-    await api.put(`/api/v1/canchas/${props.cancha.id}`, {
-      status: localStatus.value,
-      currentHeight: localHeight.value,
-      comment: localComment.value
-    });
-    emit('updated');
-  } catch (error) {
-    console.error("Error updating cancha:", error);
-  }
-};
-
-watch(() => props.cancha, (newVal) => {
-  localStatus.value = newVal.status;
-  localHeight.value = newVal.currentHeight;
-  localComment.value = newVal.comment || '';
-}, { deep: true });
 </script>
 
 <style scoped>
 .cancha-card {
+  width: 60px;
+  height: 350px;
   background: white;
-  border-radius: 12px;
   border: 1px solid #e2e8f0;
-  padding: 1rem;
+  border-radius: 8px;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-  transition: all 0.2s;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-}
-.cancha-card:hover { transform: translateY(-2px); box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-.cancha-card.observed { border-left: 4px solid #ef4444; }
-
-.cancha-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-.cancha-number { font-weight: 800; font-size: 0.9rem; color: #1e293b; }
-
-.cancha-status-badge {
-  font-size: 0.65rem;
-  font-weight: 800;
-  padding: 0.2rem 0.5rem;
-  border-radius: 4px;
-  text-transform: uppercase;
-}
-.cicloneando { background: #dcfce7; color: #166534; }
-.por-ciclonear { background: #fef3c7; color: #92400e; }
-.por-compactar { background: #f3f4f6; color: #374151; }
-.compactado { background: #d1fae5; color: #065f46; }
-.stand-by { background: #f1f5f9; color: #475569; }
-.observada { background: #fee2e2; color: #991b1b; }
-.drenando { background: #e0f2fe; color: #0369a1; }
-
-.cancha-body {
-  display: flex;
-  gap: 1rem;
-  height: 120px;
-}
-
-.level-container {
-  width: 50px;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 6px;
   position: relative;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0; /* No se encogen */
   overflow: hidden;
+}
+
+.cancha-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  border-color: #6366f1;
+  z-index: 10;
+}
+
+/* Colores por estado (en los bordes o fondo sutil) */
+.observed { border-color: #ef4444 !important; border-width: 2px; }
+.cicloneando { border-bottom: 4px solid #10b981; }
+.stand-by { border-bottom: 4px solid #64748b; }
+
+.level-indicator {
+  flex: 1;
+  background: #f1f5f9;
+  position: relative;
   display: flex;
   flex-direction: column-reverse;
 }
+
 .level-fill {
   width: 100%;
-  background: linear-gradient(to top, #6366f1, #818cf8);
-  transition: height 0.5s ease-out;
+  background: linear-gradient(to top, #4f46e5, #818cf8);
+  transition: height 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  border-top: 2px solid white;
+}
+
+.level-overlay {
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-}
-.level-text {
-  color: white;
-  font-size: 0.7rem;
-  font-weight: 800;
-  transform: rotate(-90deg);
-  white-space: nowrap;
-}
-.level-marks {
-  position: absolute;
-  right: 2px;
-  top: 0;
-  bottom: 0;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  font-size: 0.55rem;
-  color: #94a3b8;
   pointer-events: none;
 }
 
-.cancha-info {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  justify-content: center;
-}
-.info-item { display: flex; flex-direction: column; gap: 2px; }
-.info-item label { font-size: 0.65rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; }
-
-.mini-select, .mini-input {
-  width: 100%;
-  padding: 4px;
+.height-text {
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: #1e293b;
+  transform: rotate(-90deg);
+  background: rgba(255,255,255,0.7);
+  padding: 2px 4px;
   border-radius: 4px;
-  border: 1px solid #e2e8f0;
-  font-size: 0.75rem;
-  font-weight: 600;
 }
 
-.cancha-footer {
-  border-top: 1px solid #f1f5f9;
-  padding-top: 0.5rem;
+.cancha-label {
+  padding: 0.5rem 0;
+  background: white;
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 4px;
+  border-top: 1px solid #f1f5f9;
 }
-.comment-input {
-  width: 100%;
-  border: none;
-  font-size: 0.75rem;
-  color: #64748b;
-  outline: none;
-  background: transparent;
-}
-.update-info {
-  font-size: 0.6rem;
-  color: #94a3b8;
-  font-style: italic;
+
+.number { font-size: 0.75rem; font-weight: 900; color: #475569; }
+.status-icon { font-size: 1rem; }
+
+.comment-dot {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 14px;
+  height: 14px;
+  background: #f59e0b;
+  color: white;
+  font-size: 10px;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
 </style>
