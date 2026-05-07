@@ -22,10 +22,11 @@
             type="number" 
             v-model.number="formData.currentHeight" 
             step="0.1" 
+            min="1050"
             max="1220" 
             class="form-control"
           />
-          <small class="help-text">Máximo permitido: 1220m</small>
+          <small class="help-text">Permitido: 1050m - 1220m</small>
         </div>
 
         <div class="form-group">

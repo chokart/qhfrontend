@@ -27,7 +27,7 @@ const props = defineProps({
 });
 
 const levelPercentage = computed(() => {
-  const min = 1200; 
+  const min = 1050; 
   const max = 1220;
   const current = props.cancha.currentHeight;
   const pct = ((current - min) / (max - min)) * 100;
