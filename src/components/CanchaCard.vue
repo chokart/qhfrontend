@@ -103,16 +103,12 @@ const getStatusIcon = (status) => {
 }
 
 .height-text {
-  font-size: 0.65rem; /* Un poco más grande que el original (0.55) */
+  font-size: 0.65rem;
   font-weight: 900;
   color: #0f172a;
   transform: rotate(-90deg);
-  background: rgba(255, 255, 255, 0.95); /* Más sólido para legibilidad */
-  padding: 2px 5px;
-  border-radius: 4px;
   white-space: nowrap;
-  letter-spacing: 0.12em; /* Espaciado entre letras solicitado */
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  letter-spacing: 0.12em;
 }
 
 .cancha-label {
