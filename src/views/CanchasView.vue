@@ -39,7 +39,7 @@
         <h2>Canchas por Capas (Inferior)</h2>
       </div>
       <div class="parallel-container">
-        <div class="canchas-parallel">
+        <div class="canchas-parallel canchas-capas-parallel">
           <CanchaCapaCard 
             v-for="cancha in canchasCapas" 
             :key="'c_'+cancha.id" 
@@ -191,6 +191,10 @@ h1 { font-size: 1.5rem; font-weight: 800; color: #0f172a; margin: 0; }
   padding-bottom: 0.5rem;
   width: 100%;
   justify-content: center;
+}
+
+.canchas-capas-parallel {
+  flex-direction: row;
 }
 
 .loading-state {
