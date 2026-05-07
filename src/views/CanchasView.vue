@@ -20,7 +20,7 @@
     <div v-else class="content-wrapper">
       <!-- Sección de Niveles -->
       <div class="section-title">
-        <h2>Canchas por Niveles</h2>
+        <h2>Canchas Dique Principal</h2>
         <span class="stat-badge">Promedio Altura: {{ avgHeight.toFixed(2) }}m</span>
       </div>
       <div class="parallel-container">
@@ -36,7 +36,7 @@
 
       <!-- Sección de Capas -->
       <div class="section-title" style="margin-top: 2rem;">
-        <h2>Canchas por Capas (Inferior)</h2>
+        <h2>Canchas Dique Lateral</h2>
       </div>
       <div class="parallel-container">
         <div class="canchas-parallel canchas-capas-parallel">
