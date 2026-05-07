@@ -6,7 +6,7 @@
         <button class="close-btn" @click="close">×</button>
       </div>
       
-      <div class="modal-body">
+      <div class="modal-body" @keyup.enter="save">
         <div class="form-group">
           <label>Estado de la Cancha</label>
           <select v-model="formData.status" class="form-control">
