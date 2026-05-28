@@ -26,11 +26,15 @@ api.interceptors.response.use(
   (error) => {
     if (error.response && error.response.status === 401) {
       const authStore = useAuthStore();
+      console.warn("Sesión expirada o no autorizada. Redirigiendo a login...");
       
-      // Solo redirigir si no estamos ya en la página de login
+      authStore.logout();
+      
       if (router.currentRoute.value.name !== 'Login') {
-        authStore.logout();
-        router.push('/login');
+        router.push('/login').then(() => {
+          // Opcional: recargar para limpiar cualquier estado residual
+          window.location.reload();
+        });
       }
     }
     return Promise.reject(error);

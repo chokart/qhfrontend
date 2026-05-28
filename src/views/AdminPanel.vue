@@ -29,7 +29,6 @@
             @update-required="mapRef.loadData()" 
           />
           <AreaList :areas="areaList" @delete="handleDeleteArea" />
-          <EquipmentSummary :equipment="equipmentList" />
         </div>
       </div>
 
@@ -78,7 +77,6 @@ import { useRouter } from 'vue-router';
 import EquipmentMap from '../components/EquipmentMap.vue';
 import EquipmentList from '../components/EquipmentList.vue';
 import AreaList from '../components/AreaList.vue';
-import EquipmentSummary from '../components/EquipmentSummary.vue';
 import EquipmentFilter from '../components/EquipmentFilter.vue';
 import { generateEquipmentPDF } from '../utils/reportGenerator';
 

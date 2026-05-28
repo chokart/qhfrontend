@@ -26,7 +26,6 @@
           :equipment="equipmentList" 
           @update-required="mapRef.loadData()" 
         />
-        <EquipmentSummary :equipment="equipmentList" style="margin-top: 20px;" />
       </div>
     </div>
   </div>
@@ -38,7 +37,6 @@ import { useAuthStore } from '../stores/auth';
 import { useRouter } from 'vue-router';
 import EquipmentMap from '../components/EquipmentMap.vue';
 import EquipmentList from '../components/EquipmentList.vue';
-import EquipmentSummary from '../components/EquipmentSummary.vue';
 import { generateEquipmentPDF } from '../utils/reportGenerator';
 
 const authStore = useAuthStore();
