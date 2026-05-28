@@ -1,66 +1,135 @@
 <template>
-  <div class="summary-container">
-    <div class="summary-card">
-      <h2>Resumen por Categoría</h2>
-      <div class="table-container">
-        <table>
-          <thead>
-            <tr>
-              <th>Categoría</th>
-              <th class="text-center">OP</th>
-              <th class="text-center">SB</th>
-              <th class="text-center">IN</th>
-              <th class="text-center">Total</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="cat in categorySummary" :key="cat.name">
-              <td><b>{{ cat.name }}</b></td>
-              <td class="text-center status-op">{{ cat.operativo }}</td>
-              <td class="text-center status-sb">{{ cat.standby }}</td>
-              <td class="text-center status-in">{{ cat.inoperativo }}</td>
-              <td class="text-center"><b>{{ cat.total }}</b></td>
-            </tr>
-          </tbody>
-          <tfoot>
-            <tr class="total-row">
-              <td>TOTAL GENERAL</td>
-              <td class="text-center">{{ totals.operativo }}</td>
-              <td class="text-center">{{ totals.standby }}</td>
-              <td class="text-center">{{ totals.inoperativo }}</td>
-              <td class="text-center">{{ totals.total }}</td>
-            </tr>
-          </tfoot>
-        </table>
+  <div class="summary-dashboard">
+    <div class="stats-grid">
+      <div class="stat-card total">
+        <span class="stat-icon">🚜</span>
+        <div class="stat-info">
+          <span class="stat-label">Total Equipos</span>
+          <span class="stat-value">{{ totals.total }}</span>
+        </div>
+      </div>
+      <div class="stat-card op">
+        <span class="stat-icon">✅</span>
+        <div class="stat-info">
+          <span class="stat-label">Operativos</span>
+          <span class="stat-value">{{ totals.operativo }}</span>
+        </div>
+      </div>
+      <div class="stat-card sb">
+        <span class="stat-icon">🛑</span>
+        <div class="stat-info">
+          <span class="stat-label">Stand By</span>
+          <span class="stat-value">{{ totals.standby }}</span>
+        </div>
+      </div>
+      <div class="stat-card in">
+        <span class="stat-icon">⚠️</span>
+        <div class="stat-info">
+          <span class="stat-label">Inoperativos</span>
+          <span class="stat-value">{{ totals.inoperativo }}</span>
+        </div>
       </div>
     </div>
 
-    <div class="summary-card">
-      <h2>Equipos por Área</h2>
-      <div class="table-container">
-        <table>
-          <thead>
-            <tr>
-              <th>Nombre de Área</th>
-              <th class="text-center">Cantidad</th>
-              <th>Equipos</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="area in areaSummary" :key="area.name">
-              <td><b>{{ area.name }}</b></td>
-              <td class="text-center"><span class="area-count-badge">{{ area.count }}</span></td>
-              <td class="area-equipment-list">{{ area.equipmentNames.join(', ') }}</td>
-            </tr>
-            <tr v-if="areaSummary.length === 0">
-              <td colspan="3" class="text-center empty">No hay equipos en áreas registradas</td>
-            </tr>
-          </tbody>
-        </table>
+    <div class="category-summary-card">
+      <h3>Resumen por Flota</h3>
+      <div class="mini-table">
+        <div v-for="cat in categorySummary" :key="cat.name" class="cat-row">
+          <span class="cat-name">{{ cat.name }}</span>
+          <div class="cat-bar-container">
+            <div class="cat-bar op" :style="{ width: (cat.operativo / cat.total * 100) + '%' }"></div>
+            <div class="cat-bar sb" :style="{ width: (cat.standby / cat.total * 100) + '%' }"></div>
+            <div class="cat-bar in" :style="{ width: (cat.inoperativo / cat.total * 100) + '%' }"></div>
+          </div>
+          <span class="cat-total">{{ cat.total }}</span>
+        </div>
       </div>
     </div>
   </div>
 </template>
+
+<script setup>
+import { computed } from 'vue';
+
+const props = defineProps({
+  equipment: { type: Array, required: true }
+});
+
+const categorySummary = computed(() => {
+  const categories = [
+    { name: 'Hidrociclones', check: (n) => n.startsWith('BATERIA') || n.startsWith('NIDO') },
+    { name: 'Tractores D8', check: (n) => n.startsWith('D8') },
+    { name: 'Tractores D9', check: (n) => n.startsWith('D9') },
+    { name: 'Tractores D10', check: (n) => n.startsWith('D10') },
+    { name: 'Excavadoras', check: (n) => n.includes('Exc.') },
+    { name: 'Cargadores', check: (n) => n.includes('Cargador') },
+    { name: 'Rodillos', check: (n) => n.includes('Rodillo') },
+    { name: 'Volquetes', check: (n) => n.includes('Volquete') }
+  ];
+
+  const stats = categories.map(cat => ({
+    name: cat.name,
+    operativo: 0,
+    standby: 0,
+    inoperativo: 0,
+    total: 0
+  }));
+
+  props.equipment.forEach(eq => {
+    const target = stats.find(s => categories.find(c => c.name === s.name).check(eq.name)) || { total: 0 };
+    if (target.total !== undefined) {
+      target.total++;
+      if (eq.status === 'OPERATIVO') target.operativo++;
+      else if (eq.status === 'STAND_BY') target.standby++;
+      else if (eq.status === 'INOPERATIVO') target.inoperativo++;
+    }
+  });
+
+  return stats.filter(s => s.total > 0);
+});
+
+const totals = computed(() => {
+  return props.equipment.reduce((acc, eq) => {
+    acc.total++;
+    if (eq.status === 'OPERATIVO') acc.operativo++;
+    else if (eq.status === 'STAND_BY') acc.standby++;
+    else if (eq.status === 'INOPERATIVO') acc.inoperativo++;
+    return acc;
+  }, { operativo: 0, standby: 0, inoperativo: 0, total: 0 });
+});
+</script>
+
+<style scoped>
+.summary-dashboard { display: flex; flex-direction: column; gap: 1.5rem; margin-bottom: 2rem; }
+
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; }
+
+.stat-card {
+  background: white; padding: 1.25rem; border-radius: 16px; border: 1px solid #e2e8f0;
+  display: flex; align-items: center; gap: 1rem;
+}
+.stat-icon { font-size: 1.5rem; background: #f8fafc; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; border-radius: 12px; }
+.stat-info { display: flex; flex-direction: column; }
+.stat-label { font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; }
+.stat-value { font-size: 1.25rem; font-weight: 800; color: #1e293b; }
+
+.op .stat-icon { background: #ecfdf5; }
+.sb .stat-icon { background: #fffbeb; }
+.in .stat-icon { background: #fef2f2; }
+
+.category-summary-card { background: white; padding: 1.5rem; border-radius: 16px; border: 1px solid #e2e8f0; }
+.category-summary-card h3 { margin: 0 0 1.25rem 0; font-size: 0.9rem; font-weight: 800; color: #475569; text-transform: uppercase; }
+
+.mini-table { display: flex; flex-direction: column; gap: 1rem; }
+.cat-row { display: flex; align-items: center; gap: 1rem; }
+.cat-name { width: 120px; font-size: 0.85rem; font-weight: 600; color: #334155; }
+.cat-bar-container { flex: 1; height: 8px; background: #f1f5f9; border-radius: 10px; display: flex; overflow: hidden; }
+.cat-bar { height: 100%; }
+.cat-bar.op { background: #10b981; }
+.cat-bar.sb { background: #f59e0b; }
+.cat-bar.in { background: #ef4444; }
+.cat-total { width: 30px; text-align: right; font-size: 0.85rem; font-weight: 800; color: #1e293b; }
+</style>
 
 <script setup>
 import { computed } from 'vue';

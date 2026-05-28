@@ -16,6 +16,8 @@
       </div>
     </div>
     
+    <EquipmentSummary :equipment="equipmentList" />
+
     <div class="main-content">
       <div class="map-section">
         <EquipmentMap 
@@ -78,7 +80,9 @@ import EquipmentMap from '../components/EquipmentMap.vue';
 import EquipmentList from '../components/EquipmentList.vue';
 import AreaList from '../components/AreaList.vue';
 import EquipmentFilter from '../components/EquipmentFilter.vue';
+import EquipmentSummary from '../components/EquipmentSummary.vue';
 import { generateEquipmentPDF } from '../utils/reportGenerator';
+// ... (resto del script igual)
 
 const authStore = useAuthStore();
 const router = useRouter();

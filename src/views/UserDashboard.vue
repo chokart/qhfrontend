@@ -15,6 +15,8 @@
         </div>
       </div>
     </div>
+
+    <EquipmentSummary :equipment="equipmentList" />
     
     <div class="main-content">
       <div class="map-section">
@@ -37,6 +39,7 @@ import { useAuthStore } from '../stores/auth';
 import { useRouter } from 'vue-router';
 import EquipmentMap from '../components/EquipmentMap.vue';
 import EquipmentList from '../components/EquipmentList.vue';
+import EquipmentSummary from '../components/EquipmentSummary.vue';
 import { generateEquipmentPDF } from '../utils/reportGenerator';
 
 const authStore = useAuthStore();
