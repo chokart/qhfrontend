@@ -68,6 +68,15 @@ const getStatusIcon = (status) => {
   overflow: hidden;
 }
 
+@media (max-width: 768px) {
+  .cancha-card {
+    height: 240px; /* Más corta en móviles */
+    width: 38px;
+    min-width: 38px;
+  }
+}
+/* ... resto del estilo ... */
+
 .cancha-card:hover {
   transform: translateY(-5px);
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
