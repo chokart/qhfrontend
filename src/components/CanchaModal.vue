@@ -7,43 +7,51 @@
       </div>
       
       <div class="modal-body" @keyup.enter="save">
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label>Estado</label>
+            <select v-model="formData.status" class="form-control">
+              <option v-for="status in statusOptions" :key="status" :value="status">
+                {{ formatStatus(status) }}
+              </option>
+            </select>
+          </div>
+          <div class="form-group flex-1">
+            <label>Altura Actual (m)</label>
+            <input type="number" v-model.number="formData.currentHeight" step="0.1" min="1050" max="1220" class="form-control" />
+          </div>
+        </div>
+
         <div class="form-group">
-          <label>Estado de la Cancha</label>
-          <select v-model="formData.status" class="form-control">
-            <option v-for="status in statusOptions" :key="status" :value="status">
-              {{ formatStatus(status) }}
+          <label>Equipo Asignado</label>
+          <select v-model="formData.assignedEquipment" class="form-control">
+            <option value="">Ninguno</option>
+            <option v-for="eq in equipmentOptions" :key="eq.id" :value="eq.name">
+              {{ eq.name }}
             </option>
           </select>
         </div>
 
         <div class="form-group">
-          <label>Altura Actual (m)</label>
-          <input 
-            type="number" 
-            v-model.number="formData.currentHeight" 
-            step="0.1" 
-            min="1050"
-            max="1220" 
-            class="form-control"
-          />
-          <small class="help-text">Permitido: 1050m - 1220m</small>
+          <label>Operador</label>
+          <select v-model="formData.operatorName" class="form-control">
+            <option value="">Ninguno</option>
+            <option v-for="op in operatorOptions" :key="op.id" :value="op.name">
+              {{ op.name }}
+            </option>
+          </select>
         </div>
 
         <div class="form-group">
-          <label>Comentarios / Observaciones</label>
-          <textarea 
-            v-model="formData.comment" 
-            placeholder="Escriba aquí las observaciones de la cancha..." 
-            class="form-control textarea"
-            rows="3"
-          ></textarea>
+          <label>Comentarios</label>
+          <textarea v-model="formData.comment" placeholder="..." class="form-control textarea" rows="2"></textarea>
         </div>
       </div>
 
       <div class="modal-footer">
         <button class="btn-cancel" @click="close" :disabled="loading">Cancelar</button>
         <button class="btn-save" @click="save" :disabled="loading">
-          {{ loading ? 'Guardando...' : 'Guardar Cambios' }}
+          {{ loading ? '...' : 'Guardar Cambios' }}
         </button>
       </div>
     </div>
@@ -51,7 +59,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, watch } from 'vue';
+import { ref, reactive, watch, onMounted } from 'vue';
 import api from '../api';
 
 const props = defineProps({
@@ -62,10 +70,15 @@ const props = defineProps({
 const emit = defineEmits(['close', 'updated']);
 
 const loading = ref(false);
+const operatorOptions = ref([]);
+const equipmentOptions = ref([]);
+
 const formData = reactive({
   status: '',
   currentHeight: 0,
-  comment: ''
+  comment: '',
+  assignedEquipment: '',
+  operatorName: ''
 });
 
 const statusOptions = [
@@ -73,19 +86,31 @@ const statusOptions = [
   'POR_PREPARAR_BERMA', 'DRENANDO', 'STAND_BY', 'OBSERVADA'
 ];
 
+const fetchOptions = async () => {
+  try {
+    const [ops, eqs] = await Promise.all([
+      api.get('/api/v1/operators'),
+      api.get('/api/v1/equipment')
+    ]);
+    operatorOptions.value = ops.data;
+    equipmentOptions.value = eqs.data;
+  } catch (e) { console.error(e); }
+};
+
+onMounted(fetchOptions);
+
 watch(() => props.cancha, (newVal) => {
   if (newVal) {
     formData.status = newVal.status;
     formData.currentHeight = newVal.currentHeight;
     formData.comment = newVal.comment || '';
+    formData.assignedEquipment = newVal.assignedEquipment || '';
+    formData.operatorName = newVal.operatorName || '';
   }
 }, { immediate: true });
 
 const formatStatus = (status) => status.replace(/_/g, ' ');
-
-const close = () => {
-  if (!loading.value) emit('close');
-};
+const close = () => { if (!loading.value) emit('close'); };
 
 const save = async () => {
   loading.value = true;
@@ -94,7 +119,7 @@ const save = async () => {
     emit('updated');
     emit('close');
   } catch (error) {
-    alert("Error al guardar los cambios");
+    alert("Error al guardar");
   } finally {
     loading.value = false;
   }
@@ -102,90 +127,21 @@ const save = async () => {
 </script>
 
 <style scoped>
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(15, 23, 42, 0.7);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 2000;
-  backdrop-filter: blur(4px);
-}
-
-.modal-content {
-  background: white;
-  width: 90%;
-  max-width: 500px;
-  border-radius: 20px;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-  overflow: hidden;
-  animation: modalScale 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-@keyframes modalScale {
-  from { transform: scale(0.9); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
-}
-
-.modal-header {
-  padding: 1.5rem;
-  background: #f8fafc;
-  border-bottom: 1px solid #e2e8f0;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-.modal-header h2 { margin: 0; font-size: 1.25rem; font-weight: 800; color: #1e293b; }
+.modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.7); display: flex; align-items: center; justify-content: center; z-index: 2000; backdrop-filter: blur(4px); }
+.modal-content { background: white; width: 90%; max-width: 500px; border-radius: 20px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); overflow: hidden; }
+.modal-header { padding: 1.25rem 1.5rem; background: #f8fafc; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
+.modal-header h2 { margin: 0; font-size: 1.15rem; font-weight: 800; color: #1e293b; }
 .close-btn { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #64748b; }
-
-.modal-body { padding: 1.5rem; display: flex; flex-direction: column; gap: 1.25rem; }
-
-.form-group { display: flex; flex-direction: column; gap: 0.5rem; }
-.form-group label { font-size: 0.8rem; font-weight: 700; color: #64748b; text-transform: uppercase; }
-
-.form-control {
-  padding: 0.75rem;
-  border: 1px solid #d1d5db;
-  border-radius: 10px;
-  font-size: 1rem;
-  font-family: inherit;
-  outline: none;
-}
+.modal-body { padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; }
+.form-row { display: flex; gap: 1rem; }
+.flex-1 { flex: 1; }
+.form-group { display: flex; flex-direction: column; gap: 0.4rem; }
+.form-group label { font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; }
+.form-control { padding: 0.65rem; border: 1px solid #d1d5db; border-radius: 10px; font-size: 0.95rem; font-family: inherit; outline: none; }
 .form-control:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1); }
 .textarea { resize: vertical; }
-.help-text { font-size: 0.7rem; color: #94a3b8; margin-top: 2px; }
-
-.modal-footer {
-  padding: 1.25rem 1.5rem;
-  background: #f8fafc;
-  border-top: 1px solid #e2e8f0;
-  display: flex;
-  justify-content: flex-end;
-  gap: 1rem;
-}
-
-.btn-cancel {
-  background: white;
-  color: #64748b;
-  border: 1px solid #e2e8f0;
-  padding: 0.75rem 1.25rem;
-  border-radius: 10px;
-  font-weight: 700;
-  cursor: pointer;
-}
-.btn-save {
-  background: #6366f1;
-  color: white;
-  border: none;
-  padding: 0.75rem 1.25rem;
-  border-radius: 10px;
-  font-weight: 700;
-  cursor: pointer;
-  box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.2);
-}
-.btn-save:hover { background: #4f46e5; }
+.modal-footer { padding: 1rem 1.5rem; background: #f8fafc; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 1rem; }
+.btn-cancel { background: white; color: #64748b; border: 1px solid #e2e8f0; padding: 0.65rem 1.25rem; border-radius: 10px; font-weight: 700; cursor: pointer; }
+.btn-save { background: #6366f1; color: white; border: none; padding: 0.65rem 1.25rem; border-radius: 10px; font-weight: 700; cursor: pointer; }
 </style>
+
