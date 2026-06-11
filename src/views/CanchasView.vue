@@ -10,6 +10,9 @@
           <span class="stat-label">Canchas Observadas:</span>
           <span class="stat-value error">{{ observedCount }}</span>
         </div>
+        <button class="btn-pdf" @click="downloadReport" :disabled="loading">
+          <span>📄</span> Exportar PDF
+        </button>
       </div>
     </div>
 
@@ -73,6 +76,7 @@ import CanchaCard from '../components/CanchaCard.vue';
 import CanchaCapaCard from '../components/CanchaCapaCard.vue';
 import CanchaModal from '../components/CanchaModal.vue';
 import CanchaCapaModal from '../components/CanchaCapaModal.vue';
+import { generateCanchasPDF } from '../utils/reportGenerator';
 
 const canchasNiveles = ref([]);
 const canchasCapas = ref([]);
@@ -83,6 +87,10 @@ const selectedCanchaNivel = ref(null);
 
 const showModalCapa = ref(false);
 const selectedCanchaCapa = ref(null);
+
+const downloadReport = () => {
+  generateCanchasPDF(canchasNiveles.value, canchasCapas.value);
+};
 
 const fetchData = async () => {
   try {
@@ -180,6 +188,29 @@ h1 { font-size: 1.5rem; font-weight: 800; color: #0f172a; margin: 0; }
 .stat-label { font-size: 0.65rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; }
 .stat-value { font-size: 1.25rem; font-weight: 900; color: #6366f1; }
 .stat-value.error { color: #ef4444; }
+
+.btn-pdf {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: white;
+  color: #6366f1;
+  border: 2px solid #6366f1;
+  padding: 0.5rem 1rem;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-pdf:hover:not(:disabled) {
+  background: #6366f1;
+  color: white;
+}
+.btn-pdf:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
 
 .content-wrapper { display: flex; flex-direction: column; gap: 1.5rem; }
 
