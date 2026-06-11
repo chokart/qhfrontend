@@ -16,8 +16,6 @@
       </div>
     </div>
     
-    <EquipmentSummary :equipment="equipmentList" />
-
     <div class="main-content">
       <div class="map-section">
         <EquipmentMap 
@@ -26,15 +24,12 @@
           @update-areas="handleAreaUpdate" 
         />
         <div class="tables-grid">
-          <EquipmentList 
-            :equipment="equipmentList" 
-            @update-required="mapRef.loadData()" 
-          />
           <AreaList :areas="areaList" @delete="handleDeleteArea" />
         </div>
       </div>
 
       <div class="forms-section">
+
         <div class="card">
           <h2>Registrar Equipo</h2>
           <form @submit.prevent="registerEquipment">
@@ -77,10 +72,7 @@ import api from '../api';
 import { useAuthStore } from '../stores/auth';
 import { useRouter } from 'vue-router';
 import EquipmentMap from '../components/EquipmentMap.vue';
-import EquipmentList from '../components/EquipmentList.vue';
 import AreaList from '../components/AreaList.vue';
-import EquipmentFilter from '../components/EquipmentFilter.vue';
-import EquipmentSummary from '../components/EquipmentSummary.vue';
 import { generateEquipmentPDF } from '../utils/reportGenerator';
 // ... (resto del script igual)
 

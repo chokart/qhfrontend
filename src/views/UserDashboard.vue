@@ -16,17 +16,11 @@
       </div>
     </div>
 
-    <EquipmentSummary :equipment="equipmentList" />
-    
     <div class="main-content">
       <div class="map-section">
         <EquipmentMap 
           ref="mapRef" 
           @update-list="handleListUpdate" 
-        />
-        <EquipmentList 
-          :equipment="equipmentList" 
-          @update-required="mapRef.loadData()" 
         />
       </div>
     </div>
@@ -38,8 +32,6 @@ import { ref } from 'vue';
 import { useAuthStore } from '../stores/auth';
 import { useRouter } from 'vue-router';
 import EquipmentMap from '../components/EquipmentMap.vue';
-import EquipmentList from '../components/EquipmentList.vue';
-import EquipmentSummary from '../components/EquipmentSummary.vue';
 import { generateEquipmentPDF } from '../utils/reportGenerator';
 
 const authStore = useAuthStore();
