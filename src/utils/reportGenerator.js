@@ -12,18 +12,21 @@ export const generateEquipmentPDF = (equipmentList) => {
     return 'OTROS';
   };
 
-  // Filtrar solo Tractores y Excavadoras
+  // Filtrar solo Tractores (excluyendo D10) y Excavadoras
   const filteredList = equipmentList.filter(eq => {
     const cat = getCategory(eq.name);
-    return cat === 'TRACTOR' || cat === 'EXCAVADORA';
+    const isD10 = eq.name.includes('D10');
+    return (cat === 'TRACTOR' || cat === 'EXCAVADORA') && !isD10;
   });
 
-  // Cálculos de resumen
+  // Cálculos de resumen (Contando STAND_BY como OPERATIVO para el reporte)
+  const isOperational = (status) => status === 'OPERATIVO' || status === 'STAND_BY';
+
   const totalTractors = filteredList.filter(eq => getCategory(eq.name) === 'TRACTOR').length;
-  const opTractors = filteredList.filter(eq => getCategory(eq.name) === 'TRACTOR' && eq.status === 'OPERATIVO').length;
+  const opTractors = filteredList.filter(eq => getCategory(eq.name) === 'TRACTOR' && isOperational(eq.status)).length;
   
   const totalExcavators = filteredList.filter(eq => getCategory(eq.name) === 'EXCAVADORA').length;
-  const opExcavators = filteredList.filter(eq => getCategory(eq.name) === 'EXCAVADORA' && eq.status === 'OPERATIVO').length;
+  const opExcavators = filteredList.filter(eq => getCategory(eq.name) === 'EXCAVADORA' && isOperational(eq.status)).length;
 
   // Encabezado
   doc.setFontSize(20);
