@@ -5,77 +5,114 @@ export const generateEquipmentPDF = (equipmentList) => {
   const doc = new jsPDF();
   const date = new Date().toLocaleString();
 
-  // ... (encabezado igual)
+  // Función auxiliar para categorías (consistente con el resto de la app)
+  const getCategory = (name) => {
+    if (name.startsWith('D8') || name.startsWith('D9') || name.startsWith('D10')) return 'TRACTOR';
+    if (name.includes('Exc.')) return 'EXCAVADORA';
+    return 'OTROS';
+  };
+
+  // Filtrar solo Tractores y Excavadoras
+  const filteredList = equipmentList.filter(eq => {
+    const cat = getCategory(eq.name);
+    return cat === 'TRACTOR' || cat === 'EXCAVADORA';
+  });
+
+  // Cálculos de resumen
+  const totalTractors = filteredList.filter(eq => getCategory(eq.name) === 'TRACTOR').length;
+  const opTractors = filteredList.filter(eq => getCategory(eq.name) === 'TRACTOR' && eq.status === 'OPERATIVO').length;
+  
+  const totalExcavators = filteredList.filter(eq => getCategory(eq.name) === 'EXCAVADORA').length;
+  const opExcavators = filteredList.filter(eq => getCategory(eq.name) === 'EXCAVADORA' && eq.status === 'OPERATIVO').length;
+
+  // Encabezado
   doc.setFontSize(20);
   doc.setTextColor(40);
-  doc.text('Reporte de Estado de Equipos', 14, 22);
+  doc.text('Reporte de Estado de Equipos Críticos', 14, 22);
   
   doc.setFontSize(10);
   doc.setTextColor(100);
-  doc.text(`Sistema de Ubicación de Equipos - QH Relavera`, 14, 30);
+  doc.text(`QH Relavera - Resumen de Tractores y Excavadoras`, 14, 30);
   doc.text(`Fecha de emisión: ${date}`, 14, 35);
   
   doc.setDrawColor(226, 232, 240);
   doc.line(14, 40, 196, 40);
 
+  // --- SECCIÓN DE TARJETAS DE RESUMEN ---
+  // Tarjeta Tractores
+  doc.setDrawColor(99, 102, 241);
+  doc.setLineWidth(0.5);
+  doc.rect(14, 45, 88, 25); // x, y, width, height
+  doc.setFont(undefined, 'bold');
+  doc.setFontSize(11);
+  doc.setTextColor(99, 102, 241);
+  doc.text('TRACTORES', 18, 52);
+  doc.setFont(undefined, 'normal');
+  doc.setFontSize(10);
+  doc.setTextColor(51, 65, 85);
+  doc.text(`Total: ${totalTractors}`, 18, 59);
+  doc.setFont(undefined, 'bold');
+  doc.setTextColor(5, 150, 105); // Verde
+  doc.text(`Operativos: ${opTractors}`, 18, 65);
+
+  // Tarjeta Excavadoras
+  doc.setDrawColor(245, 158, 11); // Ambar
+  doc.rect(108, 45, 88, 25);
+  doc.setFont(undefined, 'bold');
+  doc.setTextColor(245, 158, 11);
+  doc.text('EXCAVADORAS', 112, 52);
+  doc.setFont(undefined, 'normal');
+  doc.setTextColor(51, 65, 85);
+  doc.text(`Total: ${totalExcavators}`, 112, 59);
+  doc.setFont(undefined, 'bold');
+  doc.setTextColor(5, 150, 105);
+  doc.text(`Operativos: ${opExcavators}`, 112, 65);
+
   // Generación de la Tabla
-  const tableColumn = ["ID", "Nombre del Equipo", "Área Actual", "Estado", "Última Actualización", "Comentarios"];
+  const tableColumn = ["ID", "Equipo", "Categoría", "Área Actual", "Estado", "Comentarios"];
   const tableRows = [];
 
-  equipmentList.forEach(eq => {
+  filteredList.forEach(eq => {
     const rowData = [
       eq.id,
       eq.name,
+      getCategory(eq.name),
       eq.currentArea || 'Fuera de zona',
       eq.status,
-      eq.lastUpdatedBy ? `${eq.lastUpdatedBy}` : 'N/A',
       eq.comment || '-'
     ];
     tableRows.push(rowData);
   });
 
-  // USAR LA FUNCIÓN autoTable DIRECTAMENTE
   autoTable(doc, {
-    startY: 45,
+    startY: 78,
     head: [tableColumn],
     body: tableRows,
     theme: 'grid',
     headStyles: {
-      fillColor: [99, 102, 241],
+      fillColor: [71, 85, 105],
       fontSize: 9,
       halign: 'center'
     },
     columnStyles: {
-      0: { cellWidth: 10 }, // ID
-      1: { cellWidth: 35 }, // Nombre
-      2: { cellWidth: 30 }, // Área
-      3: { cellWidth: 25 }, // Estado
-      4: { cellWidth: 30 }, // Actualizado por
-      5: { cellWidth: 'auto' } // Comentarios (ocupa el resto)
+      0: { cellWidth: 10 },
+      1: { cellWidth: 35 },
+      2: { cellWidth: 30 },
+      3: { cellWidth: 35 },
+      4: { cellWidth: 25 },
+      5: { cellWidth: 'auto' }
     },
-    bodyStyles: {
-      fontSize: 8,
-      textColor: [51, 65, 85]
-    },
-    alternateRowStyles: {
-      fillColor: [248, 250, 252]
-    },
+    bodyStyles: { fontSize: 8 },
+    alternateRowStyles: { fillColor: [248, 250, 252] },
     didParseCell: function (data) {
-      if (data.section === 'body' && data.column.index === 3) {
+      if (data.section === 'body' && data.column.index === 4) {
         const status = data.cell.raw;
-        if (status === 'INOPERATIVO') {
-          data.cell.styles.textColor = [239, 68, 68]; // Rojo suave
-          data.cell.styles.fontStyle = 'bold';
-        } else if (status === 'OPERATIVO') {
-          data.cell.styles.textColor = [5, 150, 105]; // Verde
-          data.cell.styles.fontStyle = 'bold';
-        } else if (status === 'STAND_BY') {
-          data.cell.styles.textColor = [217, 119, 6]; // Ambar/Naranja
-          data.cell.styles.fontStyle = 'bold';
-        }
+        if (status === 'INOPERATIVO') data.cell.styles.textColor = [220, 38, 38];
+        else if (status === 'OPERATIVO') data.cell.styles.textColor = [5, 150, 105];
+        else if (status === 'STAND_BY') data.cell.styles.textColor = [217, 119, 6];
+        data.cell.styles.fontStyle = 'bold';
       }
-    },
-    margin: { top: 45 },
+    }
   });
 
   // Pie de página
