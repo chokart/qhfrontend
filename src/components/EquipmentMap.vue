@@ -102,7 +102,7 @@ const editStatus = ref('');
 const editComment = ref('');
 
 // Lógica de Filtros
-const selectedFilters = ref([]);
+const selectedFilters = ref(['TRACTOR', 'EXCAVADORA']);
 const categories = [
   { id: 'TRACTOR', label: 'Tractores', short: 'Trac', color: '#ff4757' },
   { id: 'EXCAVADORA', label: 'Excavadoras', short: 'Exc', color: '#ffa502' },
