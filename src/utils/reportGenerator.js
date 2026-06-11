@@ -173,8 +173,14 @@ export const generateCanchasPDF = (canchasNiveles, canchasCapas) => {
     alternateRowStyles: { fillColor: [248, 250, 252] },
     didParseCell: function (data) {
       if (data.section === 'body' && data.column.index === 2) {
-        if (data.cell.raw === 'OBSERVADA') data.cell.styles.textColor = [239, 68, 68];
-        if (data.cell.raw === 'OPERATIVA') data.cell.styles.textColor = [5, 150, 105];
+        const status = data.cell.raw;
+        if (status === 'CICLONEANDO') {
+          data.cell.styles.textColor = [5, 150, 105]; // Verde
+          data.cell.styles.fontStyle = 'bold';
+        } else if (status === 'OBSERVADA') {
+          data.cell.styles.textColor = [239, 68, 68]; // Rojo
+          data.cell.styles.fontStyle = 'bold';
+        }
       }
     }
   });
@@ -213,8 +219,14 @@ export const generateCanchasPDF = (canchasNiveles, canchasCapas) => {
     alternateRowStyles: { fillColor: [248, 250, 252] },
     didParseCell: function (data) {
       if (data.section === 'body' && data.column.index === 2) {
-        if (data.cell.raw === 'OBSERVADA') data.cell.styles.textColor = [239, 68, 68];
-        if (data.cell.raw === 'OPERATIVA') data.cell.styles.textColor = [5, 150, 105];
+        const status = data.cell.raw;
+        if (status === 'CICLONEANDO') {
+          data.cell.styles.textColor = [5, 150, 105]; // Verde
+          data.cell.styles.fontStyle = 'bold';
+        } else if (status === 'OBSERVADA') {
+          data.cell.styles.textColor = [239, 68, 68]; // Rojo
+          data.cell.styles.fontStyle = 'bold';
+        }
       }
     }
   });
