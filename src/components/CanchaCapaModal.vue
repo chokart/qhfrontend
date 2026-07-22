@@ -37,7 +37,7 @@
           <select v-model="formData.operatorName" class="form-control">
             <option value="">Ninguno</option>
             <option v-for="op in operatorOptions" :key="op.id" :value="op.name">
-              {{ op.name }}
+              {{ op.code ? op.code + ' - ' + op.name : op.name }}
             </option>
           </select>
         </div>
