@@ -4,6 +4,7 @@ import Login from '../views/Login.vue';
 import AdminPanel from '../views/AdminPanel.vue';
 import UserDashboard from '../views/UserDashboard.vue';
 import CanchasView from '../views/CanchasView.vue';
+import PersonalView from '../views/PersonalView.vue';
 
 const routes = [
   { 
@@ -22,6 +23,12 @@ const routes = [
     path: '/canchas',
     component: CanchasView,
     name: 'Canchas',
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/personal',
+    component: PersonalView,
+    name: 'Personal',
     meta: { requiresAuth: true }
   },
   { 

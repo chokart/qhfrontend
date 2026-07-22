@@ -1,54 +1,57 @@
 <template>
   <div class="canchas-view">
-    <div class="header">
-      <div class="title-section">
-        <router-link to="/" class="btn-back">← Volver</router-link>
-        <h1>Control de Canchas</h1>
-      </div>
-      <div class="stats-bar">
-        <div class="stat-item">
-          <span class="stat-label">Canchas Observadas:</span>
-          <span class="stat-value error">{{ observedCount }}</span>
+    <AppNavbar />
+
+    <div class="canchas-container">
+      <div class="sub-header">
+        <div class="title-section">
+          <h1>Control de Canchas</h1>
         </div>
-        <button class="btn-pdf" @click="downloadReport" :disabled="loading">
-          <span>📄</span> Exportar PDF
-        </button>
-      </div>
-    </div>
-
-    <div v-if="loading" class="loading-state">
-      Cargando información de canchas...
-    </div>
-
-    <div v-else class="content-wrapper">
-      <!-- Sección de Niveles -->
-      <div class="section-title">
-        <h2>Canchas Dique Principal</h2>
-        <span class="stat-badge">Promedio Altura: {{ avgHeight.toFixed(2) }}m</span>
-      </div>
-      <div class="parallel-container">
-        <div class="canchas-parallel">
-          <CanchaCard 
-            v-for="cancha in canchasNiveles" 
-            :key="'n_'+cancha.id" 
-            :cancha="cancha" 
-            @click="openModalNivel(cancha)"
-          />
+        <div class="stats-bar">
+          <div class="stat-item">
+            <span class="stat-label">Canchas Observadas:</span>
+            <span class="stat-value error">{{ observedCount }}</span>
+          </div>
+          <button class="btn-pdf" @click="downloadReport" :disabled="loading">
+            <span>📄</span> Exportar PDF
+          </button>
         </div>
       </div>
 
-      <!-- Sección de Capas -->
-      <div class="section-title" style="margin-top: 2rem;">
-        <h2>Canchas Dique Lateral</h2>
+      <div v-if="loading" class="loading-state">
+        Cargando información de canchas...
       </div>
-      <div class="parallel-container">
-        <div class="canchas-parallel canchas-capas-parallel">
-          <CanchaCapaCard 
-            v-for="cancha in canchasCapas" 
-            :key="'c_'+cancha.id" 
-            :cancha="cancha" 
-            @click="openModalCapa(cancha)"
-          />
+
+      <div v-else class="content-wrapper">
+        <!-- Sección de Niveles -->
+        <div class="section-title">
+          <h2>Canchas Dique Principal</h2>
+          <span class="stat-badge">Promedio Altura: {{ avgHeight.toFixed(2) }}m</span>
+        </div>
+        <div class="parallel-container">
+          <div class="canchas-parallel">
+            <CanchaCard 
+              v-for="cancha in canchasNiveles" 
+              :key="'n_'+cancha.id" 
+              :cancha="cancha" 
+              @click="openModalNivel(cancha)"
+            />
+          </div>
+        </div>
+
+        <!-- Sección de Capas -->
+        <div class="section-title" style="margin-top: 2rem;">
+          <h2>Canchas Dique Lateral</h2>
+        </div>
+        <div class="parallel-container">
+          <div class="canchas-parallel canchas-capas-parallel">
+            <CanchaCapaCard 
+              v-for="cancha in canchasCapas" 
+              :key="'c_'+cancha.id" 
+              :cancha="cancha" 
+              @click="openModalCapa(cancha)"
+            />
+          </div>
         </div>
       </div>
     </div>
@@ -72,6 +75,7 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue';
 import api from '../api';
+import AppNavbar from '../components/AppNavbar.vue';
 import CanchaCard from '../components/CanchaCard.vue';
 import CanchaCapaCard from '../components/CanchaCapaCard.vue';
 import CanchaModal from '../components/CanchaModal.vue';
@@ -133,33 +137,25 @@ onMounted(fetchData);
 </script>
 
 <style scoped>
-.canchas-view { 
-  padding: 1.5rem; 
-  background: #f1f5f9; 
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
+.canchas-view { min-height: 100vh; background: #f8fafc; padding-bottom: 2rem; }
+.canchas-container { padding: 0 1.5rem; max-width: 1400px; margin: 0 auto; }
 
-@media (max-width: 768px) {
-  .canchas-view { padding: 1rem; }
-}
-
-.header {
+.sub-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1.5rem;
+  padding: 1.25rem 1.5rem;
   background: white;
   border-radius: 16px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  border: 1px solid #e2e8f0;
   flex-wrap: wrap;
   gap: 1rem;
+  margin-bottom: 1.5rem;
 }
 
 @media (max-width: 600px) {
-  .header { padding: 1rem; flex-direction: column; align-items: stretch; text-align: center; }
+  .sub-header { padding: 1rem; flex-direction: column; align-items: stretch; text-align: center; }
   .title-section { flex-direction: column; gap: 0.75rem; }
   .stats-bar { justify-content: center; }
 }

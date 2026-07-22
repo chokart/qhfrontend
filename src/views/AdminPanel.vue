@@ -1,65 +1,60 @@
 <template>
   <div class="admin-panel">
-    <div class="header">
-      <h1>Sistema de Ubicación de Equipos</h1>
-      <div class="header-actions">
-        <router-link to="/canchas" class="btn-module">
-          <span>📊</span> Niveles Canchas
-        </router-link>
+    <AppNavbar />
+
+    <div class="panel-container">
+      <div class="sub-header">
+        <h1>Sistema de Ubicación de Equipos</h1>
         <button class="btn-outline" @click="downloadReport">
           <span>📄</span> Exportar PDF
         </button>
-        <div class="user-info">
-          <span>Hola, {{ authStore.username }}</span>
-          <button class="logout-btn" @click="handleLogout">Cerrar Sesión</button>
-        </div>
-      </div>
-    </div>
-    
-    <div class="main-content">
-      <div class="map-section">
-        <EquipmentMap 
-          ref="mapRef" 
-          @update-list="handleListUpdate" 
-          @update-areas="handleAreaUpdate" 
-        />
-        <div class="tables-grid">
-          <AreaList :areas="areaList" @delete="handleDeleteArea" />
-        </div>
       </div>
 
-      <div class="forms-section">
-
-        <div class="card">
-          <h2>Registrar Equipo</h2>
-          <form @submit.prevent="registerEquipment">
-            <input type="text" v-model="newEq.name" placeholder="Nombre del Equipo" required />
-            <div class="color-picker">
-              <label>Color en mapa:</label>
-              <input type="color" v-model="newEq.color" />
-            </div>
-            <select v-model="newEq.status">
-              <option value="OPERATIVO">Operativo</option>
-              <option value="INOPERATIVO">Inoperativo</option>
-              <option value="STAND_BY">Stand By</option>
-            </select>
-            <textarea v-model="newEq.comment" placeholder="Comentarios / Observaciones" rows="2"></textarea>
-            <button class="btn btn-primary" type="submit">Registrar</button>
-          </form>
+      <div class="main-content">
+        <div class="map-section">
+          <EquipmentMap 
+            ref="mapRef" 
+            @update-list="handleListUpdate" 
+            @update-areas="handleAreaUpdate" 
+          />
+          <div class="tables-grid">
+            <AreaList :areas="areaList" @delete="handleDeleteArea" />
+          </div>
         </div>
 
-        <div class="card">
-          <h2>Crear Usuario</h2>
-          <form @submit.prevent="createUser">
-            <input type="text" v-model="newUser.username" placeholder="Usuario" required />
-            <input type="password" v-model="newUser.password" placeholder="Contraseña" required />
-            <select v-model="newUser.role">
-              <option value="USER">Usuario Común</option>
-              <option value="ADMIN">Administrador</option>
-            </select>
-            <button class="btn btn-success" type="submit">Crear</button>
-          </form>
-          <p v-if="message" :class="{ success: isSuccess, error: !isSuccess }">{{ message }}</p>
+        <div class="forms-section">
+
+          <div class="card">
+            <h2>Registrar Equipo</h2>
+            <form @submit.prevent="registerEquipment">
+              <input type="text" v-model="newEq.name" placeholder="Nombre del Equipo" required />
+              <div class="color-picker">
+                <label>Color en mapa:</label>
+                <input type="color" v-model="newEq.color" />
+              </div>
+              <select v-model="newEq.status">
+                <option value="OPERATIVO">Operativo</option>
+                <option value="INOPERATIVO">Inoperativo</option>
+                <option value="STAND_BY">Stand By</option>
+              </select>
+              <textarea v-model="newEq.comment" placeholder="Comentarios / Observaciones" rows="2"></textarea>
+              <button class="btn btn-primary" type="submit">Registrar</button>
+            </form>
+          </div>
+
+          <div class="card">
+            <h2>Crear Usuario</h2>
+            <form @submit.prevent="createUser">
+              <input type="text" v-model="newUser.username" placeholder="Usuario" required />
+              <input type="password" v-model="newUser.password" placeholder="Contraseña" required />
+              <select v-model="newUser.role">
+                <option value="USER">Usuario Común</option>
+                <option value="ADMIN">Administrador</option>
+              </select>
+              <button class="btn btn-success" type="submit">Crear</button>
+            </form>
+            <p v-if="message" :class="{ success: isSuccess, error: !isSuccess }">{{ message }}</p>
+          </div>
         </div>
       </div>
     </div>
@@ -71,6 +66,7 @@ import { ref, reactive, computed } from 'vue';
 import api from '../api';
 import { useAuthStore } from '../stores/auth';
 import { useRouter } from 'vue-router';
+import AppNavbar from '../components/AppNavbar.vue';
 import EquipmentMap from '../components/EquipmentMap.vue';
 import AreaList from '../components/AreaList.vue';
 import { generateEquipmentPDF } from '../utils/reportGenerator';
@@ -156,27 +152,25 @@ const downloadReport = () => {
 </script>
 
 <style scoped>
-.admin-panel { padding: 1.5rem; color: var(--text-main); text-align: left; min-height: 100vh; background: var(--bg-light); }
-.header { 
+.admin-panel { min-height: 100vh; background: var(--bg-light); padding-bottom: 2rem; }
+.panel-container { padding: 0 1.5rem; max-width: 1400px; margin: 0 auto; }
+.sub-header { 
   display: flex; 
   flex-wrap: wrap;
   justify-content: space-between; 
   align-items: center; 
   border-bottom: 1px solid var(--card-border); 
-  padding-bottom: 1.5rem; 
-  margin-bottom: 2.5rem;
+  padding-bottom: 1rem; 
+  margin-bottom: 1.5rem;
   gap: 1rem;
 }
-.header h1 { 
-  font-size: 1.85rem; 
+.sub-header h1 { 
+  font-size: 1.5rem; 
   font-weight: 800;
   margin: 0; 
   color: var(--text-main);
   letter-spacing: -0.025em;
 }
-.header-actions { display: flex; align-items: center; gap: 1.5rem; }
-.user-info { display: flex; align-items: center; gap: 1.25rem; background: var(--card-light); padding: 0.5rem 1.25rem; border-radius: 50px; border: 1px solid var(--card-border); box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
-.user-info span { font-size: 0.9rem; font-weight: 500; color: var(--text-muted); }
 
 .main-content { 
   display: flex; 

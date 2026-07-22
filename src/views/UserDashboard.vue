@@ -1,27 +1,22 @@
 <template>
   <div class="user-dashboard">
-    <div class="header">
-      <h1>EQUIPOS PESADOS QH</h1>
-      <div class="header-actions">
-        <router-link to="/canchas" class="btn-module">
-          <span>📊</span> Niveles Canchas
-        </router-link>
+    <AppNavbar />
+
+    <div class="dashboard-container">
+      <div class="sub-header">
+        <h1>EQUIPOS PESADOS QH</h1>
         <button class="btn-outline" @click="downloadReport">
           <span>📄</span> Exportar PDF
         </button>
-        <div class="user-info">
-          <span>Usuario: <b>{{ authStore.username }}</b></span>
-          <button class="logout-btn" @click="handleLogout">Cerrar Sesión</button>
-        </div>
       </div>
-    </div>
 
-    <div class="main-content">
-      <div class="map-section">
-        <EquipmentMap 
-          ref="mapRef" 
-          @update-list="handleListUpdate" 
-        />
+      <div class="main-content">
+        <div class="map-section">
+          <EquipmentMap 
+            ref="mapRef" 
+            @update-list="handleListUpdate" 
+          />
+        </div>
       </div>
     </div>
   </div>
@@ -31,6 +26,7 @@
 import { ref } from 'vue';
 import { useAuthStore } from '../stores/auth';
 import { useRouter } from 'vue-router';
+import AppNavbar from '../components/AppNavbar.vue';
 import EquipmentMap from '../components/EquipmentMap.vue';
 import { generateEquipmentPDF } from '../utils/reportGenerator';
 
@@ -39,11 +35,6 @@ const router = useRouter();
 
 const mapRef = ref(null);
 const equipmentList = ref([]);
-
-const handleLogout = () => {
-  authStore.logout();
-  router.push('/login');
-};
 
 const handleListUpdate = (list) => {
   equipmentList.value = list;
@@ -55,19 +46,20 @@ const downloadReport = () => {
 </script>
 
 <style scoped>
-.user-dashboard { padding: 1.5rem; color: var(--text-main); text-align: left; min-height: 100vh; background: var(--bg-light); }
-.header {
+.user-dashboard { min-height: 100vh; background: var(--bg-light); padding-bottom: 2rem; }
+.dashboard-container { padding: 0 1.5rem; max-width: 1400px; margin: 0 auto; }
+.sub-header {
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
   border-bottom: 1px solid var(--card-border);
-  padding-bottom: 1.5rem;
-  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  margin-bottom: 1.5rem;
   gap: 1rem;
 }
-.header h1 { 
-  font-size: 1.85rem; 
+.sub-header h1 { 
+  font-size: 1.5rem; 
   font-weight: 800;
   margin: 0; 
   color: var(--text-main);
