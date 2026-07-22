@@ -275,12 +275,23 @@ const currentMonthName = computed(() => {
 const daysInMonth = computed(() => matrixData.value.daysInMonth || 31);
 
 const filteredOperators = computed(() => {
-  if (!searchQuery.value.trim()) return matrixData.value.operators || [];
-  const q = searchQuery.value.toLowerCase().trim();
-  return (matrixData.value.operators || []).filter(op => {
-    const nameMatch = op.name && op.name.toLowerCase().includes(q);
-    const codeMatch = op.code && op.code.toLowerCase().includes(q);
-    return nameMatch || codeMatch;
+  let list = matrixData.value.operators || [];
+  if (searchQuery.value.trim()) {
+    const q = searchQuery.value.toLowerCase().trim();
+    list = list.filter(op => {
+      const nameMatch = op.name && op.name.toLowerCase().includes(q);
+      const codeMatch = op.code && op.code.toLowerCase().includes(q);
+      const groupMatch = op.groupName && op.groupName.toLowerCase().includes(q);
+      return nameMatch || codeMatch || groupMatch;
+    });
+  }
+
+  // Ordenar de forma garantizada por Guardia (groupId: 1 a 12) y luego por nombre
+  return [...list].sort((a, b) => {
+    const gA = a.groupId || 999;
+    const gB = b.groupId || 999;
+    if (gA !== gB) return gA - gB;
+    return a.name.localeCompare(b.name);
   });
 });
 
