@@ -3,124 +3,162 @@
     <AppNavbar />
 
     <div class="personal-container">
+      <!-- Encabezado del Módulo -->
       <div class="header-section">
         <div class="title-group">
-          <h1>👥 Módulo de Personal</h1>
-          <p class="subtitle">Directorio de operadores, choferes y personal de guardia en QH Relavera.</p>
-        </div>
-        <button class="btn-action-primary" @click="showInfoModal = true">
-          <span>➕</span> Registrar Personal
-        </button>
-      </div>
-
-      <!-- Tarjetas de Resumen Dinámicas -->
-      <div class="metrics-grid">
-        <div class="metric-card">
-          <div class="metric-icon blue">👷</div>
-          <div class="metric-info">
-            <span class="metric-label">Operadores Registrados</span>
-            <span class="metric-value">{{ operators.length }}</span>
-          </div>
+          <h1>👥 Módulo de Personal y Turnos</h1>
+          <p class="subtitle">Directorio de los 127 operadores y programación de turnos (Julio - Diciembre 2026).</p>
         </div>
 
-        <div class="metric-card">
-          <div class="metric-icon green">🔢</div>
-          <div class="metric-info">
-            <span class="metric-label">Con Código Asignado</span>
-            <span class="metric-value">{{ countWithCode }}</span>
-          </div>
-        </div>
-
-        <div class="metric-card">
-          <div class="metric-icon amber">🔍</div>
-          <div class="metric-info">
-            <span class="metric-label">Filtro de Búsqueda</span>
-            <span class="metric-value">{{ filteredOperators.length }}</span>
-          </div>
+        <!-- Pestañas de Navegación del Módulo -->
+        <div class="module-tabs">
+          <button 
+            :class="['tab-btn', { active: activeTab === 'directory' }]"
+            @click="activeTab = 'directory'"
+          >
+            📋 Directorio de Personal
+          </button>
+          <button 
+            :class="['tab-btn', { active: activeTab === 'calendar' }]"
+            @click="activeTab = 'calendar'"
+          >
+            📅 Calendario de Turnos (Julio - Dic 2026)
+          </button>
         </div>
       </div>
 
-      <!-- Área Principal de Contenido / Tabla de Personal -->
-      <div class="content-card">
-        <div class="card-header">
-          <div class="header-left">
-            <h3>Lista de Personal y Operadores</h3>
-            <span class="badge-count">{{ filteredOperators.length }} registros</span>
+      <!-- VISTA 1: Directorio de Personal -->
+      <div v-if="activeTab === 'directory'" class="tab-content">
+        <!-- Tarjetas de Resumen Dinámicas -->
+        <div class="metrics-grid">
+          <div class="metric-card">
+            <div class="metric-icon blue">👷</div>
+            <div class="metric-info">
+              <span class="metric-label">Operadores Registrados</span>
+              <span class="metric-value">{{ operators.length }}</span>
+            </div>
           </div>
-          <div class="search-box">
-            <span class="search-icon">🔍</span>
-            <input 
-              v-model="searchQuery" 
-              type="text" 
-              placeholder="Buscar por código o nombre..." 
-              class="search-input"
-            />
-            <button v-if="searchQuery" @click="searchQuery = ''" class="clear-btn">✕</button>
+
+          <div class="metric-card">
+            <div class="metric-icon green">🛡️</div>
+            <div class="metric-info">
+              <span class="metric-label">Guardias de Trabajo</span>
+              <span class="metric-value">12</span>
+            </div>
+          </div>
+
+          <div class="metric-card">
+            <div class="metric-icon amber">🔍</div>
+            <div class="metric-info">
+              <span class="metric-label">Filtro de Búsqueda</span>
+              <span class="metric-value">{{ filteredOperators.length }}</span>
+            </div>
           </div>
         </div>
 
-        <!-- Indicador de carga -->
-        <div v-if="loading" class="loading-state">
-          <div class="spinner"></div>
-          <p>Cargando lista de personal...</p>
-        </div>
+        <!-- Contenedor Principal / Tabla de Personal -->
+        <div class="content-card">
+          <div class="card-header">
+            <div class="header-left">
+              <h3>Directorio de Operadores por Guardia</h3>
+              <span class="badge-count">{{ filteredOperators.length }} registros</span>
+            </div>
+            <div class="search-box">
+              <span class="search-icon">🔍</span>
+              <input 
+                v-model="searchQuery" 
+                type="text" 
+                placeholder="Buscar por código, nombre o guardia..." 
+                class="search-input"
+              />
+              <button v-if="searchQuery" @click="searchQuery = ''" class="clear-btn">✕</button>
+            </div>
+          </div>
 
-        <!-- Tabla de datos -->
-        <div v-else-if="filteredOperators.length > 0" class="table-responsive">
-          <table class="personal-table">
-            <thead>
-              <tr>
-                <th style="width: 70px;">#</th>
-                <th style="width: 140px;">CÓDIGO</th>
-                <th>NOMBRE COMPLETO</th>
-                <th style="width: 120px; text-align: center;">ESTADO</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="(op, idx) in filteredOperators" :key="op.id || idx">
-                <td class="col-idx">{{ idx + 1 }}</td>
-                <td class="col-code">
-                  <span v-if="op.code" class="code-badge">{{ op.code }}</span>
-                  <span v-else class="no-code">Sin código</span>
-                </td>
-                <td class="col-name">{{ op.name }}</td>
-                <td class="col-status">
-                  <span class="status-pill active">Activo</span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+          <!-- Indicador de carga -->
+          <div v-if="loading" class="loading-state">
+            <div class="spinner"></div>
+            <p>Cargando directorio de personal...</p>
+          </div>
 
-        <!-- Estado vacío cuando no hay resultados de búsqueda -->
-        <div v-else class="empty-state">
-          <div class="empty-icon">🔍</div>
-          <h3>No se encontraron operadores</h3>
-          <p>No hay personal que coincida con el término "<b>{{ searchQuery }}</b>".</p>
+          <!-- Tabla de datos -->
+          <div v-else-if="filteredOperators.length > 0" class="table-responsive">
+            <table class="personal-table">
+              <thead>
+                <tr>
+                  <th style="width: 60px;">#</th>
+                  <th style="width: 120px;">CÓDIGO</th>
+                  <th>NOMBRE COMPLETO</th>
+                  <th style="width: 160px;">GUARDIA / GRUPO</th>
+                  <th style="width: 110px; text-align: center;">ESTADO</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="(op, idx) in filteredOperators" :key="op.id || idx">
+                  <td class="col-idx">{{ idx + 1 }}</td>
+                  <td class="col-code">
+                    <span v-if="op.code" class="code-badge">{{ op.code }}</span>
+                    <span v-else class="no-code">Sin código</span>
+                  </td>
+                  <td class="col-name">{{ op.name }}</td>
+                  <td class="col-guardia">
+                    <span 
+                      v-if="op.group" 
+                      class="guardia-badge"
+                      :style="{ backgroundColor: op.group.color || '#4f46e5' }"
+                    >
+                      {{ op.group.name }}
+                    </span>
+                    <span v-else class="no-guardia">Sin Guardia</span>
+                  </td>
+                  <td class="col-status">
+                    <span class="status-pill active">Activo</span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Estado vacío -->
+          <div v-else class="empty-state">
+            <div class="empty-icon">🔍</div>
+            <h3>No se encontraron operadores</h3>
+            <p>No hay personal que coincida con "<b>{{ searchQuery }}</b>".</p>
+          </div>
         </div>
+      </div>
+
+      <!-- VISTA 2: Calendario de Turnos (Julio - Dic 2026) -->
+      <div v-else-if="activeTab === 'calendar'" class="tab-content">
+        <ShiftCalendar 
+          ref="shiftCalendarRef"
+          @openGroupManager="showGroupManagerModal = true"
+        />
       </div>
     </div>
 
-    <!-- Modal Informativo -->
-    <div v-if="showInfoModal" class="modal-backdrop" @click.self="showInfoModal = false">
-      <div class="modal-card">
-        <h3>Registrar Personal</h3>
-        <p>El formulario de alta manual de personal se habilitará en el siguiente módulo de administración.</p>
-        <button class="btn-modal-close" @click="showInfoModal = false">Entendido</button>
-      </div>
-    </div>
+    <!-- Modal Gestor de Guardias -->
+    <GroupManagerModal 
+      :show="showGroupManagerModal"
+      @close="showGroupManagerModal = false"
+      @updated="refreshAllData"
+    />
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import AppNavbar from '../components/AppNavbar.vue';
+import ShiftCalendar from '../components/ShiftCalendar.vue';
+import GroupManagerModal from '../components/GroupManagerModal.vue';
 import api from '../api';
 
-const showInfoModal = ref(false);
+const activeTab = ref('calendar'); // Pestaña predeterminada al entrar
+const showGroupManagerModal = ref(false);
 const operators = ref([]);
 const loading = ref(true);
 const searchQuery = ref('');
+const shiftCalendarRef = ref(null);
 
 const fetchOperators = async () => {
   loading.value = true;
@@ -136,9 +174,12 @@ const fetchOperators = async () => {
 
 onMounted(fetchOperators);
 
-const countWithCode = computed(() => {
-  return operators.value.filter(op => op.code && op.code.trim() !== '').length;
-});
+const refreshAllData = () => {
+  fetchOperators();
+  if (shiftCalendarRef.value && shiftCalendarRef.value.fetchMatrix) {
+    shiftCalendarRef.value.fetchMatrix();
+  }
+};
 
 const filteredOperators = computed(() => {
   if (!searchQuery.value.trim()) return operators.value;
@@ -146,7 +187,8 @@ const filteredOperators = computed(() => {
   return operators.value.filter(op => {
     const nameMatch = op.name && op.name.toLowerCase().includes(q);
     const codeMatch = op.code && op.code.toLowerCase().includes(q);
-    return nameMatch || codeMatch;
+    const groupMatch = op.group && op.group.name && op.group.name.toLowerCase().includes(q);
+    return nameMatch || codeMatch || groupMatch;
   });
 });
 </script>
@@ -158,7 +200,7 @@ const filteredOperators = computed(() => {
 }
 
 .personal-container {
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
   padding: 0 1.5rem 2rem 1.5rem;
 }
@@ -186,25 +228,31 @@ const filteredOperators = computed(() => {
   margin: 0;
 }
 
-.btn-action-primary {
+.module-tabs {
   display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  background: #4f46e5;
-  color: white;
+  background: white;
+  padding: 0.35rem;
+  border-radius: 12px;
+  border: 1px solid #cbd5e1;
+  gap: 0.35rem;
+}
+
+.tab-btn {
+  background: none;
   border: none;
-  padding: 0.65rem 1.25rem;
-  border-radius: 10px;
+  padding: 0.6rem 1.1rem;
+  border-radius: 8px;
   font-weight: 700;
-  font-size: 0.88rem;
+  font-size: 0.85rem;
+  color: #64748b;
   cursor: pointer;
-  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
   transition: all 0.2s ease;
 }
 
-.btn-action-primary:hover {
-  background: #4338ca;
-  transform: translateY(-1px);
+.tab-btn.active {
+  background: #4f46e5;
+  color: white;
+  box-shadow: 0 4px 10px rgba(79, 70, 229, 0.25);
 }
 
 .metrics-grid {
@@ -387,7 +435,15 @@ const filteredOperators = computed(() => {
   font-family: monospace;
 }
 
-.no-code {
+.guardia-badge {
+  color: white;
+  font-weight: 800;
+  font-size: 0.75rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 6px;
+}
+
+.no-code, .no-guardia {
   color: #94a3b8;
   font-size: 0.8rem;
   font-style: italic;
@@ -455,61 +511,13 @@ const filteredOperators = computed(() => {
   font-size: 0.88rem;
 }
 
-/* Modal Styling */
-.modal-backdrop {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(15, 23, 42, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 2000;
-}
-
-.modal-card {
-  background: white;
-  border-radius: 16px;
-  padding: 1.75rem;
-  width: 90%;
-  max-width: 420px;
-  text-align: center;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-}
-
-.modal-card h3 {
-  margin-top: 0;
-  color: #0f172a;
-}
-
-.modal-card p {
-  color: #64748b;
-  font-size: 0.92rem;
-  margin-bottom: 1.5rem;
-}
-
-.btn-modal-close {
-  background: #4f46e5;
-  color: white;
-  border: none;
-  padding: 0.6rem 1.5rem;
-  border-radius: 8px;
-  font-weight: 700;
-  cursor: pointer;
-}
-
 @media (max-width: 768px) {
   .metrics-grid {
     grid-template-columns: 1fr;
   }
-  .card-header {
+  .header-section {
     flex-direction: column;
     align-items: stretch;
-  }
-  .search-box {
-    max-width: 100%;
   }
 }
 </style>
