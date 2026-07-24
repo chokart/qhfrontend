@@ -22,6 +22,14 @@
         :style="{ backgroundColor: statusColor }" 
         :title="formatStatusText(cancha.status)"
       ></span>
+
+      <!-- Primeras 3 letras de Tractores y Operadores -->
+      <div v-if="cancha.assignedEquipment" class="short-badge eq-badge" :title="'Tractores: ' + cancha.assignedEquipment">
+        🚜 {{ formatShort3(cancha.assignedEquipment) }}
+      </div>
+      <div v-if="cancha.operatorName" class="short-badge op-badge" :title="'Operadores: ' + cancha.operatorName">
+        👤 {{ formatShort3(cancha.operatorName) }}
+      </div>
     </div>
 
     <!-- Comentario rápido si existe -->
@@ -48,12 +56,22 @@ const levelPercentage = computed(() => {
   const pct = ((current - min) / (max - min)) * 100;
   return Math.min(Math.max(pct, 2), 100); 
 });
+
+// Función para extraer las 3 primeras letras de los ítems separados por coma
+const formatShort3 = (text) => {
+  if (!text) return '';
+  return text
+    .split(',')
+    .map(item => item.trim().slice(0, 3).toUpperCase())
+    .filter(Boolean)
+    .join(', ');
+};
 </script>
 
 <style scoped>
 .cancha-card {
-  width: 45px;
-  height: 320px;
+  width: 48px;
+  min-height: 330px;
   background: white;
   border: 2px solid #e2e8f0;
   border-radius: 8px;
@@ -63,15 +81,15 @@ const levelPercentage = computed(() => {
   cursor: pointer;
   transition: all 0.2s;
   flex-shrink: 0;
-  min-width: 45px;
+  min-width: 48px;
   overflow: hidden;
 }
 
 @media (max-width: 768px) {
   .cancha-card {
-    height: 240px;
-    width: 38px;
-    min-width: 38px;
+    min-height: 250px;
+    width: 42px;
+    min-width: 42px;
   }
 }
 
@@ -126,23 +144,47 @@ const levelPercentage = computed(() => {
 }
 
 .cancha-label {
-  padding: 0.4rem 0;
+  padding: 0.35rem 2px;
   background: white;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 3px;
+  gap: 2px;
   border-top: 2px solid #f1f5f9;
 }
 
 .number { font-size: 0.75rem; font-weight: 900; color: #334155; }
 
 .status-color-dot {
-  width: 9px;
-  height: 9px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
   display: inline-block;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.short-badge {
+  font-size: 0.58rem;
+  font-weight: 900;
+  padding: 1px 2px;
+  border-radius: 4px;
+  line-height: 1;
+  white-space: nowrap;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.eq-badge {
+  background: #f1f5f9;
+  color: #0f172a;
+  border: 1px solid #cbd5e1;
+}
+
+.op-badge {
+  background: #e0e7ff;
+  color: #3730a3;
+  border: 1px solid #c7d2fe;
 }
 
 .comment-dot {

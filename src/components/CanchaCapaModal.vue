@@ -22,24 +22,42 @@
           </div>
         </div>
 
+        <!-- Asignación de Tractores (Máximo 2) -->
         <div class="form-group">
-          <label>Equipo Asignado</label>
-          <select v-model="formData.assignedEquipment" class="form-control">
-            <option value="">Ninguno</option>
-            <option v-for="eq in equipmentOptions" :key="eq.id" :value="eq.name">
-              {{ eq.name }}
-            </option>
-          </select>
+          <label>Tractores Asignados (Máx. 2)</label>
+          <div class="form-row">
+            <select v-model="formData.tractor1" class="form-control flex-1">
+              <option value="">Tractor 1: Ninguno</option>
+              <option v-for="eq in tractorOptions" :key="eq.id" :value="eq.name">
+                {{ eq.name }}
+              </option>
+            </select>
+            <select v-model="formData.tractor2" class="form-control flex-1">
+              <option value="">Tractor 2: Ninguno</option>
+              <option v-for="eq in tractorOptions" :key="eq.id" :value="eq.name">
+                {{ eq.name }}
+              </option>
+            </select>
+          </div>
         </div>
 
+        <!-- Asignación de Operadores (Máximo 2) -->
         <div class="form-group">
-          <label>Operador</label>
-          <select v-model="formData.operatorName" class="form-control">
-            <option value="">Ninguno</option>
-            <option v-for="op in operatorOptions" :key="op.id" :value="op.name">
-              {{ op.code ? op.code + ' - ' + op.name : op.name }}
-            </option>
-          </select>
+          <label>Operadores Asignados (Máx. 2)</label>
+          <div class="form-row">
+            <select v-model="formData.operator1" class="form-control flex-1">
+              <option value="">Operador 1: Ninguno</option>
+              <option v-for="op in operatorOptions" :key="op.id" :value="op.name">
+                {{ op.code ? op.code + ' - ' + op.name : op.name }}
+              </option>
+            </select>
+            <select v-model="formData.operator2" class="form-control flex-1">
+              <option value="">Operador 2: Ninguno</option>
+              <option v-for="op in operatorOptions" :key="op.id" :value="op.name">
+                {{ op.code ? op.code + ' - ' + op.name : op.name }}
+              </option>
+            </select>
+          </div>
         </div>
 
         <div class="form-group">
@@ -59,7 +77,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, watch, onMounted } from 'vue';
+import { ref, reactive, computed, watch, onMounted } from 'vue';
 import api from '../api';
 
 const props = defineProps({
@@ -77,14 +95,27 @@ const formData = reactive({
   status: '',
   currentCapa: 1,
   comment: '',
-  assignedEquipment: '',
-  operatorName: ''
+  tractor1: '',
+  tractor2: '',
+  operator1: '',
+  operator2: ''
 });
 
 const statusOptions = [
   'CICLONEANDO', 'POR_CICLONEAR', 'POR_COMPACTAR', 'COMPACTADO', 
   'POR_PREPARAR_BERMA', 'DRENANDO', 'STAND_BY', 'OBSERVADA'
 ];
+
+const getCategory = (name) => {
+  if (!name) return '';
+  if (name.startsWith('D8') || name.startsWith('D9') || name.startsWith('D10') || name.startsWith('D-') || name.toLowerCase().includes('tractor')) return 'TRACTOR';
+  return '';
+};
+
+// Filtrar únicamente Tractores
+const tractorOptions = computed(() => {
+  return equipmentOptions.value.filter(eq => getCategory(eq.name) === 'TRACTOR');
+});
 
 const fetchOptions = async () => {
   try {
@@ -104,8 +135,16 @@ watch(() => props.cancha, (newVal) => {
     formData.status = newVal.status;
     formData.currentCapa = newVal.currentCapa;
     formData.comment = newVal.comment || '';
-    formData.assignedEquipment = newVal.assignedEquipment || '';
-    formData.operatorName = newVal.operatorName || '';
+    
+    // Descomponer tractores asignados
+    const tractors = (newVal.assignedEquipment || '').split(',').map(s => s.trim()).filter(Boolean);
+    formData.tractor1 = tractors[0] || '';
+    formData.tractor2 = tractors[1] || '';
+    
+    // Descomponer operadores asignados
+    const operators = (newVal.operatorName || '').split(',').map(s => s.trim()).filter(Boolean);
+    formData.operator1 = operators[0] || '';
+    formData.operator2 = operators[1] || '';
   }
 }, { immediate: true });
 
@@ -115,7 +154,18 @@ const close = () => { if (!loading.value) emit('close'); };
 const save = async () => {
   loading.value = true;
   try {
-    await api.put(`/api/v1/canchas-capas/${props.cancha.id}`, formData);
+    const assignedEquipmentCombined = [formData.tractor1, formData.tractor2].filter(Boolean).join(', ');
+    const operatorNameCombined = [formData.operator1, formData.operator2].filter(Boolean).join(', ');
+
+    const payload = {
+      status: formData.status,
+      currentCapa: formData.currentCapa,
+      comment: formData.comment,
+      assignedEquipment: assignedEquipmentCombined,
+      operatorName: operatorNameCombined
+    };
+
+    await api.put(`/api/v1/canchas-capas/${props.cancha.id}`, payload);
     emit('updated');
     emit('close');
   } catch (error) {
@@ -128,20 +178,19 @@ const save = async () => {
 
 <style scoped>
 .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.7); display: flex; align-items: center; justify-content: center; z-index: 2000; backdrop-filter: blur(4px); }
-.modal-content { background: white; width: 90%; max-width: 500px; border-radius: 20px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); overflow: hidden; }
+.modal-content { background: white; width: 90%; max-width: 520px; border-radius: 20px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); overflow: hidden; }
 .modal-header { padding: 1.25rem 1.5rem; background: #f8fafc; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
 .modal-header h2 { margin: 0; font-size: 1.15rem; font-weight: 800; color: #1e293b; }
 .close-btn { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #64748b; }
 .modal-body { padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; }
-.form-row { display: flex; gap: 1rem; }
+.form-row { display: flex; gap: 0.75rem; }
 .flex-1 { flex: 1; }
 .form-group { display: flex; flex-direction: column; gap: 0.4rem; }
 .form-group label { font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; }
-.form-control { padding: 0.65rem; border: 1px solid #d1d5db; border-radius: 10px; font-size: 0.95rem; font-family: inherit; outline: none; }
+.form-control { padding: 0.65rem; border: 1px solid #d1d5db; border-radius: 10px; font-size: 0.88rem; font-family: inherit; outline: none; }
 .form-control:focus { border-color: #f59e0b; box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1); }
 .textarea { resize: vertical; }
 .modal-footer { padding: 1rem 1.5rem; background: #f8fafc; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 1rem; }
 .btn-cancel { background: white; color: #64748b; border: 1px solid #e2e8f0; padding: 0.65rem 1.25rem; border-radius: 10px; font-weight: 700; cursor: pointer; }
 .btn-save { background: #f59e0b; color: white; border: none; padding: 0.65rem 1.25rem; border-radius: 10px; font-weight: 700; cursor: pointer; }
 </style>
-
