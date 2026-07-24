@@ -1,5 +1,6 @@
 <template>
   <div class="cancha-card" :class="[cancha.status.toLowerCase().replace(/_/g, '-'), { 'observed': cancha.status === 'OBSERVADA' }]">
+    <button class="btn-hide-card" @click.stop="$emit('hide')" title="Ocultar esta cancha">🙈</button>
     <div class="level-indicator">
       <div class="level-fill" :style="{ height: levelPercentage + '%' }"></div>
       <div class="level-overlay">
@@ -25,6 +26,8 @@ import { computed } from 'vue';
 const props = defineProps({
   cancha: { type: Object, required: true }
 });
+
+defineEmits(['hide']);
 
 const levelPercentage = computed(() => {
   const min = 1050; 
@@ -148,5 +151,29 @@ const getStatusIcon = (status) => {
   justify-content: center;
   border-radius: 50%;
   box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.btn-hide-card {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  z-index: 12;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid #cbd5e1;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s;
+  padding: 0;
+}
+
+.cancha-card:hover .btn-hide-card {
+  opacity: 1;
 }
 </style>
