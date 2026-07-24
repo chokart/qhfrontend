@@ -5,7 +5,7 @@ export const STATUS_COLORS = {
   'COMPACTADO': '#3b82f6',        // Azul
   'POR_PREPARAR_BERMA': '#f97316',// Naranja
   'DRENANDO': '#0284c7',          // Azul Océano
-  'STAND_BY': '#64748b',          // Gris Pizarra
+  'STAND_BY': '#eab308',          // Amarillo / Ámbar Dorado
   'OBSERVADA': '#ef4444'          // Rojo Alerta
 };
 
