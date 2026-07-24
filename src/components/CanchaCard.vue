@@ -17,18 +17,13 @@
     
     <div class="cancha-label" :style="{ borderTopColor: statusColor }">
       <span class="number">#{{ cancha.number }}</span>
-      <span 
-        class="status-color-dot" 
-        :style="{ backgroundColor: statusColor }" 
-        :title="formatStatusText(cancha.status)"
-      ></span>
 
       <!-- Primeras 3 letras de Tractores y Operadores -->
       <div v-if="cancha.assignedEquipment" class="short-badge eq-badge" :title="'Tractores: ' + cancha.assignedEquipment">
-        🚜 {{ formatShort3(cancha.assignedEquipment) }}
+        {{ formatShort3(cancha.assignedEquipment) }}
       </div>
       <div v-if="cancha.operatorName" class="short-badge op-badge" :title="'Operadores: ' + cancha.operatorName">
-        👤 {{ formatShort3(cancha.operatorName) }}
+        {{ formatShort3(cancha.operatorName) }}
       </div>
     </div>
 
@@ -155,18 +150,10 @@ const formatShort3 = (text) => {
 
 .number { font-size: 0.75rem; font-weight: 900; color: #334155; }
 
-.status-color-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  display: inline-block;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-}
-
 .short-badge {
   font-size: 0.58rem;
   font-weight: 900;
-  padding: 1px 2px;
+  padding: 1px 3px;
   border-radius: 4px;
   line-height: 1;
   white-space: nowrap;
