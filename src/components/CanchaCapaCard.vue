@@ -1,5 +1,9 @@
 <template>
-  <div class="cancha-card" :class="[cancha.status.toLowerCase().replace(/_/g, '-'), { 'observed': cancha.status === 'OBSERVADA' }]">
+  <div 
+    class="cancha-card" 
+    :class="{ 'observed': cancha.status === 'OBSERVADA' }"
+    :style="{ borderColor: statusColor }"
+  >
     <button class="btn-hide-card" @click.stop="$emit('hide')" title="Ocultar esta cancha">🙈</button>
     <div class="layer-indicator">
       <div 
@@ -7,16 +11,19 @@
         :key="layer" 
         class="layer-block" 
         :class="{ 'filled': layer <= cancha.currentCapa }"
+        :style="layer <= cancha.currentCapa ? { backgroundColor: statusColor } : {}"
       >
         <span v-if="layer === cancha.currentCapa" class="layer-text">Capa {{ layer }}</span>
       </div>
     </div>
     
-    <div class="cancha-label">
+    <div class="cancha-label" :style="{ borderTopColor: statusColor }">
       <span class="number">#{{ cancha.number }}</span>
-      <span class="status-icon" :title="formatStatus(cancha.status)">
-        {{ getStatusIcon(cancha.status) }}
-      </span>
+      <span 
+        class="status-color-dot" 
+        :style="{ backgroundColor: statusColor }" 
+        :title="formatStatusText(cancha.status)"
+      ></span>
     </div>
 
     <div v-if="cancha.comment" class="comment-dot" :title="cancha.comment">!</div>
@@ -24,27 +31,16 @@
 </template>
 
 <script setup>
+import { computed } from 'vue';
+import { getStatusColor, formatStatusText } from '../utils/canchaColors';
+
 const props = defineProps({
   cancha: { type: Object, required: true }
 });
 
 defineEmits(['hide']);
 
-const formatStatus = (status) => status.replace(/_/g, ' ');
-
-const getStatusIcon = (status) => {
-  const icons = {
-    'CICLONEANDO': '🌀',
-    'POR_CICLONEAR': '⏳',
-    'POR_COMPACTAR': '🚜',
-    'COMPACTADO': '✅',
-    'POR_PREPARAR_BERMA': '🚧',
-    'DRENANDO': '💧',
-    'STAND_BY': '🛑',
-    'OBSERVADA': '⚠️'
-  };
-  return icons[status] || '•';
-};
+const statusColor = computed(() => getStatusColor(props.cancha.status));
 </script>
 
 <style scoped>
@@ -52,7 +48,7 @@ const getStatusIcon = (status) => {
   width: 45px;
   height: 320px;
   background: white;
-  border: 1px solid #e2e8f0;
+  border: 2px solid #e2e8f0;
   border-radius: 8px;
   display: flex;
   flex-direction: column;
@@ -66,28 +62,35 @@ const getStatusIcon = (status) => {
 
 @media (max-width: 768px) {
   .cancha-card {
-    height: 240px; /* Más corta en móviles */
+    height: 240px;
     width: 38px;
     min-width: 32px;
   }
 }
-/* ... resto del estilo ... */
 
 .cancha-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-  border-color: #f59e0b;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.15);
   z-index: 10;
 }
 
-.observed { border-color: #ef4444 !important; border-width: 2px; }
-.cicloneando { border-bottom: 4px solid #10b981; }
+.observed { 
+  border-color: #ef4444 !important; 
+  border-width: 2.5px;
+  animation: pulse-border 2s infinite;
+}
+
+@keyframes pulse-border {
+  0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+  70% { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
 
 .layer-indicator {
   flex: 1;
   background: #f1f5f9;
   display: flex;
-  flex-direction: column-reverse; /* Capa 1 abajo */
+  flex-direction: column-reverse;
 }
 
 .layer-block {
@@ -97,13 +100,9 @@ const getStatusIcon = (status) => {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.3s;
+  transition: background-color 0.3s ease;
 }
-.layer-block:first-child { border-top: none; } /* La capa 1 no tiene borde arriba suyo, que ahora es abajo */
-
-.layer-block.filled {
-  background: #f59e0b; /* Color naranja distintivo para las capas */
-}
+.layer-block:first-child { border-top: none; }
 
 .layer-text {
   font-size: 0.55rem;
@@ -111,6 +110,7 @@ const getStatusIcon = (status) => {
   color: white;
   transform: rotate(-90deg);
   white-space: nowrap;
+  text-shadow: 0 0 3px rgba(0,0,0,0.5);
 }
 
 .cancha-label {
@@ -119,12 +119,19 @@ const getStatusIcon = (status) => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
-  border-top: 1px solid #f1f5f9;
+  gap: 3px;
+  border-top: 2px solid #f1f5f9;
 }
 
-.number { font-size: 0.7rem; font-weight: 900; color: #475569; }
-.status-icon { font-size: 0.85rem; }
+.number { font-size: 0.7rem; font-weight: 900; color: #334155; }
+
+.status-color-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  display: inline-block;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
 
 .comment-dot {
   position: absolute;

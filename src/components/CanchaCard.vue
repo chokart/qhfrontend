@@ -1,18 +1,27 @@
 <template>
-  <div class="cancha-card" :class="[cancha.status.toLowerCase().replace(/_/g, '-'), { 'observed': cancha.status === 'OBSERVADA' }]">
+  <div 
+    class="cancha-card" 
+    :class="{ 'observed': cancha.status === 'OBSERVADA' }"
+    :style="{ borderColor: statusColor }"
+  >
     <button class="btn-hide-card" @click.stop="$emit('hide')" title="Ocultar esta cancha">🙈</button>
     <div class="level-indicator">
-      <div class="level-fill" :style="{ height: levelPercentage + '%' }"></div>
+      <div 
+        class="level-fill" 
+        :style="{ height: levelPercentage + '%', backgroundColor: statusColor }"
+      ></div>
       <div class="level-overlay">
         <span class="height-text">{{ cancha.currentHeight }}m</span>
       </div>
     </div>
     
-    <div class="cancha-label">
+    <div class="cancha-label" :style="{ borderTopColor: statusColor }">
       <span class="number">#{{ cancha.number }}</span>
-      <span class="status-icon" :title="formatStatus(cancha.status)">
-        {{ getStatusIcon(cancha.status) }}
-      </span>
+      <span 
+        class="status-color-dot" 
+        :style="{ backgroundColor: statusColor }" 
+        :title="formatStatusText(cancha.status)"
+      ></span>
     </div>
 
     <!-- Comentario rápido si existe -->
@@ -22,12 +31,15 @@
 
 <script setup>
 import { computed } from 'vue';
+import { getStatusColor, formatStatusText } from '../utils/canchaColors';
 
 const props = defineProps({
   cancha: { type: Object, required: true }
 });
 
 defineEmits(['hide']);
+
+const statusColor = computed(() => getStatusColor(props.cancha.status));
 
 const levelPercentage = computed(() => {
   const min = 1050; 
@@ -36,22 +48,6 @@ const levelPercentage = computed(() => {
   const pct = ((current - min) / (max - min)) * 100;
   return Math.min(Math.max(pct, 2), 100); 
 });
-
-const formatStatus = (status) => status.replace(/_/g, ' ');
-
-const getStatusIcon = (status) => {
-  const icons = {
-    'CICLONEANDO': '🌀',
-    'POR_CICLONEAR': '⏳',
-    'POR_COMPACTAR': '🚜',
-    'COMPACTADO': '✅',
-    'POR_PREPARAR_BERMA': '🚧',
-    'DRENANDO': '💧',
-    'STAND_BY': '🛑',
-    'OBSERVADA': '⚠️'
-  };
-  return icons[status] || '•';
-};
 </script>
 
 <style scoped>
@@ -59,7 +55,7 @@ const getStatusIcon = (status) => {
   width: 45px;
   height: 320px;
   background: white;
-  border: 1px solid #e2e8f0;
+  border: 2px solid #e2e8f0;
   border-radius: 8px;
   display: flex;
   flex-direction: column;
@@ -73,23 +69,29 @@ const getStatusIcon = (status) => {
 
 @media (max-width: 768px) {
   .cancha-card {
-    height: 240px; /* Más corta en móviles */
+    height: 240px;
     width: 38px;
     min-width: 38px;
   }
 }
-/* ... resto del estilo ... */
 
 .cancha-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-  border-color: #6366f1;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.15);
   z-index: 10;
 }
 
-/* Colores por estado */
-.observed { border-color: #ef4444 !important; border-width: 2px; }
-.cicloneando { border-bottom: 4px solid #10b981; }
+.observed { 
+  border-color: #ef4444 !important; 
+  border-width: 2.5px;
+  animation: pulse-border 2s infinite;
+}
+
+@keyframes pulse-border {
+  0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+  70% { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
 
 .level-indicator {
   flex: 1;
@@ -101,8 +103,7 @@ const getStatusIcon = (status) => {
 
 .level-fill {
   width: 100%;
-  background: linear-gradient(to top, #4f46e5, #818cf8);
-  transition: height 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: height 0.8s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s ease;
 }
 
 .level-overlay {
@@ -121,6 +122,7 @@ const getStatusIcon = (status) => {
   transform: rotate(-90deg);
   white-space: nowrap;
   letter-spacing: 0.12em;
+  text-shadow: 0 0 4px rgba(255, 255, 255, 0.8);
 }
 
 .cancha-label {
@@ -129,12 +131,19 @@ const getStatusIcon = (status) => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
-  border-top: 1px solid #f1f5f9;
+  gap: 3px;
+  border-top: 2px solid #f1f5f9;
 }
 
-.number { font-size: 0.75rem; font-weight: 900; color: #475569; }
-.status-icon { font-size: 0.9rem; }
+.number { font-size: 0.75rem; font-weight: 900; color: #334155; }
+
+.status-color-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  display: inline-block;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
 
 .comment-dot {
   position: absolute;

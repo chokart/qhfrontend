@@ -72,6 +72,7 @@
                   :class="['status-chip', { active: selectedStatusFilter === st.value }]"
                   @click="selectedStatusFilter = st.value"
                 >
+                  <span v-if="st.value !== 'ALL'" class="chip-color-dot" :style="{ backgroundColor: getStatusColor(st.value) }"></span>
                   {{ st.label }}
                 </button>
               </div>
@@ -207,6 +208,7 @@ import CanchaCapaCard from '../components/CanchaCapaCard.vue';
 import CanchaModal from '../components/CanchaModal.vue';
 import CanchaCapaModal from '../components/CanchaCapaModal.vue';
 import { generateCanchasPDF } from '../utils/reportGenerator';
+import { getStatusColor, formatStatusText } from '../utils/canchaColors';
 
 const canchasNiveles = ref([]);
 const canchasCapas = ref([]);
@@ -229,14 +231,14 @@ const hiddenLateralIds = ref(new Set());
 
 const statusOptions = [
   { value: 'ALL', label: 'Todos los Estados' },
-  { value: 'CICLONEANDO', label: '🌀 Cicloneando' },
-  { value: 'POR_CICLONEAR', label: '⏳ Por Ciclonear' },
-  { value: 'POR_COMPACTAR', label: '🚜 Por Compactar' },
-  { value: 'COMPACTADO', label: '✅ Compactado' },
-  { value: 'POR_PREPARAR_BERMA', label: '🚧 Por Preparar Berma' },
-  { value: 'DRENANDO', label: '💧 Drenando' },
-  { value: 'STAND_BY', label: '🛑 Stand By' },
-  { value: 'OBSERVADA', label: '⚠️ Observadas' }
+  { value: 'CICLONEANDO', label: 'Cicloneando' },
+  { value: 'POR_CICLONEAR', label: 'Por Ciclonear' },
+  { value: 'POR_COMPACTAR', label: 'Por Compactar' },
+  { value: 'COMPACTADO', label: 'Compactado' },
+  { value: 'POR_PREPARAR_BERMA', label: 'Por Preparar Berma' },
+  { value: 'DRENANDO', label: 'Drenando' },
+  { value: 'STAND_BY', label: 'Stand By' },
+  { value: 'OBSERVADA', label: 'Observadas' }
 ];
 
 // Cargar preferencias guardadas en localStorage
@@ -586,6 +588,9 @@ h1 { font-size: 1.5rem; font-weight: 800; color: #0f172a; margin: 0; }
 }
 
 .status-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
   background: #f8fafc;
   border: 1px solid #cbd5e1;
   color: #475569;
@@ -595,6 +600,13 @@ h1 { font-size: 1.5rem; font-weight: 800; color: #0f172a; margin: 0; }
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
+}
+
+.chip-color-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
 }
 
 .status-chip.active {
