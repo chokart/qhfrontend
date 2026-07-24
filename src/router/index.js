@@ -5,6 +5,7 @@ import AdminPanel from '../views/AdminPanel.vue';
 import UserDashboard from '../views/UserDashboard.vue';
 import CanchasView from '../views/CanchasView.vue';
 import PersonalView from '../views/PersonalView.vue';
+import UserManagement from '../views/UserManagement.vue';
 
 const routes = [
   { 
@@ -30,6 +31,12 @@ const routes = [
     component: PersonalView,
     name: 'Personal',
     meta: { requiresAuth: true }
+  },
+  {
+    path: '/usuarios',
+    component: UserManagement,
+    name: 'UserManagement',
+    meta: { requiresAuth: true, role: 'ADMIN' }
   },
   { 
     path: '/', 

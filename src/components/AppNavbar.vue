@@ -23,6 +23,11 @@
         <span class="nav-icon">👥</span>
         <span class="nav-label">Personal</span>
       </router-link>
+
+      <router-link v-if="authStore.isAdmin" to="/usuarios" class="nav-item" active-class="active">
+        <span class="nav-icon">👤</span>
+        <span class="nav-label">Usuarios</span>
+      </router-link>
     </div>
 
     <div class="navbar-user">
