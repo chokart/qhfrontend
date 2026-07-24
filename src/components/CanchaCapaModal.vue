@@ -178,11 +178,11 @@ const save = async () => {
 
 <style scoped>
 .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.7); display: flex; align-items: center; justify-content: center; z-index: 2000; backdrop-filter: blur(4px); }
-.modal-content { background: white; width: 90%; max-width: 520px; border-radius: 20px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); overflow: hidden; }
+.modal-content { background: white; width: 92%; max-width: 520px; max-height: 90vh; display: flex; flex-direction: column; border-radius: 20px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); overflow: hidden; }
 .modal-header { padding: 1.25rem 1.5rem; background: #f8fafc; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
 .modal-header h2 { margin: 0; font-size: 1.15rem; font-weight: 800; color: #1e293b; }
 .close-btn { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #64748b; }
-.modal-body { padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; }
+.modal-body { padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; overflow-y: auto; flex: 1; }
 .form-row { display: flex; gap: 0.75rem; }
 .flex-1 { flex: 1; }
 .form-group { display: flex; flex-direction: column; gap: 0.4rem; }
@@ -193,4 +193,10 @@ const save = async () => {
 .modal-footer { padding: 1rem 1.5rem; background: #f8fafc; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 1rem; }
 .btn-cancel { background: white; color: #64748b; border: 1px solid #e2e8f0; padding: 0.65rem 1.25rem; border-radius: 10px; font-weight: 700; cursor: pointer; }
 .btn-save { background: #f59e0b; color: white; border: none; padding: 0.65rem 1.25rem; border-radius: 10px; font-weight: 700; cursor: pointer; }
+
+@media (max-width: 576px) {
+  .modal-content { width: 95%; border-radius: 16px; }
+  .modal-body { padding: 1.25rem 1rem; }
+  .form-row { flex-direction: column; gap: 0.75rem; }
+}
 </style>

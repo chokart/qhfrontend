@@ -691,7 +691,11 @@ h1 { font-size: 1.5rem; font-weight: 800; color: #0f172a; margin: 0; }
 }
 
 @media (max-width: 768px) {
-  .parallel-container { padding: 1rem 0.5rem; }
+  .parallel-container { padding: 1rem 0.4rem; }
+  .color-legend-card { padding: 0.65rem 0.85rem; gap: 0.5rem; }
+  .legend-title { font-size: 0.72rem; }
+  .legend-chip { padding: 0.25rem 0.5rem; }
+  .legend-name { font-size: 0.72rem; }
 }
 
 .canchas-parallel {

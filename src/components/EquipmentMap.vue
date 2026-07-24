@@ -863,9 +863,25 @@ onMounted(() => {
 .in { background: #ff4757; }
 
 @media (max-width: 768px) {
-  #map { height: 60vh; min-height: 400px; }
-  .toolbar-body { grid-template-columns: 1fr; }
-  .categories-bar { flex-direction: column; align-items: flex-start; }
+  .filter-toolbar-card {
+    padding: 1rem;
+    gap: 1rem;
+  }
+  #map {
+    height: calc(100vh - 280px);
+    min-height: 380px;
+  }
+  .toolbar-body {
+    grid-template-columns: 1fr;
+    gap: 0.85rem;
+  }
+  .categories-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .chips-grid {
+    width: 100%;
+  }
 }
 
 :deep(.leaflet-pro-icon) { background: none; border: none; }

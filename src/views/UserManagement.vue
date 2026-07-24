@@ -332,4 +332,11 @@ input:focus, select:focus {
 .fade-enter-from, .fade-leave-to {
   opacity: 0;
 }
+
+@media (max-width: 768px) {
+  .view-container { padding: 0 1rem; }
+  .form-card { padding: 1.5rem 1.25rem; border-radius: 16px; }
+  .header-title .icon { font-size: 1.75rem; padding: 0.35rem; }
+  .header-title h1 { font-size: 1.25rem; }
+}
 </style>

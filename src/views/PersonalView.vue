@@ -524,12 +524,10 @@ const filteredOperators = computed(() => {
 }
 
 @media (max-width: 768px) {
-  .metrics-grid {
-    grid-template-columns: 1fr;
-  }
-  .header-section {
-    flex-direction: column;
-    align-items: stretch;
-  }
+  .personal-view-container { padding: 0 0.85rem; }
+  .metrics-grid { grid-template-columns: 1fr; }
+  .header-section { flex-direction: column; align-items: stretch; gap: 0.75rem; }
+  .search-box { max-width: 100%; }
+  .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 }
 </style>
