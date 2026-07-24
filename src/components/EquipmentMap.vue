@@ -170,7 +170,7 @@ const editComment = ref('');
 // Estado de Filtros
 const searchQuery = ref('');
 const statusFilter = ref('ALL');
-const selectedFilters = ref(['TRACTOR', 'EXCAVADORA', 'HIDROCICLON', 'VOLQUETE', 'RODILLO', 'CARGADOR', 'OTROS']);
+const selectedFilters = ref(['TRACTOR', 'EXCAVADORA']);
 
 const categories = [
   { id: 'TRACTOR', label: 'Tractores', short: 'Trac', color: '#ff4757' },
