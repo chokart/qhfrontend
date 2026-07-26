@@ -48,8 +48,8 @@
           <div class="metric-card">
             <div class="metric-icon green">🛡️</div>
             <div class="metric-info">
-              <span class="metric-label">Guardias de Trabajo</span>
-              <span class="metric-value">12</span>
+              <span class="metric-label">Guardias Registradas</span>
+              <span class="metric-value">{{ groups.length }}</span>
             </div>
           </div>
 
@@ -97,6 +97,7 @@
                   <th>NOMBRE COMPLETO</th>
                   <th style="width: 160px;">GUARDIA / GRUPO</th>
                   <th style="width: 110px; text-align: center;">ESTADO</th>
+                  <th style="width: 150px; text-align: center;">ACCIONES</th>
                 </tr>
               </thead>
               <tbody>
@@ -117,8 +118,17 @@
                     </span>
                     <span v-else class="no-guardia">Sin Guardia</span>
                   </td>
-                  <td class="col-status">
+                  <td class="col-status" style="text-align: center;">
                     <span class="status-pill active">Activo</span>
+                  </td>
+                  <td class="col-actions" style="text-align: center;">
+                    <button 
+                      class="action-btn-guard"
+                      @click="openChangeGuardModal(op)"
+                      title="Cambiar Guardia de este operador"
+                    >
+                      ✏️ Cambiar Guardia
+                    </button>
                   </td>
                 </tr>
               </tbody>
@@ -148,6 +158,52 @@
       </div>
     </div>
 
+    <!-- Modal Cambiar Guardia de Operador -->
+    <div v-if="showChangeGuardModal" class="modal-backdrop" @click.self="closeChangeGuardModal">
+      <div class="modal-dialog">
+        <div class="modal-header">
+          <h3>🛡️ Cambiar Guardia de Operador</h3>
+          <button class="btn-close" @click="closeChangeGuardModal">✕</button>
+        </div>
+        <div class="modal-body" v-if="selectedOperator">
+          <div class="op-card-summary">
+            <span v-if="selectedOperator.code" class="code-badge">{{ selectedOperator.code }}</span>
+            <span class="op-name-bold">{{ selectedOperator.name }}</span>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Seleccionar Guardia / Grupo de Trabajo:</label>
+            <select v-model="selectedGroupId" class="form-select">
+              <option :value="null">-- Sin Guardia Asignada --</option>
+              <option v-for="g in groups" :key="g.id" :value="g.id">
+                {{ g.name }} ({{ g.programType || 'Rotación' }})
+              </option>
+            </select>
+          </div>
+
+          <div v-if="selectedGroupPreview" class="group-preview-box">
+            <span class="preview-label">Vista previa del distintivo:</span>
+            <span 
+              class="guardia-badge"
+              :style="{ backgroundColor: selectedGroupPreview.color || '#4f46e5' }"
+            >
+              {{ selectedGroupPreview.name }}
+            </span>
+          </div>
+          <div v-else class="group-preview-box empty">
+            <span class="preview-label">El operador quedará sin guardia asignada.</span>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-cancel" @click="closeChangeGuardModal">Cancelar</button>
+          <button class="btn-save" :disabled="savingGuard" @click="saveOperatorGuard">
+            <span v-if="savingGuard">Guardando...</span>
+            <span v-else>💾 Guardar Cambio</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Modal Gestor de Guardias -->
     <GroupManagerModal 
       :show="showGroupManagerModal"
@@ -168,9 +224,16 @@ import api from '../api';
 const activeTab = ref('calendar'); // Pestaña predeterminada al entrar
 const showGroupManagerModal = ref(false);
 const operators = ref([]);
+const groups = ref([]);
 const loading = ref(true);
 const searchQuery = ref('');
 const shiftCalendarRef = ref(null);
+
+// Estados para Modal de Cambio de Guardia
+const showChangeGuardModal = ref(false);
+const selectedOperator = ref(null);
+const selectedGroupId = ref(null);
+const savingGuard = ref(false);
 
 const fetchOperators = async () => {
   loading.value = true;
@@ -184,12 +247,72 @@ const fetchOperators = async () => {
   }
 };
 
-onMounted(fetchOperators);
+const fetchGroups = async () => {
+  try {
+    const res = await api.get('/api/v1/groups');
+    groups.value = res.data;
+  } catch (err) {
+    console.error("Error al cargar guardias:", err);
+  }
+};
+
+onMounted(() => {
+  fetchOperators();
+  fetchGroups();
+});
 
 const refreshAllData = () => {
   fetchOperators();
+  fetchGroups();
   if (shiftCalendarRef.value && shiftCalendarRef.value.fetchMatrix) {
     shiftCalendarRef.value.fetchMatrix();
+  }
+};
+
+const openChangeGuardModal = (op) => {
+  selectedOperator.value = op;
+  selectedGroupId.value = op.group ? op.group.id : null;
+  showChangeGuardModal.value = true;
+};
+
+const closeChangeGuardModal = () => {
+  showChangeGuardModal.value = false;
+  selectedOperator.value = null;
+  selectedGroupId.value = null;
+  savingGuard.value = false;
+};
+
+const selectedGroupPreview = computed(() => {
+  if (!selectedGroupId.value) return null;
+  return groups.value.find(g => g.id === selectedGroupId.value) || null;
+});
+
+const saveOperatorGuard = async () => {
+  if (!selectedOperator.value) return;
+  savingGuard.value = true;
+  try {
+    const res = await api.put(`/api/v1/operators/${selectedOperator.value.id}/group`, {
+      groupId: selectedGroupId.value
+    });
+    
+    // Actualizar operador localmente
+    const updatedOp = res.data;
+    const idx = operators.value.findIndex(o => o.id === updatedOp.id);
+    if (idx !== -1) {
+      operators.value[idx] = updatedOp;
+    }
+
+    // Refrescar matriz de turnos si está activa
+    if (shiftCalendarRef.value && shiftCalendarRef.value.fetchMatrix) {
+      shiftCalendarRef.value.fetchMatrix();
+    }
+
+    closeChangeGuardModal();
+  } catch (err) {
+    console.error("Error al guardar guardia:", err);
+    alert("Hubo un error al intentar actualizar la guardia del operador.");
+  } finally {
+    savingGuard.value = false;
   }
 };
 
@@ -453,6 +576,7 @@ const filteredOperators = computed(() => {
   font-size: 0.75rem;
   padding: 0.25rem 0.6rem;
   border-radius: 6px;
+  display: inline-block;
 }
 
 .no-code, .no-guardia {
@@ -477,6 +601,25 @@ const filteredOperators = computed(() => {
 .status-pill.active {
   background: #dcfce7;
   color: #166534;
+}
+
+.action-btn-guard {
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #cbd5e1;
+  padding: 0.35rem 0.7rem;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.action-btn-guard:hover {
+  background: #4f46e5;
+  color: white;
+  border-color: #4f46e5;
+  box-shadow: 0 2px 6px rgba(79, 70, 229, 0.25);
 }
 
 .loading-state {
@@ -521,6 +664,183 @@ const filteredOperators = computed(() => {
 .empty-state p {
   color: #64748b;
   font-size: 0.88rem;
+}
+
+/* Modal Estilos */
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(15, 23, 42, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-dialog {
+  background: white;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 480px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+  animation: modalIn 0.2s ease-out;
+}
+
+@keyframes modalIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem 1.5rem;
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.btn-close {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  color: #94a3b8;
+  cursor: pointer;
+}
+
+.btn-close:hover {
+  color: #334155;
+}
+
+.modal-body {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.op-card-summary {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: #f1f5f9;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+}
+
+.op-name-bold {
+  font-weight: 700;
+  color: #1e293b;
+  font-size: 0.95rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form-label {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #475569;
+}
+
+.form-select {
+  width: 100%;
+  padding: 0.65rem 0.85rem;
+  border-radius: 10px;
+  border: 1px solid #cbd5e1;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #0f172a;
+  outline: none;
+  background: white;
+  transition: all 0.2s ease;
+}
+
+.form-select:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+
+.group-preview-box {
+  background: #faf5ff;
+  border: 1px dashed #d8b4fe;
+  padding: 0.85rem 1rem;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.group-preview-box.empty {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+.preview-label {
+  font-size: 0.82rem;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+}
+
+.btn-cancel {
+  background: white;
+  border: 1px solid #cbd5e1;
+  padding: 0.6rem 1.2rem;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: #475569;
+  cursor: pointer;
+}
+
+.btn-cancel:hover {
+  background: #f1f5f9;
+}
+
+.btn-save {
+  background: #4f46e5;
+  color: white;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(79, 70, 229, 0.25);
+  transition: all 0.2s ease;
+}
+
+.btn-save:hover:not(:disabled) {
+  background: #4338ca;
+}
+
+.btn-save:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 @media (max-width: 768px) {
