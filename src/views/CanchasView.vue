@@ -15,6 +15,10 @@
           <button class="btn-pdf" @click="downloadReport" :disabled="loading">
             <span>📄</span> Exportar PDF
           </button>
+          <label class="btn-upload-report" :class="{ disabled: uploadingReport || loading }">
+            <span>📤</span> {{ uploadingReport ? 'Procesando PDF...' : 'Subir Reporte Geotecnia' }}
+            <input type="file" accept=".pdf" @change="onPdfFileSelected" hidden :disabled="uploadingReport || loading" />
+          </label>
         </div>
       </div>
 
@@ -207,6 +211,55 @@
       @close="showModalCapa = false" 
       @updated="fetchData"
     />
+
+    <!-- Modal de Resultado de Carga del Reporte Geotecnia -->
+    <div v-if="showUploadModal" class="modal-backdrop" @click.self="showUploadModal = false">
+      <div class="modal-card import-modal">
+        <div class="modal-header">
+          <h3>Procesamiento de Reporte Geotecnia (.pdf)</h3>
+          <button class="btn-close" @click="showUploadModal = false">✕</button>
+        </div>
+        <div class="modal-body">
+          <div v-if="uploadingReport" class="loading-state-modal">
+            <span class="spinner-icon">🔄</span>
+            <p>Procesando archivo PDF y actualizando estados de canchas...</p>
+          </div>
+          <div v-else-if="uploadError" class="error-msg-banner">
+            ⚠️ <b>Error al procesar archivo:</b> {{ uploadError }}
+          </div>
+          <div v-else-if="uploadResult" class="upload-success">
+            <div class="success-banner">
+              <span class="banner-icon">✅</span>
+              <div>
+                <h4>¡Actualización Automática Exitosa!</h4>
+                <p>El reporte diario de Geotecnia ha sido analizado y aplicado.</p>
+              </div>
+            </div>
+            <div class="summary-cards-grid">
+              <div class="summary-card">
+                <span class="summary-num">{{ uploadResult.principalUpdated }}</span>
+                <span class="summary-label">Canchas Dique Principal</span>
+              </div>
+              <div class="summary-card">
+                <span class="summary-num">{{ uploadResult.lateralUpdated }}</span>
+                <span class="summary-label">Canchas Dique Lateral</span>
+              </div>
+            </div>
+            <div class="logs-section" v-if="uploadResult.logMessages && uploadResult.logMessages.length">
+              <h5>Detalle de actualizaciones ({{ uploadResult.logMessages.length }}):</h5>
+              <div class="logs-container">
+                <ul class="logs-list">
+                  <li v-for="(log, idx) in uploadResult.logMessages" :key="idx">{{ log }}</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-modal-close" @click="showUploadModal = false" :disabled="uploadingReport">Cerrar</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -356,6 +409,40 @@ const filteredCapas = computed(() => {
 
 const downloadReport = () => {
   generateCanchasPDF(filteredNiveles.value, filteredCapas.value);
+};
+
+// Carga de Reporte Geotecnia (.pdf)
+const uploadingReport = ref(false);
+const showUploadModal = ref(false);
+const uploadResult = ref(null);
+const uploadError = ref('');
+
+const onPdfFileSelected = async (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  uploadingReport.value = true;
+  uploadError.value = '';
+  uploadResult.value = null;
+  showUploadModal.value = true;
+
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await api.post('/api/v1/canchas/import-report', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+    uploadResult.value = response.data;
+    await fetchData();
+  } catch (err) {
+    console.error('Error al procesar el reporte de Geotecnia:', err);
+    uploadError.value = typeof err.response?.data === 'string' 
+      ? err.response.data 
+      : 'Ocurrió un error al procesar el reporte PDF.';
+  } finally {
+    uploadingReport.value = false;
+    event.target.value = '';
+  }
 };
 
 const fetchData = async () => {
@@ -798,6 +885,239 @@ h1 { font-size: 1.5rem; font-weight: 800; color: #0f172a; margin: 0; }
   font-weight: 700;
   color: #1e293b;
   text-transform: capitalize;
+}
+
+/* Botón Subir Reporte Geotecnia */
+.btn-upload-report {
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+  color: #ffffff;
+  padding: 0.6rem 1.1rem;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(3, 105, 161, 0.2);
+  user-select: none;
+}
+
+.btn-upload-report:hover:not(.disabled) {
+  background: linear-gradient(135deg, #0369a1 0%, #075985 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(3, 105, 161, 0.3);
+}
+
+.btn-upload-report.disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Modal Estilos Importación */
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.import-modal {
+  background: #ffffff;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 580px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.modal-header {
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #f8fafc;
+}
+
+.modal-header h3 {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+}
+
+.btn-close {
+  background: transparent;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  color: #64748b;
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+}
+
+.btn-close:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.modal-body {
+  padding: 1.5rem;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.loading-state-modal {
+  text-align: center;
+  padding: 2.5rem 1rem;
+  color: #0284c7;
+}
+
+.spinner-icon {
+  font-size: 2.5rem;
+  display: inline-block;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes spin {
+  100% { transform: rotate(360deg); }
+}
+
+.error-msg-banner {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+  padding: 1rem;
+  border-radius: 10px;
+  font-size: 0.9rem;
+}
+
+.success-banner {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  padding: 1rem;
+  border-radius: 12px;
+  margin-bottom: 1.25rem;
+}
+
+.banner-icon {
+  font-size: 1.8rem;
+}
+
+.success-banner h4 {
+  margin: 0 0 0.2rem 0;
+  color: #166534;
+  font-weight: 800;
+}
+
+.success-banner p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #15803d;
+}
+
+.summary-cards-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.summary-card {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.summary-num {
+  font-size: 2rem;
+  font-weight: 900;
+  color: #0284c7;
+  line-height: 1.1;
+}
+
+.summary-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #64748b;
+  margin-top: 0.3rem;
+}
+
+.logs-section h5 {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: #334155;
+}
+
+.logs-container {
+  max-height: 160px;
+  overflow-y: auto;
+  background: #0f172a;
+  color: #38bdf8;
+  border-radius: 8px;
+  padding: 0.75rem;
+  font-family: monospace;
+  font-size: 0.78rem;
+}
+
+.logs-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.logs-list li {
+  padding: 0.15rem 0;
+  border-bottom: 1px solid #1e293b;
+}
+
+.logs-list li:last-child {
+  border-bottom: none;
+}
+
+.modal-footer {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: flex-end;
+  background: #f8fafc;
+}
+
+.btn-modal-close {
+  background: #475569;
+  color: #ffffff;
+  border: none;
+  padding: 0.6rem 1.4rem;
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn-modal-close:hover {
+  background: #334155;
 }
 
 /* Custom Scrollbar */
