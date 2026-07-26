@@ -96,8 +96,8 @@
                   <th style="width: 120px;">CÓDIGO</th>
                   <th>NOMBRE COMPLETO</th>
                   <th style="width: 160px;">GUARDIA / GRUPO</th>
-                  <th style="width: 110px; text-align: center;">ESTADO</th>
-                  <th style="width: 150px; text-align: center;">ACCIONES</th>
+                  <th style="width: 100px; text-align: center;">ESTADO</th>
+                  <th style="width: 240px; text-align: center;">ACCIONES</th>
                 </tr>
               </thead>
               <tbody>
@@ -122,13 +122,22 @@
                     <span class="status-pill active">Activo</span>
                   </td>
                   <td class="col-actions" style="text-align: center;">
-                    <button 
-                      class="action-btn-guard"
-                      @click="openChangeGuardModal(op)"
-                      title="Cambiar Guardia de este operador"
-                    >
-                      ✏️ Cambiar Guardia
-                    </button>
+                    <div class="actions-group">
+                      <button 
+                        class="action-btn-guard"
+                        @click="openChangeGuardModal(op)"
+                        title="Cambiar Guardia de este operador"
+                      >
+                        ✏️ Guardia
+                      </button>
+                      <button 
+                        class="action-btn-vacation"
+                        @click="openVacationModal(op)"
+                        title="Asignar Vacaciones a este operador"
+                      >
+                        🌴 Vacaciones
+                      </button>
+                    </div>
                   </td>
                 </tr>
               </tbody>
@@ -204,6 +213,58 @@
       </div>
     </div>
 
+    <!-- Modal Registrar Vacaciones de Operador -->
+    <div v-if="showVacationModal" class="modal-backdrop" @click.self="closeVacationModal">
+      <div class="modal-dialog">
+        <div class="modal-header">
+          <h3>🌴 Registrar Vacaciones de Operador</h3>
+          <button class="btn-close" @click="closeVacationModal">✕</button>
+        </div>
+        <div class="modal-body" v-if="selectedVacationOperator">
+          <div class="op-card-summary">
+            <span v-if="selectedVacationOperator.code" class="code-badge">{{ selectedVacationOperator.code }}</span>
+            <span class="op-name-bold">{{ selectedVacationOperator.name }}</span>
+          </div>
+
+          <div class="form-row-dates">
+            <div class="form-group">
+              <label class="form-label">Fecha de Inicio:</label>
+              <input type="date" v-model="vacationStartDate" class="form-input-date" />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Fecha de Fin:</label>
+              <input type="date" v-model="vacationEndDate" class="form-input-date" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Observación / Motivo (Opcional):</label>
+            <input 
+              type="text" 
+              v-model="vacationComment" 
+              placeholder="Ej. Vacaciones anuales autorizadas 2026" 
+              class="form-input-text" 
+            />
+          </div>
+
+          <div class="vacation-summary-box">
+            <div class="summary-icon">🌴</div>
+            <div class="summary-text">
+              <span>El operador estará registrado en estado <b>Vacaciones (V)</b> durante el rango de fechas seleccionado.</span>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-cancel" @click="closeVacationModal">Cancelar</button>
+          <button class="btn-save-vacation" :disabled="savingVacation" @click="saveOperatorVacation">
+            <span v-if="savingVacation">Guardando...</span>
+            <span v-else>🌴 Confirmar Vacaciones</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Modal Gestor de Guardias -->
     <GroupManagerModal 
       :show="showGroupManagerModal"
@@ -234,6 +295,14 @@ const showChangeGuardModal = ref(false);
 const selectedOperator = ref(null);
 const selectedGroupId = ref(null);
 const savingGuard = ref(false);
+
+// Estados para Modal de Vacaciones
+const showVacationModal = ref(false);
+const selectedVacationOperator = ref(null);
+const vacationStartDate = ref('');
+const vacationEndDate = ref('');
+const vacationComment = ref('');
+const savingVacation = ref(false);
 
 const fetchOperators = async () => {
   loading.value = true;
@@ -280,6 +349,69 @@ const closeChangeGuardModal = () => {
   selectedOperator.value = null;
   selectedGroupId.value = null;
   savingGuard.value = false;
+};
+
+const openVacationModal = (op) => {
+  selectedVacationOperator.value = op;
+  const today = new Date();
+  const yyyy = today.getFullYear();
+  const mm = String(today.getMonth() + 1).padStart(2, '0');
+  const dd = String(today.getDate()).padStart(2, '0');
+  vacationStartDate.value = `${yyyy}-${mm}-${dd}`;
+  
+  // +7 días por defecto
+  const endDate = new Date(today);
+  endDate.setDate(today.getDate() + 7);
+  const endYyyy = endDate.getFullYear();
+  const endMm = String(endDate.getMonth() + 1).padStart(2, '0');
+  const endDd = String(endDate.getDate()).padStart(2, '0');
+  vacationEndDate.value = `${endYyyy}-${endMm}-${endDd}`;
+
+  vacationComment.value = '';
+  showVacationModal.value = true;
+};
+
+const closeVacationModal = () => {
+  showVacationModal.value = false;
+  selectedVacationOperator.value = null;
+  vacationStartDate.value = '';
+  vacationEndDate.value = '';
+  vacationComment.value = '';
+  savingVacation.value = false;
+};
+
+const saveOperatorVacation = async () => {
+  if (!selectedVacationOperator.value) return;
+  if (!vacationStartDate.value || !vacationEndDate.value) {
+    alert("Por favor ingrese tanto la Fecha de Inicio como la Fecha de Fin.");
+    return;
+  }
+  if (vacationStartDate.value > vacationEndDate.value) {
+    alert("La Fecha de Inicio no puede ser posterior a la Fecha de Fin.");
+    return;
+  }
+
+  savingVacation.value = true;
+  try {
+    await api.post('/api/v1/shifts/override', {
+      operatorId: selectedVacationOperator.value.id,
+      startDate: vacationStartDate.value,
+      endDate: vacationEndDate.value,
+      shiftType: 'V',
+      comment: vacationComment.value || 'Vacaciones autorizadas'
+    });
+
+    if (shiftCalendarRef.value && shiftCalendarRef.value.fetchMatrix) {
+      shiftCalendarRef.value.fetchMatrix();
+    }
+
+    closeVacationModal();
+  } catch (err) {
+    console.error("Error al registrar vacaciones:", err);
+    alert("Hubo un error al intentar registrar las vacaciones del operador.");
+  } finally {
+    savingVacation.value = false;
+  }
 };
 
 const selectedGroupPreview = computed(() => {
@@ -603,16 +735,24 @@ const filteredOperators = computed(() => {
   color: #166534;
 }
 
+.actions-group {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
 .action-btn-guard {
   background: #f1f5f9;
   color: #475569;
   border: 1px solid #cbd5e1;
-  padding: 0.35rem 0.7rem;
+  padding: 0.35rem 0.65rem;
   border-radius: 8px;
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   font-weight: 700;
   cursor: pointer;
   transition: all 0.2s ease;
+  white-space: nowrap;
 }
 
 .action-btn-guard:hover {
@@ -620,6 +760,26 @@ const filteredOperators = computed(() => {
   color: white;
   border-color: #4f46e5;
   box-shadow: 0 2px 6px rgba(79, 70, 229, 0.25);
+}
+
+.action-btn-vacation {
+  background: #fef3c7;
+  color: #b45309;
+  border: 1px solid #fde68a;
+  padding: 0.35rem 0.65rem;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.action-btn-vacation:hover {
+  background: #f59e0b;
+  color: white;
+  border-color: #f59e0b;
+  box-shadow: 0 2px 6px rgba(245, 158, 11, 0.3);
 }
 
 .loading-state {
@@ -685,7 +845,7 @@ const filteredOperators = computed(() => {
   background: white;
   border-radius: 16px;
   width: 100%;
-  max-width: 480px;
+  max-width: 500px;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
   overflow: hidden;
   animation: modalIn 0.2s ease-out;
@@ -746,32 +906,39 @@ const filteredOperators = computed(() => {
   font-size: 0.95rem;
 }
 
+.form-row-dates {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
 .form-group {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.4rem;
 }
 
 .form-label {
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   font-weight: 700;
   color: #475569;
 }
 
-.form-select {
+.form-select, .form-input-date, .form-input-text {
   width: 100%;
-  padding: 0.65rem 0.85rem;
+  padding: 0.6rem 0.8rem;
   border-radius: 10px;
   border: 1px solid #cbd5e1;
-  font-size: 0.9rem;
+  font-size: 0.88rem;
   font-weight: 600;
   color: #0f172a;
   outline: none;
   background: white;
   transition: all 0.2s ease;
+  box-sizing: border-box;
 }
 
-.form-select:focus {
+.form-select:focus, .form-input-date:focus, .form-input-text:focus {
   border-color: #6366f1;
   box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
 }
@@ -789,6 +956,26 @@ const filteredOperators = computed(() => {
 .group-preview-box.empty {
   background: #f8fafc;
   border-color: #cbd5e1;
+}
+
+.vacation-summary-box {
+  background: #fef3c7;
+  border: 1px solid #fde68a;
+  padding: 0.85rem 1rem;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.summary-icon {
+  font-size: 1.5rem;
+}
+
+.summary-text {
+  font-size: 0.82rem;
+  color: #92400e;
+  line-height: 1.3;
 }
 
 .preview-label {
@@ -843,11 +1030,34 @@ const filteredOperators = computed(() => {
   cursor: not-allowed;
 }
 
+.btn-save-vacation {
+  background: #f59e0b;
+  color: white;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(245, 158, 11, 0.25);
+  transition: all 0.2s ease;
+}
+
+.btn-save-vacation:hover:not(:disabled) {
+  background: #d97706;
+}
+
+.btn-save-vacation:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 @media (max-width: 768px) {
   .personal-view-container { padding: 0 0.85rem; }
   .metrics-grid { grid-template-columns: 1fr; }
   .header-section { flex-direction: column; align-items: stretch; gap: 0.75rem; }
   .search-box { max-width: 100%; }
   .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .form-row-dates { grid-template-columns: 1fr; }
 }
 </style>
