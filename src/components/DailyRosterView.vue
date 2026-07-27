@@ -27,10 +27,6 @@
           <span>🌙</span>
           <span><b>{{ nightOperators.length }}</b> Turno Noche</span>
         </div>
-        <div class="pill pill-free">
-          <span>🏖️</span>
-          <span><b>{{ freeOperators.length }}</b> Libres</span>
-        </div>
         <div class="pill pill-vacation-day">
           <span>☀️🌴</span>
           <span><b>{{ vacationDayOperators.length }}</b> Vacaciones Día</span>
@@ -178,54 +174,6 @@
           </div>
           <div v-if="vacationNightOperators.length === 0" class="empty-col-compact">Sin vacaciones de noche</div>
         </div>
-
-        <!-- Vacaciones en Día Libre (si aplica) -->
-        <template v-if="vacationFreeOperators.length > 0">
-          <div class="col-header vacation-header mt-section">
-            <span class="header-icon">🏖️🌴</span>
-            <span class="header-title">Vacaciones (Descanso)</span>
-            <span class="header-count">{{ vacationFreeOperators.length }}</span>
-          </div>
-          <div class="operator-list compact-list">
-            <div
-              v-for="op in vacationFreeOperators"
-              :key="op.operatorId"
-              class="operator-card compact-card vacation-card"
-            >
-              <div class="op-info">
-                <span class="op-name compact-name">{{ op.name }}</span>
-                <div class="op-meta">
-                  <span v-if="op.code" class="op-code">{{ op.code }}</span>
-                  <span
-                    class="op-guardia"
-                    :style="{ backgroundColor: op.groupColor || '#4f46e5' }"
-                  >
-                    {{ op.groupName }}
-                  </span>
-                </div>
-              </div>
-              <span class="shift-badge shift-v">V-L</span>
-            </div>
-          </div>
-        </template>
-
-        <!-- Libres -->
-        <div class="col-header free-header mt-section">
-          <span class="header-icon">🏖️</span>
-          <span class="header-title">Libres</span>
-          <span class="header-count">{{ freeOperators.length }}</span>
-        </div>
-        <div class="operator-list compact-list">
-          <div
-            v-for="op in freeOperators"
-            :key="op.operatorId"
-            class="operator-card compact-card free-card"
-          >
-            <span class="op-name compact-name">{{ op.name }}</span>
-            <span class="shift-badge shift-l">L</span>
-          </div>
-          <div v-if="freeOperators.length === 0" class="empty-col-compact">Sin días libres</div>
-        </div>
       </div>
     </div>
 
@@ -291,12 +239,6 @@ const nightOperators = computed(() =>
     .sort((a, b) => (a.groupId || 999) - (b.groupId || 999) || a.name.localeCompare(b.name))
 );
 
-const freeOperators = computed(() =>
-  matrixOperators.value
-    .filter(op => op.todayShift === 'L')
-    .sort((a, b) => (a.groupId || 999) - (b.groupId || 999) || a.name.localeCompare(b.name))
-);
-
 const vacationDayOperators = computed(() =>
   matrixOperators.value
     .filter(op => op.todayShift === 'V' && op.todayBaseShift === 'D')
@@ -306,12 +248,6 @@ const vacationDayOperators = computed(() =>
 const vacationNightOperators = computed(() =>
   matrixOperators.value
     .filter(op => op.todayShift === 'V' && op.todayBaseShift === 'N')
-    .sort((a, b) => (a.groupId || 999) - (b.groupId || 999) || a.name.localeCompare(b.name))
-);
-
-const vacationFreeOperators = computed(() =>
-  matrixOperators.value
-    .filter(op => op.todayShift === 'V' && op.todayBaseShift !== 'D' && op.todayBaseShift !== 'N')
     .sort((a, b) => (a.groupId || 999) - (b.groupId || 999) || a.name.localeCompare(b.name))
 );
 </script>
