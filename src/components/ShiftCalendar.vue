@@ -47,6 +47,8 @@
       <div class="legend-badge shift-n"><span>🌙</span> <b>N</b> - Turno Noche</div>
       <div class="legend-badge shift-l"><span>🏖️</span> <b>L</b> - Día Libre</div>
       <div class="legend-badge shift-v"><span>🌴</span> <b>V</b> - Vacaciones</div>
+      <div class="legend-badge shift-st"><span>⏰</span> <b>ST</b> - Sobretiempo</div>
+      <div class="legend-badge shift-dm"><span>🩺</span> <b>DM</b> - Descanso Médico</div>
     </div>
 
     <!-- Estado de Carga -->
@@ -143,6 +145,22 @@
               {{ dailySummary[d]?.V || 0 }}
             </td>
           </tr>
+          <tr class="summary-row">
+            <td class="sticky-col col-operator summary-label">
+              <b>SOBRETIEMPO (⏰)</b>
+            </td>
+            <td v-for="d in daysInMonth" :key="d" class="col-summary count-st">
+              {{ dailySummary[d]?.ST || 0 }}
+            </td>
+          </tr>
+          <tr class="summary-row">
+            <td class="sticky-col col-operator summary-label">
+              <b>DESCANSO MÉDICO (🩺)</b>
+            </td>
+            <td v-for="d in daysInMonth" :key="d" class="col-summary count-dm">
+              {{ dailySummary[d]?.DM || 0 }}
+            </td>
+          </tr>
         </tfoot>
       </table>
     </div>
@@ -150,7 +168,7 @@
     <!-- Modal para Registrar Excepción o Vacaciones -->
     <div v-if="selectedCell" class="modal-backdrop" @click.self="selectedCell = null">
       <div class="override-modal-card">
-        <h3>Modificar Turno de Operador</h3>
+        <h3>Modificar Turno / Excepción de Operador</h3>
         <p class="modal-op-name"><b>{{ selectedCell.opName }}</b> ({{ selectedCell.opCode }})</p>
         <p class="modal-date-info">Fecha de inicio: <b>2026-{{ currentMonth < 10 ? '0' + currentMonth : currentMonth }}-{{ selectedCell.day < 10 ? '0' + selectedCell.day : selectedCell.day }}</b></p>
 
@@ -173,11 +191,19 @@
               :class="['btn-shift-radio', 'v', { active: overrideShiftType === 'V' }]"
               @click="overrideShiftType = 'V'"
             >🌴 Vacaciones (V)</button>
+            <button 
+              :class="['btn-shift-radio', 'st', { active: overrideShiftType === 'ST' }]"
+              @click="overrideShiftType = 'ST'"
+            >⏰ Sobretiempo (ST)</button>
+            <button 
+              :class="['btn-shift-radio', 'dm', { active: overrideShiftType === 'DM' }]"
+              @click="overrideShiftType = 'DM'"
+            >🩺 Descanso Médico (DM)</button>
           </div>
         </div>
 
-        <div v-if="overrideShiftType === 'V'" class="form-group-modal">
-          <label>Fecha Fin de Vacaciones (Opcional Rango):</label>
+        <div v-if="['V', 'DM', 'ST'].includes(overrideShiftType)" class="form-group-modal">
+          <label>Fecha Fin (Opcional para Rango):</label>
           <input type="date" v-model="overrideEndDate" class="input-modal-date" />
         </div>
 
@@ -298,7 +324,7 @@ const filteredOperators = computed(() => {
 const dailySummary = computed(() => {
   const summary = {};
   for (let d = 1; d <= daysInMonth.value; d++) {
-    summary[d] = { D: 0, N: 0, L: 0, V: 0 };
+    summary[d] = { D: 0, N: 0, L: 0, V: 0, ST: 0, DM: 0 };
   }
   (matrixData.value.operators || []).forEach(op => {
     for (let d = 1; d <= daysInMonth.value; d++) {
@@ -329,6 +355,8 @@ const getShiftClass = (shift) => {
     case 'N': return 'shift-n';
     case 'L': return 'shift-l';
     case 'V': return 'shift-v';
+    case 'ST': return 'shift-st';
+    case 'DM': return 'shift-dm';
     default: return 'shift-l';
   }
 };
@@ -339,6 +367,8 @@ const getShiftLabel = (shift) => {
     case 'N': return 'Turno Noche';
     case 'L': return 'Día Libre';
     case 'V': return 'Vacaciones';
+    case 'ST': return 'Sobretiempo';
+    case 'DM': return 'Descanso Médico';
     default: return 'Libre';
   }
 };
@@ -669,6 +699,16 @@ const removeOverride = async () => {
   color: white;
 }
 
+.shift-st {
+  background: #0284c7;
+  color: white;
+}
+
+.shift-dm {
+  background: #e11d48;
+  color: white;
+}
+
 .is-override {
   box-shadow: 0 0 0 2px #0f172a;
   position: relative;
@@ -691,6 +731,8 @@ const removeOverride = async () => {
 .count-n { background: #e0e7ff; color: #4338ca; }
 .count-l { background: #f8fafc; color: #64748b; }
 .count-v { background: #fef3c7; color: #b45309; }
+.count-st { background: #e0f2fe; color: #0369a1; }
+.count-dm { background: #ffe4e6; color: #be123c; }
 
 .calendar-loading {
   text-align: center;
@@ -786,6 +828,8 @@ const removeOverride = async () => {
 .btn-shift-radio.active.n { background: #6366f1; color: white; border-color: #6366f1; }
 .btn-shift-radio.active.l { background: #64748b; color: white; border-color: #64748b; }
 .btn-shift-radio.active.v { background: #f59e0b; color: white; border-color: #f59e0b; }
+.btn-shift-radio.active.st { background: #0284c7; color: white; border-color: #0284c7; }
+.btn-shift-radio.active.dm { background: #e11d48; color: white; border-color: #e11d48; }
 
 .input-modal-date, .input-modal-text {
   padding: 0.6rem;

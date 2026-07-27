@@ -213,17 +213,26 @@
       </div>
     </div>
 
-    <!-- Modal Registrar Vacaciones de Operador -->
+    <!-- Modal Registrar Excepción de Operador (Vacaciones / Descanso Médico / Sobretiempo) -->
     <div v-if="showVacationModal" class="modal-backdrop" @click.self="closeVacationModal">
       <div class="modal-dialog">
         <div class="modal-header">
-          <h3>🌴 Registrar Vacaciones de Operador</h3>
+          <h3>📝 Registrar Excepción / Licencia de Operador</h3>
           <button class="btn-close" @click="closeVacationModal">✕</button>
         </div>
         <div class="modal-body" v-if="selectedVacationOperator">
           <div class="op-card-summary">
             <span v-if="selectedVacationOperator.code" class="code-badge">{{ selectedVacationOperator.code }}</span>
             <span class="op-name-bold">{{ selectedVacationOperator.name }}</span>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Tipo de Excepción / Estado:</label>
+            <select v-model="vacationShiftType" class="form-select">
+              <option value="V">🌴 Vacaciones (V)</option>
+              <option value="DM">🩺 Descanso Médico (DM)</option>
+              <option value="ST">⏰ Sobretiempo / Día Libre Trabajado (ST)</option>
+            </select>
           </div>
 
           <div class="form-row-dates">
@@ -243,15 +252,15 @@
             <input 
               type="text" 
               v-model="vacationComment" 
-              placeholder="Ej. Vacaciones anuales autorizadas 2026" 
+              placeholder="Ej. Vacaciones anuales / Descanso médico autorizadas" 
               class="form-input-text" 
             />
           </div>
 
           <div class="vacation-summary-box">
-            <div class="summary-icon">🌴</div>
+            <div class="summary-icon">{{ vacationShiftType === 'V' ? '🌴' : (vacationShiftType === 'DM' ? '🩺' : '⏰') }}</div>
             <div class="summary-text">
-              <span>El operador estará registrado en estado <b>Vacaciones (V)</b> durante el rango de fechas seleccionado.</span>
+              <span>El operador estará registrado en estado <b>{{ vacationShiftType === 'V' ? 'Vacaciones (V)' : (vacationShiftType === 'DM' ? 'Descanso Médico (DM)' : 'Sobretiempo (ST)') }}</b> durante el rango de fechas seleccionado.</span>
             </div>
           </div>
         </div>
@@ -259,7 +268,7 @@
           <button class="btn-cancel" @click="closeVacationModal">Cancelar</button>
           <button class="btn-save-vacation" :disabled="savingVacation" @click="saveOperatorVacation">
             <span v-if="savingVacation">Guardando...</span>
-            <span v-else>🌴 Confirmar Vacaciones</span>
+            <span v-else>💾 Confirmar Registro</span>
           </button>
         </div>
       </div>
@@ -296,9 +305,10 @@ const selectedOperator = ref(null);
 const selectedGroupId = ref(null);
 const savingGuard = ref(false);
 
-// Estados para Modal de Vacaciones
+// Estados para Modal de Vacaciones / Descanso Médico / Sobretiempo
 const showVacationModal = ref(false);
 const selectedVacationOperator = ref(null);
+const vacationShiftType = ref('V');
 const vacationStartDate = ref('');
 const vacationEndDate = ref('');
 const vacationComment = ref('');
@@ -353,6 +363,7 @@ const closeChangeGuardModal = () => {
 
 const openVacationModal = (op) => {
   selectedVacationOperator.value = op;
+  vacationShiftType.value = 'V';
   const today = new Date();
   const yyyy = today.getFullYear();
   const mm = String(today.getMonth() + 1).padStart(2, '0');
@@ -374,6 +385,7 @@ const openVacationModal = (op) => {
 const closeVacationModal = () => {
   showVacationModal.value = false;
   selectedVacationOperator.value = null;
+  vacationShiftType.value = 'V';
   vacationStartDate.value = '';
   vacationEndDate.value = '';
   vacationComment.value = '';
@@ -393,12 +405,13 @@ const saveOperatorVacation = async () => {
 
   savingVacation.value = true;
   try {
+    const labelMap = { 'V': 'Vacaciones autorizadas', 'DM': 'Descanso médico autorizado', 'ST': 'Sobretiempo registrado' };
     await api.post('/api/v1/shifts/override', {
       operatorId: selectedVacationOperator.value.id,
       startDate: vacationStartDate.value,
       endDate: vacationEndDate.value,
-      shiftType: 'V',
-      comment: vacationComment.value || 'Vacaciones autorizadas'
+      shiftType: vacationShiftType.value,
+      comment: vacationComment.value || labelMap[vacationShiftType.value]
     });
 
     if (shiftCalendarRef.value && shiftCalendarRef.value.fetchMatrix) {
@@ -407,8 +420,8 @@ const saveOperatorVacation = async () => {
 
     closeVacationModal();
   } catch (err) {
-    console.error("Error al registrar vacaciones:", err);
-    alert("Hubo un error al intentar registrar las vacaciones del operador.");
+    console.error("Error al registrar excepción de turno:", err);
+    alert("Hubo un error al intentar registrar la excepción del operador.");
   } finally {
     savingVacation.value = false;
   }

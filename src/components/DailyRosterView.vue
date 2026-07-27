@@ -27,6 +27,10 @@
           <span>🌙</span>
           <span><b>{{ nightOperators.length }}</b> Turno Noche</span>
         </div>
+        <div class="pill pill-st">
+          <span>⏰</span>
+          <span><b>{{ overtimeOperators.length }}</b> Sobretiempo</span>
+        </div>
         <div class="pill pill-vacation-day">
           <span>☀️🌴</span>
           <span><b>{{ vacationDayOperators.length }}</b> Vacaciones Día</span>
@@ -34,6 +38,10 @@
         <div class="pill pill-vacation-night">
           <span>🌙🌴</span>
           <span><b>{{ vacationNightOperators.length }}</b> Vacaciones Noche</span>
+        </div>
+        <div class="pill pill-dm">
+          <span>🩺</span>
+          <span><b>{{ dmDayOperators.length + dmNightOperators.length }}</b> Descanso Médico</span>
         </div>
       </div>
     </div>
@@ -115,10 +123,36 @@
         </div>
       </div>
 
-      <!-- Libres / Vacaciones (columna compacta) -->
+      <!-- Ausencias y Sobretiempo (columna compacta) -->
       <div class="roster-col roster-col-compact">
+        <!-- Sobretiempo (Trabajo en día libre) -->
+        <div class="col-header st-header">
+          <span class="header-icon">⏰</span>
+          <span class="header-title">Sobretiempo (Día Libre)</span>
+          <span class="header-count">{{ overtimeOperators.length }}</span>
+        </div>
+        <div class="operator-list compact-list">
+          <div
+            v-for="op in overtimeOperators"
+            :key="op.operatorId"
+            class="operator-card compact-card st-card"
+          >
+            <div class="op-info">
+              <span class="op-name compact-name">{{ op.name }}</span>
+              <div class="op-meta">
+                <span v-if="op.code" class="op-code">{{ op.code }}</span>
+                <span class="op-guardia" :style="{ backgroundColor: op.groupColor || '#4f46e5' }">
+                  {{ op.groupName }}
+                </span>
+              </div>
+            </div>
+            <span class="shift-badge shift-st">ST</span>
+          </div>
+          <div v-if="overtimeOperators.length === 0" class="empty-col-compact">Sin sobretiempo registrado</div>
+        </div>
+
         <!-- Vacaciones Turno Día -->
-        <div class="col-header vacation-day-header">
+        <div class="col-header vacation-day-header mt-section">
           <span class="header-icon">☀️🌴</span>
           <span class="header-title">Vacaciones (De Día)</span>
           <span class="header-count">{{ vacationDayOperators.length }}</span>
@@ -173,6 +207,32 @@
             <span class="shift-badge shift-v-n">V-N</span>
           </div>
           <div v-if="vacationNightOperators.length === 0" class="empty-col-compact">Sin vacaciones de noche</div>
+        </div>
+
+        <!-- Descanso Médico -->
+        <div class="col-header dm-header mt-section">
+          <span class="header-icon">🩺</span>
+          <span class="header-title">Descanso Médico</span>
+          <span class="header-count">{{ dmDayOperators.length + dmNightOperators.length }}</span>
+        </div>
+        <div class="operator-list compact-list">
+          <div
+            v-for="op in [...dmDayOperators, ...dmNightOperators]"
+            :key="op.operatorId"
+            class="operator-card compact-card dm-card"
+          >
+            <div class="op-info">
+              <span class="op-name compact-name">{{ op.name }}</span>
+              <div class="op-meta">
+                <span v-if="op.code" class="op-code">{{ op.code }}</span>
+                <span class="op-guardia" :style="{ backgroundColor: op.groupColor || '#4f46e5' }">
+                  {{ op.groupName }}
+                </span>
+              </div>
+            </div>
+            <span class="shift-badge shift-dm">DM</span>
+          </div>
+          <div v-if="dmDayOperators.length + dmNightOperators.length === 0" class="empty-col-compact">Sin descansos médicos</div>
         </div>
       </div>
     </div>
@@ -239,6 +299,12 @@ const nightOperators = computed(() =>
     .sort((a, b) => (a.groupId || 999) - (b.groupId || 999) || a.name.localeCompare(b.name))
 );
 
+const overtimeOperators = computed(() =>
+  matrixOperators.value
+    .filter(op => op.todayShift === 'ST')
+    .sort((a, b) => (a.groupId || 999) - (b.groupId || 999) || a.name.localeCompare(b.name))
+);
+
 const vacationDayOperators = computed(() =>
   matrixOperators.value
     .filter(op => op.todayShift === 'V' && op.todayBaseShift === 'D')
@@ -248,6 +314,18 @@ const vacationDayOperators = computed(() =>
 const vacationNightOperators = computed(() =>
   matrixOperators.value
     .filter(op => op.todayShift === 'V' && op.todayBaseShift === 'N')
+    .sort((a, b) => (a.groupId || 999) - (b.groupId || 999) || a.name.localeCompare(b.name))
+);
+
+const dmDayOperators = computed(() =>
+  matrixOperators.value
+    .filter(op => op.todayShift === 'DM' && op.todayBaseShift === 'D')
+    .sort((a, b) => (a.groupId || 999) - (b.groupId || 999) || a.name.localeCompare(b.name))
+);
+
+const dmNightOperators = computed(() =>
+  matrixOperators.value
+    .filter(op => op.todayShift === 'DM' && op.todayBaseShift === 'N')
     .sort((a, b) => (a.groupId || 999) - (b.groupId || 999) || a.name.localeCompare(b.name))
 );
 </script>
@@ -335,6 +413,8 @@ const vacationNightOperators = computed(() =>
 .pill-vacation     { background: #fef3c7; color: #92400e; }
 .pill-vacation-day { background: #fef9c3; color: #854d0e; border: 1px solid #fde047; }
 .pill-vacation-night{ background: #fae8ff; color: #86198f; border: 1px solid #f0abfc; }
+.pill-st           { background: #e0f2fe; color: #0369a1; border: 1px solid #7dd3fc; }
+.pill-dm           { background: #ffe4e6; color: #9f1239; border: 1px solid #fecdd3; }
 
 /* === Grilla de resultados === */
 .roster-grid {
@@ -371,6 +451,8 @@ const vacationNightOperators = computed(() =>
 .vacation-header       { background: #fef9c3; border-bottom-color: #fde047; }
 .vacation-day-header   { background: #fef9c3; border-bottom-color: #fde047; }
 .vacation-night-header { background: #fae8ff; border-bottom-color: #f0abfc; }
+.st-header             { background: #e0f2fe; border-bottom-color: #7dd3fc; }
+.dm-header             { background: #ffe4e6; border-bottom-color: #fecdd3; }
 .free-header           { background: #f8fafc; border-bottom-color: #cbd5e1; }
 
 .mt-section {
@@ -419,6 +501,8 @@ const vacationNightOperators = computed(() =>
 .night-card    { background: #eef2ff; border-color: #c7d2fe; }
 .compact-card  { border: 1px solid #f1f5f9; }
 .vacation-card { background: #fefce8; border-color: #fde68a; }
+.st-card       { background: #f0f9ff; border-color: #bae6fd; }
+.dm-card       { background: #fff1f2; border-color: #fecdd3; }
 .free-card     { background: #f8fafc; border-color: #e2e8f0; }
 
 .op-idx {
@@ -489,6 +573,8 @@ const vacationNightOperators = computed(() =>
 .shift-v { background: #f59e0b; color: white; }
 .shift-v-d { background: #eab308; color: white; }
 .shift-v-n { background: #a855f7; color: white; }
+.shift-st  { background: #0284c7; color: white; }
+.shift-dm  { background: #e11d48; color: white; }
 
 /* === Estados === */
 .loading-state {
