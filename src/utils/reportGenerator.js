@@ -71,11 +71,19 @@ export const generateEquipmentPDF = (equipmentList) => {
   doc.setTextColor(5, 150, 105);
   doc.text(`Operativos: ${opExcavators}`, 112, 65);
 
-  // Generación de la Tabla
+  // Generación de la Tabla (Ordenar colocalndo INOPERATIVO primero)
+  const statusPriority = { 'INOPERATIVO': 1, 'STAND_BY': 2, 'OPERATIVO': 3 };
+  const sortedList = [...filteredList].sort((a, b) => {
+    const priorityA = statusPriority[a.status] || 4;
+    const priorityB = statusPriority[b.status] || 4;
+    if (priorityA !== priorityB) return priorityA - priorityB;
+    return (a.name || '').localeCompare(b.name || '', undefined, { numeric: true });
+  });
+
   const tableColumn = ["ID", "Equipo", "Categoría", "Área Actual", "Estado", "Comentarios"];
   const tableRows = [];
 
-  filteredList.forEach(eq => {
+  sortedList.forEach(eq => {
     const rowData = [
       eq.id,
       eq.name,
