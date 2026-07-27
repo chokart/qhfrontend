@@ -132,10 +132,10 @@
                       </button>
                       <button 
                         class="action-btn-vacation"
-                        @click="openVacationModal(op)"
-                        title="Asignar Vacaciones a este operador"
+                        @click="openVacationModal(op, 'V')"
+                        title="Programar Vacaciones, Descanso Médico o Sobretiempo"
                       >
-                        🌴 Vacaciones
+                        📝 Programar Excepción
                       </button>
                     </div>
                   </td>
@@ -361,9 +361,9 @@ const closeChangeGuardModal = () => {
   savingGuard.value = false;
 };
 
-const openVacationModal = (op) => {
+const openVacationModal = (op, defaultType = 'V') => {
   selectedVacationOperator.value = op;
-  vacationShiftType.value = 'V';
+  vacationShiftType.value = defaultType;
   const today = new Date();
   const yyyy = today.getFullYear();
   const mm = String(today.getMonth() + 1).padStart(2, '0');
