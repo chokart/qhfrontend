@@ -47,7 +47,8 @@
       <div class="legend-badge shift-n"><span>🌙</span> <b>N</b> - Turno Noche</div>
       <div class="legend-badge shift-l"><span>🏖️</span> <b>L</b> - Día Libre</div>
       <div class="legend-badge shift-v"><span>🌴</span> <b>V</b> - Vacaciones</div>
-      <div class="legend-badge shift-st"><span>⏰</span> <b>ST</b> - Sobretiempo</div>
+      <div class="legend-badge shift-st-d"><span>☀️⏰</span> <b>ST-D</b> - Sobretiempo Día</div>
+      <div class="legend-badge shift-st-n"><span>🌙⏰</span> <b>ST-N</b> - Sobretiempo Noche</div>
       <div class="legend-badge shift-dm"><span>🩺</span> <b>DM</b> - Descanso Médico</div>
     </div>
 
@@ -147,10 +148,18 @@
           </tr>
           <tr class="summary-row">
             <td class="sticky-col col-operator summary-label">
-              <b>SOBRETIEMPO (⏰)</b>
+              <b>SOBRETIEMPO DÍA (☀️⏰)</b>
             </td>
-            <td v-for="d in daysInMonth" :key="d" class="col-summary count-st">
-              {{ dailySummary[d]?.ST || 0 }}
+            <td v-for="d in daysInMonth" :key="d" class="col-summary count-st-d">
+              {{ dailySummary[d]?.['ST-D'] || 0 }}
+            </td>
+          </tr>
+          <tr class="summary-row">
+            <td class="sticky-col col-operator summary-label">
+              <b>SOBRETIEMPO NOCHE (🌙⏰)</b>
+            </td>
+            <td v-for="d in daysInMonth" :key="d" class="col-summary count-st-n">
+              {{ dailySummary[d]?.['ST-N'] || 0 }}
             </td>
           </tr>
           <tr class="summary-row">
@@ -192,17 +201,21 @@
               @click="overrideShiftType = 'V'"
             >🌴 Vacaciones (V)</button>
             <button 
-              :class="['btn-shift-radio', 'st', { active: overrideShiftType === 'ST' }]"
-              @click="overrideShiftType = 'ST'"
-            >⏰ Sobretiempo (ST)</button>
+              :class="['btn-shift-radio', 'st-d', { active: overrideShiftType === 'ST-D' }]"
+              @click="overrideShiftType = 'ST-D'"
+            >☀️⏰ ST Día</button>
+            <button 
+              :class="['btn-shift-radio', 'st-n', { active: overrideShiftType === 'ST-N' }]"
+              @click="overrideShiftType = 'ST-N'"
+            >🌙⏰ ST Noche</button>
             <button 
               :class="['btn-shift-radio', 'dm', { active: overrideShiftType === 'DM' }]"
               @click="overrideShiftType = 'DM'"
-            >🩺 Descanso Médico (DM)</button>
+            >🩺 Descanso Médico</button>
           </div>
         </div>
 
-        <div v-if="['V', 'DM', 'ST'].includes(overrideShiftType)" class="form-group-modal">
+        <div v-if="['V', 'DM', 'ST-D', 'ST-N', 'ST'].includes(overrideShiftType)" class="form-group-modal">
           <label>Fecha Fin (Opcional para Rango):</label>
           <input type="date" v-model="overrideEndDate" class="input-modal-date" />
         </div>
@@ -324,12 +337,14 @@ const filteredOperators = computed(() => {
 const dailySummary = computed(() => {
   const summary = {};
   for (let d = 1; d <= daysInMonth.value; d++) {
-    summary[d] = { D: 0, N: 0, L: 0, V: 0, ST: 0, DM: 0 };
+    summary[d] = { D: 0, N: 0, L: 0, V: 0, 'ST-D': 0, 'ST-N': 0, DM: 0 };
   }
   (matrixData.value.operators || []).forEach(op => {
     for (let d = 1; d <= daysInMonth.value; d++) {
       const shift = op.shifts[d] || 'L';
-      if (summary[d][shift] !== undefined) {
+      if (shift === 'ST') {
+        summary[d]['ST-D']++;
+      } else if (summary[d][shift] !== undefined) {
         summary[d][shift]++;
       }
     }
@@ -355,7 +370,9 @@ const getShiftClass = (shift) => {
     case 'N': return 'shift-n';
     case 'L': return 'shift-l';
     case 'V': return 'shift-v';
-    case 'ST': return 'shift-st';
+    case 'ST-D':
+    case 'ST': return 'shift-st-d';
+    case 'ST-N': return 'shift-st-n';
     case 'DM': return 'shift-dm';
     default: return 'shift-l';
   }
@@ -367,7 +384,9 @@ const getShiftLabel = (shift) => {
     case 'N': return 'Turno Noche';
     case 'L': return 'Día Libre';
     case 'V': return 'Vacaciones';
-    case 'ST': return 'Sobretiempo';
+    case 'ST-D':
+    case 'ST': return 'Sobretiempo Día';
+    case 'ST-N': return 'Sobretiempo Noche';
     case 'DM': return 'Descanso Médico';
     default: return 'Libre';
   }
@@ -699,8 +718,13 @@ const removeOverride = async () => {
   color: white;
 }
 
-.shift-st {
+.shift-st-d {
   background: #0284c7;
+  color: white;
+}
+
+.shift-st-n {
+  background: #0369a1;
   color: white;
 }
 
@@ -731,7 +755,8 @@ const removeOverride = async () => {
 .count-n { background: #e0e7ff; color: #4338ca; }
 .count-l { background: #f8fafc; color: #64748b; }
 .count-v { background: #fef3c7; color: #b45309; }
-.count-st { background: #e0f2fe; color: #0369a1; }
+.count-st-d { background: #e0f2fe; color: #0369a1; }
+.count-st-n { background: #bae6fd; color: #075985; }
 .count-dm { background: #ffe4e6; color: #be123c; }
 
 .calendar-loading {
@@ -828,7 +853,8 @@ const removeOverride = async () => {
 .btn-shift-radio.active.n { background: #6366f1; color: white; border-color: #6366f1; }
 .btn-shift-radio.active.l { background: #64748b; color: white; border-color: #64748b; }
 .btn-shift-radio.active.v { background: #f59e0b; color: white; border-color: #f59e0b; }
-.btn-shift-radio.active.st { background: #0284c7; color: white; border-color: #0284c7; }
+.btn-shift-radio.active.st-d { background: #0284c7; color: white; border-color: #0284c7; }
+.btn-shift-radio.active.st-n { background: #0369a1; color: white; border-color: #0369a1; }
 .btn-shift-radio.active.dm { background: #e11d48; color: white; border-color: #e11d48; }
 
 .input-modal-date, .input-modal-text {

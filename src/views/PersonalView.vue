@@ -230,8 +230,9 @@
             <label class="form-label">Tipo de Excepción / Estado:</label>
             <select v-model="vacationShiftType" class="form-select">
               <option value="V">🌴 Vacaciones (V)</option>
+              <option value="ST-D">☀️⏰ Sobretiempo Día (ST-D)</option>
+              <option value="ST-N">🌙⏰ Sobretiempo Noche (ST-N)</option>
               <option value="DM">🩺 Descanso Médico (DM)</option>
-              <option value="ST">⏰ Sobretiempo / Día Libre Trabajado (ST)</option>
             </select>
           </div>
 
@@ -258,9 +259,9 @@
           </div>
 
           <div class="vacation-summary-box">
-            <div class="summary-icon">{{ vacationShiftType === 'V' ? '🌴' : (vacationShiftType === 'DM' ? '🩺' : '⏰') }}</div>
+            <div class="summary-icon">{{ vacationShiftType === 'V' ? '🌴' : (vacationShiftType.startsWith('ST') ? '⏰' : '🩺') }}</div>
             <div class="summary-text">
-              <span>El operador estará registrado en estado <b>{{ vacationShiftType === 'V' ? 'Vacaciones (V)' : (vacationShiftType === 'DM' ? 'Descanso Médico (DM)' : 'Sobretiempo (ST)') }}</b> durante el rango de fechas seleccionado.</span>
+              <span>El operador estará registrado en estado <b>{{ vacationShiftType === 'V' ? 'Vacaciones (V)' : (vacationShiftType === 'ST-D' ? 'Sobretiempo Día (ST-D)' : (vacationShiftType === 'ST-N' ? 'Sobretiempo Noche (ST-N)' : 'Descanso Médico (DM)')) }}</b> durante el rango de fechas seleccionado.</span>
             </div>
           </div>
         </div>
@@ -405,7 +406,13 @@ const saveOperatorVacation = async () => {
 
   savingVacation.value = true;
   try {
-    const labelMap = { 'V': 'Vacaciones autorizadas', 'DM': 'Descanso médico autorizado', 'ST': 'Sobretiempo registrado' };
+    const labelMap = { 
+      'V': 'Vacaciones autorizadas', 
+      'DM': 'Descanso médico autorizado', 
+      'ST-D': 'Sobretiempo día registrado', 
+      'ST-N': 'Sobretiempo noche registrado', 
+      'ST': 'Sobretiempo registrado' 
+    };
     await api.post('/api/v1/shifts/override', {
       operatorId: selectedVacationOperator.value.id,
       startDate: vacationStartDate.value,
