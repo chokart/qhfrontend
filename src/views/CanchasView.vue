@@ -68,13 +68,13 @@
           <div v-if="showVisibilityPanel" class="visibility-panel-body">
             <!-- Filtro por Estado Operativo -->
             <div class="panel-row">
-              <label class="row-label">Filtrar por Estado:</label>
+              <label class="row-label">Filtrar por Estado (Selección múltiple):</label>
               <div class="status-filters-list">
                 <button 
                   v-for="st in statusOptions" 
                   :key="st.value"
-                  :class="['status-chip', { active: selectedStatusFilter === st.value }]"
-                  @click="selectedStatusFilter = st.value"
+                  :class="['status-chip', { active: isStatusSelected(st.value) }]"
+                  @click="toggleStatusFilter(st.value)"
                 >
                   <span v-if="st.value !== 'ALL'" class="chip-color-dot" :style="{ backgroundColor: getStatusColor(st.value) }"></span>
                   {{ st.label }}
@@ -277,7 +277,7 @@ const selectedCanchaCapa = ref(null);
 const showVisibilityPanel = ref(false);
 const showSectionPrincipal = ref(true);
 const showSectionLateral = ref(true);
-const selectedStatusFilter = ref('ALL');
+const selectedStatusFilters = ref([]); // Lista de estados seleccionados (vacío = TODOS)
 
 const hiddenPrincipalIds = ref(new Set());
 const hiddenLateralIds = ref(new Set());
@@ -294,6 +294,25 @@ const statusOptions = [
   { value: 'OBSERVADA', label: 'Observadas' }
 ];
 
+const isStatusSelected = (val) => {
+  if (val === 'ALL') return selectedStatusFilters.value.length === 0;
+  return selectedStatusFilters.value.includes(val);
+};
+
+const toggleStatusFilter = (val) => {
+  if (val === 'ALL') {
+    selectedStatusFilters.value = [];
+  } else {
+    const index = selectedStatusFilters.value.indexOf(val);
+    if (index > -1) {
+      selectedStatusFilters.value.splice(index, 1);
+    } else {
+      selectedStatusFilters.value.push(val);
+    }
+  }
+  saveVisibilityPreferences();
+};
+
 // Cargar preferencias guardadas en localStorage
 const loadVisibilityPreferences = () => {
   try {
@@ -304,7 +323,11 @@ const loadVisibilityPreferences = () => {
       if (Array.isArray(parsed.hiddenLateral)) hiddenLateralIds.value = new Set(parsed.hiddenLateral);
       if (typeof parsed.showPrincipal === 'boolean') showSectionPrincipal.value = parsed.showPrincipal;
       if (typeof parsed.showLateral === 'boolean') showSectionLateral.value = parsed.showLateral;
-      if (parsed.statusFilter) selectedStatusFilter.value = parsed.statusFilter;
+      if (Array.isArray(parsed.statusFilters)) {
+        selectedStatusFilters.value = parsed.statusFilters;
+      } else if (typeof parsed.statusFilter === 'string' && parsed.statusFilter !== 'ALL') {
+        selectedStatusFilters.value = [parsed.statusFilter];
+      }
     }
   } catch (e) {
     console.error("Error loading visibility preferences:", e);
@@ -319,7 +342,7 @@ const saveVisibilityPreferences = () => {
       hiddenLateral: Array.from(hiddenLateralIds.value),
       showPrincipal: showSectionPrincipal.value,
       showLateral: showSectionLateral.value,
-      statusFilter: selectedStatusFilter.value
+      statusFilters: selectedStatusFilters.value
     };
     localStorage.setItem('canchas_visibility_prefs', JSON.stringify(data));
   } catch (e) {
@@ -327,7 +350,7 @@ const saveVisibilityPreferences = () => {
   }
 };
 
-watch([showSectionPrincipal, showSectionLateral, selectedStatusFilter], saveVisibilityPreferences);
+watch([showSectionPrincipal, showSectionLateral, selectedStatusFilters], saveVisibilityPreferences, { deep: true });
 
 const toggleCanchaPrincipal = (id) => {
   const newSet = new Set(hiddenPrincipalIds.value);
@@ -368,7 +391,7 @@ const showAllCanchas = () => {
   hiddenLateralIds.value = new Set();
   showSectionPrincipal.value = true;
   showSectionLateral.value = true;
-  selectedStatusFilter.value = 'ALL';
+  selectedStatusFilters.value = [];
   saveVisibilityPreferences();
 };
 
@@ -383,7 +406,7 @@ const totalHiddenCount = computed(() => {
 const filteredNiveles = computed(() => {
   return canchasNiveles.value.filter(c => {
     const notHidden = !hiddenPrincipalIds.value.has(c.id);
-    const matchesStatus = selectedStatusFilter.value === 'ALL' || c.status === selectedStatusFilter.value;
+    const matchesStatus = selectedStatusFilters.value.length === 0 || selectedStatusFilters.value.includes(c.status);
     return notHidden && matchesStatus;
   });
 });
@@ -391,7 +414,7 @@ const filteredNiveles = computed(() => {
 const filteredCapas = computed(() => {
   return canchasCapas.value.filter(c => {
     const notHidden = !hiddenLateralIds.value.has(c.id);
-    const matchesStatus = selectedStatusFilter.value === 'ALL' || c.status === selectedStatusFilter.value;
+    const matchesStatus = selectedStatusFilters.value.length === 0 || selectedStatusFilters.value.includes(c.status);
     return notHidden && matchesStatus;
   });
 });
