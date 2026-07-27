@@ -31,9 +31,13 @@
           <span>🏖️</span>
           <span><b>{{ freeOperators.length }}</b> Libres</span>
         </div>
-        <div class="pill pill-vacation">
-          <span>🌴</span>
-          <span><b>{{ vacationOperators.length }}</b> Vacaciones</span>
+        <div class="pill pill-vacation-day">
+          <span>☀️🌴</span>
+          <span><b>{{ vacationDayOperators.length }}</b> Vacaciones Día</span>
+        </div>
+        <div class="pill pill-vacation-night">
+          <span>🌙🌴</span>
+          <span><b>{{ vacationNightOperators.length }}</b> Vacaciones Noche</span>
         </div>
       </div>
     </div>
@@ -117,23 +121,93 @@
 
       <!-- Libres / Vacaciones (columna compacta) -->
       <div class="roster-col roster-col-compact">
-        <!-- Vacaciones -->
-        <div class="col-header vacation-header">
-          <span class="header-icon">🌴</span>
-          <span class="header-title">Vacaciones</span>
-          <span class="header-count">{{ vacationOperators.length }}</span>
+        <!-- Vacaciones Turno Día -->
+        <div class="col-header vacation-day-header">
+          <span class="header-icon">☀️🌴</span>
+          <span class="header-title">Vacaciones (De Día)</span>
+          <span class="header-count">{{ vacationDayOperators.length }}</span>
         </div>
         <div class="operator-list compact-list">
           <div
-            v-for="op in vacationOperators"
+            v-for="op in vacationDayOperators"
             :key="op.operatorId"
             class="operator-card compact-card vacation-card"
           >
-            <span class="op-name compact-name">{{ op.name }}</span>
-            <span class="shift-badge shift-v">V</span>
+            <div class="op-info">
+              <span class="op-name compact-name">{{ op.name }}</span>
+              <div class="op-meta">
+                <span v-if="op.code" class="op-code">{{ op.code }}</span>
+                <span
+                  class="op-guardia"
+                  :style="{ backgroundColor: op.groupColor || '#4f46e5' }"
+                >
+                  {{ op.groupName }}
+                </span>
+              </div>
+            </div>
+            <span class="shift-badge shift-v-d">V-D</span>
           </div>
-          <div v-if="vacationOperators.length === 0" class="empty-col-compact">Sin vacaciones</div>
+          <div v-if="vacationDayOperators.length === 0" class="empty-col-compact">Sin vacaciones de día</div>
         </div>
+
+        <!-- Vacaciones Turno Noche -->
+        <div class="col-header vacation-night-header mt-section">
+          <span class="header-icon">🌙🌴</span>
+          <span class="header-title">Vacaciones (De Noche)</span>
+          <span class="header-count">{{ vacationNightOperators.length }}</span>
+        </div>
+        <div class="operator-list compact-list">
+          <div
+            v-for="op in vacationNightOperators"
+            :key="op.operatorId"
+            class="operator-card compact-card vacation-card"
+          >
+            <div class="op-info">
+              <span class="op-name compact-name">{{ op.name }}</span>
+              <div class="op-meta">
+                <span v-if="op.code" class="op-code">{{ op.code }}</span>
+                <span
+                  class="op-guardia"
+                  :style="{ backgroundColor: op.groupColor || '#4f46e5' }"
+                >
+                  {{ op.groupName }}
+                </span>
+              </div>
+            </div>
+            <span class="shift-badge shift-v-n">V-N</span>
+          </div>
+          <div v-if="vacationNightOperators.length === 0" class="empty-col-compact">Sin vacaciones de noche</div>
+        </div>
+
+        <!-- Vacaciones en Día Libre (si aplica) -->
+        <template v-if="vacationFreeOperators.length > 0">
+          <div class="col-header vacation-header mt-section">
+            <span class="header-icon">🏖️🌴</span>
+            <span class="header-title">Vacaciones (Descanso)</span>
+            <span class="header-count">{{ vacationFreeOperators.length }}</span>
+          </div>
+          <div class="operator-list compact-list">
+            <div
+              v-for="op in vacationFreeOperators"
+              :key="op.operatorId"
+              class="operator-card compact-card vacation-card"
+            >
+              <div class="op-info">
+                <span class="op-name compact-name">{{ op.name }}</span>
+                <div class="op-meta">
+                  <span v-if="op.code" class="op-code">{{ op.code }}</span>
+                  <span
+                    class="op-guardia"
+                    :style="{ backgroundColor: op.groupColor || '#4f46e5' }"
+                  >
+                    {{ op.groupName }}
+                  </span>
+                </div>
+              </div>
+              <span class="shift-badge shift-v">V-L</span>
+            </div>
+          </div>
+        </template>
 
         <!-- Libres -->
         <div class="col-header free-header mt-section">
@@ -193,7 +267,8 @@ const fetchRoster = async () => {
     // Extraer el turno del día específico para cada operador
     matrixOperators.value = res.data.operators.map(op => ({
       ...op,
-      todayShift: op.shifts[day] || 'L'
+      todayShift: op.shifts[day] || 'L',
+      todayBaseShift: (op.baseShifts && op.baseShifts[day]) ? op.baseShifts[day] : (op.shifts[day] || 'L')
     }));
     rosterReady.value = true;
   } catch (err) {
@@ -222,9 +297,21 @@ const freeOperators = computed(() =>
     .sort((a, b) => (a.groupId || 999) - (b.groupId || 999) || a.name.localeCompare(b.name))
 );
 
-const vacationOperators = computed(() =>
+const vacationDayOperators = computed(() =>
   matrixOperators.value
-    .filter(op => op.todayShift === 'V')
+    .filter(op => op.todayShift === 'V' && op.todayBaseShift === 'D')
+    .sort((a, b) => (a.groupId || 999) - (b.groupId || 999) || a.name.localeCompare(b.name))
+);
+
+const vacationNightOperators = computed(() =>
+  matrixOperators.value
+    .filter(op => op.todayShift === 'V' && op.todayBaseShift === 'N')
+    .sort((a, b) => (a.groupId || 999) - (b.groupId || 999) || a.name.localeCompare(b.name))
+);
+
+const vacationFreeOperators = computed(() =>
+  matrixOperators.value
+    .filter(op => op.todayShift === 'V' && op.todayBaseShift !== 'D' && op.todayBaseShift !== 'N')
     .sort((a, b) => (a.groupId || 999) - (b.groupId || 999) || a.name.localeCompare(b.name))
 );
 </script>
@@ -306,15 +393,17 @@ const vacationOperators = computed(() =>
   font-weight: 600;
 }
 
-.pill-day    { background: #dcfce7; color: #166534; }
-.pill-night  { background: #e0e7ff; color: #3730a3; }
-.pill-free   { background: #f1f5f9; color: #475569; }
-.pill-vacation { background: #fef3c7; color: #92400e; }
+.pill-day          { background: #dcfce7; color: #166534; }
+.pill-night        { background: #e0e7ff; color: #3730a3; }
+.pill-free         { background: #f1f5f9; color: #475569; }
+.pill-vacation     { background: #fef3c7; color: #92400e; }
+.pill-vacation-day { background: #fef9c3; color: #854d0e; border: 1px solid #fde047; }
+.pill-vacation-night{ background: #fae8ff; color: #86198f; border: 1px solid #f0abfc; }
 
 /* === Grilla de resultados === */
 .roster-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr 340px;
+  grid-template-columns: 1fr 1fr 360px;
   gap: 1.25rem;
   align-items: start;
 }
@@ -341,10 +430,12 @@ const vacationOperators = computed(() =>
   border-bottom: 2px solid #e2e8f0;
 }
 
-.day-header    { background: #f0fdf4; border-bottom-color: #86efac; }
-.night-header  { background: #eef2ff; border-bottom-color: #a5b4fc; }
-.vacation-header { background: #fef9c3; border-bottom-color: #fde047; }
-.free-header   { background: #f8fafc; border-bottom-color: #cbd5e1; }
+.day-header            { background: #f0fdf4; border-bottom-color: #86efac; }
+.night-header          { background: #eef2ff; border-bottom-color: #a5b4fc; }
+.vacation-header       { background: #fef9c3; border-bottom-color: #fde047; }
+.vacation-day-header   { background: #fef9c3; border-bottom-color: #fde047; }
+.vacation-night-header { background: #fae8ff; border-bottom-color: #f0abfc; }
+.free-header           { background: #f8fafc; border-bottom-color: #cbd5e1; }
 
 .mt-section {
   margin-top: 0;
@@ -445,14 +536,14 @@ const vacationOperators = computed(() =>
 }
 
 .shift-badge {
-  width: 30px;
+  width: 38px;
   height: 30px;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 8px;
   font-weight: 900;
-  font-size: 0.88rem;
+  font-size: 0.82rem;
   flex-shrink: 0;
 }
 
@@ -460,6 +551,8 @@ const vacationOperators = computed(() =>
 .shift-n { background: #6366f1; color: white; }
 .shift-l { background: #e2e8f0; color: #64748b; }
 .shift-v { background: #f59e0b; color: white; }
+.shift-v-d { background: #eab308; color: white; }
+.shift-v-n { background: #a855f7; color: white; }
 
 /* === Estados === */
 .loading-state {
