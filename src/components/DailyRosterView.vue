@@ -16,14 +16,22 @@
             @change="fetchRoster"
           />
         </div>
-        <button
-          v-if="!loading && rosterReady"
-          class="btn-export-pdf"
-          @click="exportDailyRosterPDF"
-          title="Descargar reporte oficial en formato PDF"
-        >
-          📄 Exportar PDF
-        </button>
+        <div class="pdf-buttons-group" v-if="!loading && rosterReady">
+          <button
+            class="btn-export-pdf btn-pdf-day"
+            @click="exportDayRosterPDF"
+            title="Descargar reporte PDF exclusivo de Turno Día"
+          >
+            ☀️ PDF Día
+          </button>
+          <button
+            class="btn-export-pdf btn-pdf-night"
+            @click="exportNightRosterPDF"
+            title="Descargar reporte PDF exclusivo de Turno Noche"
+          >
+            🌙 PDF Noche
+          </button>
+        </div>
       </div>
 
       <div class="date-summary-pills" v-if="!loading && rosterReady">
@@ -65,6 +73,7 @@
           <span class="header-icon">☀️</span>
           <span class="header-title">Personal Turno Día</span>
           <span class="header-count">{{ dayOperators.length + stDayOperators.length + absentDayOperators.length }} total</span>
+          <button class="btn-col-pdf btn-col-pdf-day" @click="exportDayRosterPDF" title="Descargar PDF exclusivo del Turno Día">📄 PDF Día</button>
         </div>
 
         <!-- 1. Activos en Guardia -->
@@ -152,6 +161,7 @@
           <span class="header-icon">🌙</span>
           <span class="header-title">Personal Turno Noche</span>
           <span class="header-count">{{ nightOperators.length + stNightOperators.length + absentNightOperators.length }} total</span>
+          <button class="btn-col-pdf btn-col-pdf-night" @click="exportNightRosterPDF" title="Descargar PDF exclusivo del Turno Noche">📄 PDF Noche</button>
         </div>
 
         <!-- 1. Activos en Guardia -->
@@ -286,8 +296,8 @@ const fetchRoster = async () => {
   }
 };
 
-// Exportar Reporte de Guardia del Día en PDF
-const exportDailyRosterPDF = () => {
+// Exportar PDF Turno Día
+const exportDayRosterPDF = () => {
   if (!rosterReady.value || !selectedDate.value) return;
 
   const doc = new jsPDF({
@@ -298,15 +308,16 @@ const exportDailyRosterPDF = () => {
 
   const dateStr = formattedDate.value;
   const timestamp = new Date().toLocaleString('es-PE');
+  const totalDay = dayOperators.value.length + stDayOperators.value.length + absentDayOperators.value.length;
 
-  // Encabezado Banner
-  doc.setFillColor(15, 23, 42); // Dark Navy
+  // Banner Encabezado Verde Día
+  doc.setFillColor(5, 150, 105); // Emerald Green
   doc.rect(0, 0, 210, 26, 'F');
 
   doc.setTextColor(255, 255, 255);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(15);
-  doc.text('QH - REPORTE DE GUARDIA DEL DÍA', 14, 12);
+  doc.text('QH - REPORTE DE GUARDIA DEL DÍA (TURNO DÍA)', 14, 12);
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
@@ -315,25 +326,23 @@ const exportDailyRosterPDF = () => {
 
   let currentY = 32;
 
-  const totalDay = dayOperators.value.length + stDayOperators.value.length + absentDayOperators.value.length;
-  const totalNight = nightOperators.value.length + stNightOperators.value.length + absentNightOperators.value.length;
-
-  // Cuadro de Resumen Ejecutivo
-  doc.setFillColor(248, 250, 252);
-  doc.setDrawColor(226, 232, 240);
+  // Cuadro de Resumen
+  doc.setFillColor(240, 253, 244);
+  doc.setDrawColor(187, 247, 208);
   doc.roundedRect(14, currentY, 182, 14, 2, 2, 'FD');
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(8.5);
-  doc.setTextColor(15, 23, 42);
-  doc.text(`TURNO DÍA TOTAL: ${totalDay} (Activos: ${dayOperators.value.length} | ST: ${stDayOperators.value.length} | Ausentes: ${absentDayOperators.value.length})`, 18, currentY + 9);
-  doc.text(`TURNO NOCHE TOTAL: ${totalNight} (Activos: ${nightOperators.value.length} | ST: ${stNightOperators.value.length} | Ausentes: ${absentNightOperators.value.length})`, 115, currentY + 9);
+  doc.setTextColor(22, 101, 52);
+  doc.text(`TOTAL PERSONAL DÍA: ${totalDay}`, 18, currentY + 9);
+  doc.text(`Activos: ${dayOperators.value.length}`, 75, currentY + 9);
+  doc.text(`Sobretiempo: ${stDayOperators.value.length}`, 115, currentY + 9);
+  doc.text(`Ausentes: ${absentDayOperators.value.length}`, 155, currentY + 9);
 
   currentY += 18;
 
-  // Construir filas de Día
   const dayRows = [
-    ...dayOperators.value.map((op, idx) => [idx + 1, op.code || '-', op.name, op.groupName || 'Sin Guardia', '🟢 Activo (D)']),
+    ...dayOperators.value.map((op, idx) => [idx + 1, op.code || '-', op.name, op.groupName || 'Sin Guardia', '🟢 Activo / En Guardia (D)']),
     ...stDayOperators.value.map((op, idx) => [dayOperators.value.length + idx + 1, op.code || '-', op.name, op.groupName || 'Sin Guardia', '⏰ Sobretiempo (ST-D)']),
     ...absentDayOperators.value.map((op, idx) => [
       dayOperators.value.length + stDayOperators.value.length + idx + 1,
@@ -344,28 +353,80 @@ const exportDailyRosterPDF = () => {
     ])
   ];
 
-  // 1. Tabla Turno Día
   autoTable(doc, {
     startY: currentY,
-    head: [[{ content: `☀️ PERSONAL TURNO DÍA (${totalDay} TOTAL)`, colSpan: 5, styles: { halign: 'left', fontSize: 9 } }], ['#', 'Código', 'Nombre del Operador', 'Guardia / Grupo', 'Condición / Estado']],
-    body: dayRows.length > 0 ? dayRows : [[{ content: 'Sin personal en Turno Día', colSpan: 5, styles: { halign: 'center' } }]],
-    headStyles: { fillColor: [16, 185, 129], textColor: [255, 255, 255], fontStyle: 'bold' },
+    head: [[{ content: `☀️ DETALLE DE PERSONAL TURNO DÍA (${totalDay} OPERADORES)`, colSpan: 5, styles: { halign: 'left', fontSize: 9 } }], ['#', 'Código', 'Nombre del Operador', 'Guardia / Grupo', 'Condición / Estado']],
+    body: dayRows.length > 0 ? dayRows : [[{ content: 'Sin personal registrado en Turno Día', colSpan: 5, styles: { halign: 'center' } }]],
+    headStyles: { fillColor: [5, 150, 105], textColor: [255, 255, 255], fontStyle: 'bold' },
     margin: { left: 14, right: 14 },
-    styles: { fontSize: 8, cellPadding: 2 },
+    styles: { fontSize: 8, cellPadding: 2.5 },
     columnStyles: {
       0: { cellWidth: 10, halign: 'center' },
       1: { cellWidth: 25 },
       2: { cellWidth: 'auto' },
       3: { cellWidth: 40 },
-      4: { cellWidth: 45, halign: 'center' }
+      4: { cellWidth: 50, halign: 'center' }
     }
   });
 
-  currentY = doc.lastAutoTable.finalY + 8;
+  const pageCount = doc.internal.getNumberOfPages();
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+    doc.setFontSize(7.5);
+    doc.setTextColor(148, 163, 184);
+    doc.text(`Página ${i} de ${pageCount} - QH Relavera Turno Día`, 105, 290, { align: 'center' });
+  }
 
-  // Construir filas de Noche
+  doc.save(`Guardia_del_Dia_Turno_Dia_${selectedDate.value}.pdf`);
+};
+
+// Exportar PDF Turno Noche
+const exportNightRosterPDF = () => {
+  if (!rosterReady.value || !selectedDate.value) return;
+
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4'
+  });
+
+  const dateStr = formattedDate.value;
+  const timestamp = new Date().toLocaleString('es-PE');
+  const totalNight = nightOperators.value.length + stNightOperators.value.length + absentNightOperators.value.length;
+
+  // Banner Encabezado Índigo Noche
+  doc.setFillColor(67, 56, 202); // Indigo
+  doc.rect(0, 0, 210, 26, 'F');
+
+  doc.setTextColor(255, 255, 255);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(15);
+  doc.text('QH - REPORTE DE GUARDIA DEL DÍA (TURNO NOCHE)', 14, 12);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+  doc.text(`Fecha: ${dateStr}`, 14, 20);
+  doc.text(`Emitido: ${timestamp}`, 135, 20);
+
+  let currentY = 32;
+
+  // Cuadro de Resumen
+  doc.setFillColor(238, 242, 255);
+  doc.setDrawColor(199, 210, 254);
+  doc.roundedRect(14, currentY, 182, 14, 2, 2, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8.5);
+  doc.setTextColor(55, 48, 163);
+  doc.text(`TOTAL PERSONAL NOCHE: ${totalNight}`, 18, currentY + 9);
+  doc.text(`Activos: ${nightOperators.value.length}`, 75, currentY + 9);
+  doc.text(`Sobretiempo: ${stNightOperators.value.length}`, 115, currentY + 9);
+  doc.text(`Ausentes: ${absentNightOperators.value.length}`, 155, currentY + 9);
+
+  currentY += 18;
+
   const nightRows = [
-    ...nightOperators.value.map((op, idx) => [idx + 1, op.code || '-', op.name, op.groupName || 'Sin Guardia', '🔵 Activo (N)']),
+    ...nightOperators.value.map((op, idx) => [idx + 1, op.code || '-', op.name, op.groupName || 'Sin Guardia', '🔵 Activo / En Guardia (N)']),
     ...stNightOperators.value.map((op, idx) => [nightOperators.value.length + idx + 1, op.code || '-', op.name, op.groupName || 'Sin Guardia', '⏰ Sobretiempo (ST-N)']),
     ...absentNightOperators.value.map((op, idx) => [
       nightOperators.value.length + stNightOperators.value.length + idx + 1,
@@ -376,33 +437,31 @@ const exportDailyRosterPDF = () => {
     ])
   ];
 
-  // 2. Tabla Turno Noche
   autoTable(doc, {
     startY: currentY,
-    head: [[{ content: `🌙 PERSONAL TURNO NOCHE (${totalNight} TOTAL)`, colSpan: 5, styles: { halign: 'left', fontSize: 9 } }], ['#', 'Código', 'Nombre del Operador', 'Guardia / Grupo', 'Condición / Estado']],
-    body: nightRows.length > 0 ? nightRows : [[{ content: 'Sin personal en Turno Noche', colSpan: 5, styles: { halign: 'center' } }]],
-    headStyles: { fillColor: [99, 102, 241], textColor: [255, 255, 255], fontStyle: 'bold' },
+    head: [[{ content: `🌙 DETALLE DE PERSONAL TURNO NOCHE (${totalNight} OPERADORES)`, colSpan: 5, styles: { halign: 'left', fontSize: 9 } }], ['#', 'Código', 'Nombre del Operador', 'Guardia / Grupo', 'Condición / Estado']],
+    body: nightRows.length > 0 ? nightRows : [[{ content: 'Sin personal registrado en Turno Noche', colSpan: 5, styles: { halign: 'center' } }]],
+    headStyles: { fillColor: [67, 56, 202], textColor: [255, 255, 255], fontStyle: 'bold' },
     margin: { left: 14, right: 14 },
-    styles: { fontSize: 8, cellPadding: 2 },
+    styles: { fontSize: 8, cellPadding: 2.5 },
     columnStyles: {
       0: { cellWidth: 10, halign: 'center' },
       1: { cellWidth: 25 },
       2: { cellWidth: 'auto' },
       3: { cellWidth: 40 },
-      4: { cellWidth: 45, halign: 'center' }
+      4: { cellWidth: 50, halign: 'center' }
     }
   });
 
-  // Numerales de pie de página
   const pageCount = doc.internal.getNumberOfPages();
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i);
     doc.setFontSize(7.5);
     doc.setTextColor(148, 163, 184);
-    doc.text(`Página ${i} de ${pageCount} - QH Relavera Daily Roster System`, 105, 290, { align: 'center' });
+    doc.text(`Página ${i} de ${pageCount} - QH Relavera Turno Noche`, 105, 290, { align: 'center' });
   }
 
-  doc.save(`Guardia_del_Dia_${selectedDate.value}.pdf`);
+  doc.save(`Guardia_del_Dia_Turno_Noche_${selectedDate.value}.pdf`);
 };
 
 // Filtrar por turno del día seleccionado
@@ -529,27 +588,71 @@ const absentNightOperators = computed(() => {
   box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
 }
 
+.pdf-buttons-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: 0.5rem;
+}
+
 .btn-export-pdf {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  background: #0f172a;
   color: white;
   border: none;
-  padding: 0.65rem 1.15rem;
+  padding: 0.6rem 1rem;
   border-radius: 10px;
   font-weight: 700;
-  font-size: 0.88rem;
+  font-size: 0.85rem;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.15);
-  margin-left: 0.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.12);
 }
 
-.btn-export-pdf:hover {
-  background: #1e293b;
+.btn-pdf-day {
+  background: #059669;
+}
+.btn-pdf-day:hover {
+  background: #047857;
   transform: translateY(-1px);
-  box-shadow: 0 6px 10px -1px rgba(15, 23, 42, 0.25);
+}
+
+.btn-pdf-night {
+  background: #4338ca;
+}
+.btn-pdf-night:hover {
+  background: #3730a3;
+  transform: translateY(-1px);
+}
+
+.btn-col-pdf {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  border: none;
+  padding: 0.35rem 0.75rem;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: white;
+  margin-left: auto;
+}
+
+.btn-col-pdf-day {
+  background: #059669;
+}
+.btn-col-pdf-day:hover {
+  background: #047857;
+}
+
+.btn-col-pdf-night {
+  background: #4338ca;
+}
+.btn-col-pdf-night:hover {
+  background: #3730a3;
 }
 
 .date-summary-pills {
