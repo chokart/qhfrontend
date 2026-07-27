@@ -22,17 +22,6 @@
         </div>
       </div>
 
-      <!-- Leyenda Visual de Colores por Estado -->
-      <div class="color-legend-card">
-        <span class="legend-title">Leyenda de Estados:</span>
-        <div class="legend-chips">
-          <div v-for="(color, status) in STATUS_COLORS" :key="status" class="legend-chip">
-            <span class="legend-dot" :style="{ backgroundColor: color }"></span>
-            <span class="legend-name">{{ formatStatusText(status) }}</span>
-          </div>
-        </div>
-      </div>
-
       <!-- Barra de Herramientas y Visibilidad de Canchas -->
       <div class="visibility-toolbar-card">
         <div class="toolbar-top">
@@ -272,7 +261,7 @@ import CanchaCapaCard from '../components/CanchaCapaCard.vue';
 import CanchaModal from '../components/CanchaModal.vue';
 import CanchaCapaModal from '../components/CanchaCapaModal.vue';
 import { generateCanchasPDF } from '../utils/reportGenerator';
-import { STATUS_COLORS, getStatusColor, formatStatusText } from '../utils/canchaColors';
+import { getStatusColor } from '../utils/canchaColors';
 
 const canchasNiveles = ref([]);
 const canchasCapas = ref([]);
@@ -831,60 +820,6 @@ h1 { font-size: 1.5rem; font-weight: 800; color: #0f172a; margin: 0; }
 }
 .fade-enter-from, .fade-leave-to {
   opacity: 0;
-}
-
-/* Leyenda de Colores */
-.color-legend-card {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 14px;
-  padding: 0.75rem 1.25rem;
-  margin-bottom: 1.25rem;
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  flex-wrap: wrap;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-}
-
-.legend-title {
-  font-size: 0.78rem;
-  font-weight: 800;
-  color: #475569;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  white-space: nowrap;
-}
-
-.legend-chips {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  flex-wrap: wrap;
-}
-
-.legend-chip {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  background: #f8fafc;
-  padding: 0.3rem 0.65rem;
-  border-radius: 6px;
-  border: 1px solid #e2e8f0;
-}
-
-.legend-dot {
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  display: inline-block;
-}
-
-.legend-name {
-  font-size: 0.78rem;
-  font-weight: 700;
-  color: #1e293b;
-  text-transform: capitalize;
 }
 
 /* Botón Subir Reporte Geotecnia */
