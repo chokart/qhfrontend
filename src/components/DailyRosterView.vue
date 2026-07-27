@@ -16,6 +16,14 @@
             @change="fetchRoster"
           />
         </div>
+        <button
+          v-if="!loading && rosterReady"
+          class="btn-export-pdf"
+          @click="exportDailyRosterPDF"
+          title="Descargar reporte oficial en formato PDF"
+        >
+          📄 Exportar PDF
+        </button>
       </div>
 
       <div class="date-summary-pills" v-if="!loading && rosterReady">
@@ -216,6 +224,8 @@
 
 <script setup>
 import { ref, computed } from 'vue';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import api from '../api';
 
 const selectedDate = ref('');
@@ -252,6 +262,193 @@ const fetchRoster = async () => {
   } finally {
     loading.value = false;
   }
+};
+
+// Exportar Reporte de Guardia del Día en PDF
+const exportDailyRosterPDF = () => {
+  if (!rosterReady.value || !selectedDate.value) return;
+
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4'
+  });
+
+  const dateStr = formattedDate.value;
+  const timestamp = new Date().toLocaleString('es-PE');
+
+  // Encabezado Banner
+  doc.setFillColor(15, 23, 42); // Dark Navy
+  doc.rect(0, 0, 210, 26, 'F');
+
+  doc.setTextColor(255, 255, 255);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(15);
+  doc.text('QH - REPORTE DE GUARDIA DEL DÍA', 14, 12);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+  doc.text(`Fecha: ${dateStr}`, 14, 20);
+  doc.text(`Emitido: ${timestamp}`, 135, 20);
+
+  let currentY = 32;
+
+  // Cuadro de Resumen Ejecutivo
+  doc.setFillColor(248, 250, 252);
+  doc.setDrawColor(226, 232, 240);
+  doc.roundedRect(14, currentY, 182, 14, 2, 2, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8.5);
+  doc.setTextColor(15, 23, 42);
+  doc.text(`Turno Día: ${dayOperators.value.length}`, 18, currentY + 9);
+  doc.text(`Turno Noche: ${nightOperators.value.length}`, 54, currentY + 9);
+  doc.text(`Ausentes Día: ${absentDayOperators.value.length}`, 92, currentY + 9);
+  doc.text(`Ausentes Noche: ${absentNightOperators.value.length}`, 132, currentY + 9);
+  doc.text(`Sobretiempo: ${stDayOperators.value.length + stNightOperators.value.length}`, 168, currentY + 9);
+
+  currentY += 18;
+
+  // 1. Tabla Turno Día
+  autoTable(doc, {
+    startY: currentY,
+    head: [['#', 'Código', 'Nombre del Operador', 'Guardia / Grupo', 'Estado']],
+    body: dayOperators.value.map((op, idx) => [
+      idx + 1,
+      op.code || '-',
+      op.name,
+      op.groupName || 'Sin Guardia',
+      'Turno Día (D)'
+    ]),
+    headStyles: { fillColor: [16, 185, 129], textColor: [255, 255, 255], fontStyle: 'bold' },
+    margin: { left: 14, right: 14 },
+    styles: { fontSize: 8, cellPadding: 2 },
+    columnStyles: {
+      0: { cellWidth: 10, halign: 'center' },
+      1: { cellWidth: 25 },
+      2: { cellWidth: 'auto' },
+      3: { cellWidth: 40 },
+      4: { cellWidth: 35, halign: 'center' }
+    }
+  });
+
+  currentY = doc.lastAutoTable.finalY + 8;
+
+  // 2. Tabla Turno Noche
+  autoTable(doc, {
+    startY: currentY,
+    head: [['#', 'Código', 'Nombre del Operador', 'Guardia / Grupo', 'Estado']],
+    body: nightOperators.value.map((op, idx) => [
+      idx + 1,
+      op.code || '-',
+      op.name,
+      op.groupName || 'Sin Guardia',
+      'Turno Noche (N)'
+    ]),
+    headStyles: { fillColor: [99, 102, 241], textColor: [255, 255, 255], fontStyle: 'bold' },
+    margin: { left: 14, right: 14 },
+    styles: { fontSize: 8, cellPadding: 2 },
+    columnStyles: {
+      0: { cellWidth: 10, halign: 'center' },
+      1: { cellWidth: 25 },
+      2: { cellWidth: 'auto' },
+      3: { cellWidth: 40 },
+      4: { cellWidth: 35, halign: 'center' }
+    }
+  });
+
+  currentY = doc.lastAutoTable.finalY + 8;
+
+  // 3. Tabla Ausentes Turno Día (si hay)
+  if (absentDayOperators.value.length > 0) {
+    autoTable(doc, {
+      startY: currentY,
+      head: [['#', 'Código', 'Nombre del Operador', 'Guardia / Grupo', 'Tipo de Ausencia']],
+      body: absentDayOperators.value.map((op, idx) => [
+        idx + 1,
+        op.code || '-',
+        op.name,
+        op.groupName || 'Sin Guardia',
+        op.absentBadge === 'V-D' ? 'Vacaciones Día (V-D)' : 'Descanso Médico Día (DM-D)'
+      ]),
+      headStyles: { fillColor: [217, 119, 6], textColor: [255, 255, 255], fontStyle: 'bold' },
+      margin: { left: 14, right: 14 },
+      styles: { fontSize: 8, cellPadding: 2 },
+      columnStyles: {
+        0: { cellWidth: 10, halign: 'center' },
+        1: { cellWidth: 25 },
+        2: { cellWidth: 'auto' },
+        3: { cellWidth: 40 },
+        4: { cellWidth: 45, halign: 'center' }
+      }
+    });
+
+    currentY = doc.lastAutoTable.finalY + 8;
+  }
+
+  // 4. Tabla Ausentes Turno Noche (si hay)
+  if (absentNightOperators.value.length > 0) {
+    autoTable(doc, {
+      startY: currentY,
+      head: [['#', 'Código', 'Nombre del Operador', 'Guardia / Grupo', 'Tipo de Ausencia']],
+      body: absentNightOperators.value.map((op, idx) => [
+        idx + 1,
+        op.code || '-',
+        op.name,
+        op.groupName || 'Sin Guardia',
+        op.absentBadge === 'V-N' ? 'Vacaciones Noche (V-N)' : 'Descanso Médico Noche (DM-N)'
+      ]),
+      headStyles: { fillColor: [126, 34, 206], textColor: [255, 255, 255], fontStyle: 'bold' },
+      margin: { left: 14, right: 14 },
+      styles: { fontSize: 8, cellPadding: 2 },
+      columnStyles: {
+        0: { cellWidth: 10, halign: 'center' },
+        1: { cellWidth: 25 },
+        2: { cellWidth: 'auto' },
+        3: { cellWidth: 40 },
+        4: { cellWidth: 45, halign: 'center' }
+      }
+    });
+
+    currentY = doc.lastAutoTable.finalY + 8;
+  }
+
+  // 5. Tabla Sobretiempo (si hay)
+  const stAll = [...stDayOperators.value, ...stNightOperators.value];
+  if (stAll.length > 0) {
+    autoTable(doc, {
+      startY: currentY,
+      head: [['#', 'Código', 'Nombre del Operador', 'Guardia / Grupo', 'Sobretiempo']],
+      body: stAll.map((op, idx) => [
+        idx + 1,
+        op.code || '-',
+        op.name,
+        op.groupName || 'Sin Guardia',
+        op.todayShift === 'ST-N' ? 'Sobretiempo Noche (ST-N)' : 'Sobretiempo Día (ST-D)'
+      ]),
+      headStyles: { fillColor: [2, 132, 199], textColor: [255, 255, 255], fontStyle: 'bold' },
+      margin: { left: 14, right: 14 },
+      styles: { fontSize: 8, cellPadding: 2 },
+      columnStyles: {
+        0: { cellWidth: 10, halign: 'center' },
+        1: { cellWidth: 25 },
+        2: { cellWidth: 'auto' },
+        3: { cellWidth: 40 },
+        4: { cellWidth: 45, halign: 'center' }
+      }
+    });
+  }
+
+  // Numerales de pie de página
+  const pageCount = doc.internal.getNumberOfPages();
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+    doc.setFontSize(7.5);
+    doc.setTextColor(148, 163, 184);
+    doc.text(`Página ${i} de ${pageCount} - QH Relavera Daily Roster System`, 105, 290, { align: 'center' });
+  }
+
+  doc.save(`Guardia_del_Dia_${selectedDate.value}.pdf`);
 };
 
 // Filtrar por turno del día seleccionado
@@ -376,6 +573,29 @@ const absentNightOperators = computed(() => {
 
 .date-input:focus {
   box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+}
+
+.btn-export-pdf {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: #0f172a;
+  color: white;
+  border: none;
+  padding: 0.65rem 1.15rem;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.15);
+  margin-left: 0.5rem;
+}
+
+.btn-export-pdf:hover {
+  background: #1e293b;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 10px -1px rgba(15, 23, 42, 0.25);
 }
 
 .date-summary-pills {
