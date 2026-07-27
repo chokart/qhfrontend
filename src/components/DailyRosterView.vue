@@ -317,7 +317,7 @@ const exportDayRosterPDF = () => {
   doc.setTextColor(255, 255, 255);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(15);
-  doc.text('QH - REPORTE DE GUARDIA DEL DÍA (TURNO DÍA)', 14, 12);
+  doc.text('QH - REPORTE DE GUARDIA DEL DIA (TURNO DIA)', 14, 12);
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
@@ -334,7 +334,7 @@ const exportDayRosterPDF = () => {
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(8.5);
   doc.setTextColor(22, 101, 52);
-  doc.text(`TOTAL PERSONAL DÍA: ${totalDay}`, 18, currentY + 9);
+  doc.text(`TOTAL PERSONAL DIA: ${totalDay}`, 18, currentY + 9);
   doc.text(`Activos: ${dayOperators.value.length}`, 75, currentY + 9);
   doc.text(`Sobretiempo: ${stDayOperators.value.length}`, 115, currentY + 9);
   doc.text(`Ausentes: ${absentDayOperators.value.length}`, 155, currentY + 9);
@@ -342,20 +342,20 @@ const exportDayRosterPDF = () => {
   currentY += 18;
 
   const dayRows = [
-    ...dayOperators.value.map((op, idx) => [idx + 1, op.code || '-', op.name, op.groupName || 'Sin Guardia', '🟢 Activo / En Guardia (D)']),
-    ...stDayOperators.value.map((op, idx) => [dayOperators.value.length + idx + 1, op.code || '-', op.name, op.groupName || 'Sin Guardia', '⏰ Sobretiempo (ST-D)']),
+    ...dayOperators.value.map((op, idx) => [idx + 1, op.code || '-', op.name, op.groupName || 'Sin Guardia', 'Activo (D)']),
+    ...stDayOperators.value.map((op, idx) => [dayOperators.value.length + idx + 1, op.code || '-', op.name, op.groupName || 'Sin Guardia', 'Sobretiempo (ST-D)']),
     ...absentDayOperators.value.map((op, idx) => [
       dayOperators.value.length + stDayOperators.value.length + idx + 1,
       op.code || '-',
       op.name,
       op.groupName || 'Sin Guardia',
-      op.absentBadge === 'V-D' ? '🌴 Vacaciones (V-D)' : '🩺 Descanso Médico (DM-D)'
+      op.absentBadge === 'V-D' ? 'Vacaciones (V-D)' : 'Descanso Medico (DM-D)'
     ])
   ];
 
   autoTable(doc, {
     startY: currentY,
-    head: [[{ content: `☀️ DETALLE DE PERSONAL TURNO DÍA (${totalDay} OPERADORES)`, colSpan: 5, styles: { halign: 'left', fontSize: 9 } }], ['#', 'Código', 'Nombre del Operador', 'Guardia / Grupo', 'Condición / Estado']],
+    head: [[{ content: `DETALLE DE PERSONAL TURNO DIA (${totalDay} OPERADORES)`, colSpan: 5, styles: { halign: 'left', fontSize: 9 } }], ['#', 'Código', 'Nombre del Operador', 'Guardia / Grupo', 'Estado']],
     body: dayRows.length > 0 ? dayRows : [[{ content: 'Sin personal registrado en Turno Día', colSpan: 5, styles: { halign: 'center' } }]],
     headStyles: { fillColor: [5, 150, 105], textColor: [255, 255, 255], fontStyle: 'bold' },
     margin: { left: 14, right: 14 },
@@ -365,7 +365,7 @@ const exportDayRosterPDF = () => {
       1: { cellWidth: 25 },
       2: { cellWidth: 'auto' },
       3: { cellWidth: 40 },
-      4: { cellWidth: 50, halign: 'center' }
+      4: { cellWidth: 45, halign: 'center' }
     }
   });
 
@@ -401,7 +401,7 @@ const exportNightRosterPDF = () => {
   doc.setTextColor(255, 255, 255);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(15);
-  doc.text('QH - REPORTE DE GUARDIA DEL DÍA (TURNO NOCHE)', 14, 12);
+  doc.text('QH - REPORTE DE GUARDIA DEL DIA (TURNO NOCHE)', 14, 12);
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
@@ -426,20 +426,20 @@ const exportNightRosterPDF = () => {
   currentY += 18;
 
   const nightRows = [
-    ...nightOperators.value.map((op, idx) => [idx + 1, op.code || '-', op.name, op.groupName || 'Sin Guardia', '🔵 Activo / En Guardia (N)']),
-    ...stNightOperators.value.map((op, idx) => [nightOperators.value.length + idx + 1, op.code || '-', op.name, op.groupName || 'Sin Guardia', '⏰ Sobretiempo (ST-N)']),
+    ...nightOperators.value.map((op, idx) => [idx + 1, op.code || '-', op.name, op.groupName || 'Sin Guardia', 'Activo (N)']),
+    ...stNightOperators.value.map((op, idx) => [nightOperators.value.length + idx + 1, op.code || '-', op.name, op.groupName || 'Sin Guardia', 'Sobretiempo (ST-N)']),
     ...absentNightOperators.value.map((op, idx) => [
       nightOperators.value.length + stNightOperators.value.length + idx + 1,
       op.code || '-',
       op.name,
       op.groupName || 'Sin Guardia',
-      op.absentBadge === 'V-N' ? '🌴 Vacaciones (V-N)' : '🩺 Descanso Médico (DM-N)'
+      op.absentBadge === 'V-N' ? 'Vacaciones (V-N)' : 'Descanso Medico (DM-N)'
     ])
   ];
 
   autoTable(doc, {
     startY: currentY,
-    head: [[{ content: `🌙 DETALLE DE PERSONAL TURNO NOCHE (${totalNight} OPERADORES)`, colSpan: 5, styles: { halign: 'left', fontSize: 9 } }], ['#', 'Código', 'Nombre del Operador', 'Guardia / Grupo', 'Condición / Estado']],
+    head: [[{ content: `DETALLE DE PERSONAL TURNO NOCHE (${totalNight} OPERADORES)`, colSpan: 5, styles: { halign: 'left', fontSize: 9 } }], ['#', 'Código', 'Nombre del Operador', 'Guardia / Grupo', 'Estado']],
     body: nightRows.length > 0 ? nightRows : [[{ content: 'Sin personal registrado en Turno Noche', colSpan: 5, styles: { halign: 'center' } }]],
     headStyles: { fillColor: [67, 56, 202], textColor: [255, 255, 255], fontStyle: 'bold' },
     margin: { left: 14, right: 14 },
@@ -449,7 +449,7 @@ const exportNightRosterPDF = () => {
       1: { cellWidth: 25 },
       2: { cellWidth: 'auto' },
       3: { cellWidth: 40 },
-      4: { cellWidth: 50, halign: 'center' }
+      4: { cellWidth: 45, halign: 'center' }
     }
   });
 
