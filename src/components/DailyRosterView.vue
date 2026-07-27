@@ -59,17 +59,23 @@
     <!-- Resultado -->
     <div v-else-if="rosterReady" class="roster-grid">
 
-      <!-- Turno Día -->
+      <!-- COLUMNA 1: TODO EL PERSONAL TURNO DÍA -->
       <div class="roster-col">
         <div class="col-header day-header">
           <span class="header-icon">☀️</span>
-          <span class="header-title">Turno Día</span>
-          <span class="header-count">{{ dayOperators.length }} operadores</span>
+          <span class="header-title">Personal Turno Día</span>
+          <span class="header-count">{{ dayOperators.length + stDayOperators.length + absentDayOperators.length }} total</span>
+        </div>
+
+        <!-- 1. Activos en Guardia -->
+        <div class="sub-header active-day-sub-header">
+          <span class="sub-title">🟢 Activos / En Guardia</span>
+          <span class="sub-count">{{ dayOperators.length }}</span>
         </div>
         <div v-if="dayOperators.length === 0" class="empty-col">
-          <p>Sin personal en turno día.</p>
+          <p>Sin personal activo en turno día.</p>
         </div>
-        <div class="operator-list">
+        <div v-else class="operator-list">
           <div
             v-for="(op, idx) in dayOperators"
             :key="op.operatorId"
@@ -80,10 +86,7 @@
               <span class="op-name">{{ op.name }}</span>
               <div class="op-meta">
                 <span v-if="op.code" class="op-code">{{ op.code }}</span>
-                <span
-                  class="op-guardia"
-                  :style="{ backgroundColor: op.groupColor || '#4f46e5' }"
-                >
+                <span class="op-guardia" :style="{ backgroundColor: op.groupColor || '#4f46e5' }">
                   {{ op.groupName }}
                 </span>
               </div>
@@ -91,52 +94,39 @@
             <span class="shift-badge shift-d">D</span>
           </div>
         </div>
-      </div>
 
-      <!-- Turno Noche -->
-      <div class="roster-col">
-        <div class="col-header night-header">
-          <span class="header-icon">🌙</span>
-          <span class="header-title">Turno Noche</span>
-          <span class="header-count">{{ nightOperators.length }} operadores</span>
+        <!-- 2. Sobretiempo Día -->
+        <div class="sub-header st-sub-header mt-section">
+          <span class="sub-title">⏰ Sobretiempo (Día Libre Trabajado)</span>
+          <span class="sub-count">{{ stDayOperators.length }}</span>
         </div>
-        <div v-if="nightOperators.length === 0" class="empty-col">
-          <p>Sin personal en turno noche.</p>
-        </div>
-        <div class="operator-list">
+        <div v-if="stDayOperators.length === 0" class="empty-col-compact">Sin sobretiempo de día</div>
+        <div v-else class="operator-list compact-list">
           <div
-            v-for="(op, idx) in nightOperators"
+            v-for="op in stDayOperators"
             :key="op.operatorId"
-            class="operator-card night-card"
+            class="operator-card compact-card st-card"
           >
-            <span class="op-idx">{{ idx + 1 }}</span>
             <div class="op-info">
-              <span class="op-name">{{ op.name }}</span>
+              <span class="op-name compact-name">{{ op.name }}</span>
               <div class="op-meta">
                 <span v-if="op.code" class="op-code">{{ op.code }}</span>
-                <span
-                  class="op-guardia"
-                  :style="{ backgroundColor: op.groupColor || '#4f46e5' }"
-                >
+                <span class="op-guardia" :style="{ backgroundColor: op.groupColor || '#4f46e5' }">
                   {{ op.groupName }}
                 </span>
               </div>
             </div>
-            <span class="shift-badge shift-n">N</span>
+            <span class="shift-badge shift-st-d">ST-D</span>
           </div>
         </div>
-      </div>
 
-      <!-- Ausencias y Sobretiempo (columna compacta) -->
-      <div class="roster-col roster-col-compact">
-
-        <!-- Ausentes Turno Día (Vacaciones + Descanso Médico) -->
-        <div class="col-header absent-day-header">
-          <span class="header-icon">☀️🌴🩺</span>
-          <span class="header-title">Ausentes Turno Día</span>
-          <span class="header-count" title="Vacaciones + Descanso Médico">{{ absentDayOperators.length }}</span>
+        <!-- 3. Ausentes Turno Día (Vacaciones / Descanso Médico) -->
+        <div class="sub-header absent-day-sub-header mt-section">
+          <span class="sub-title">🏖️🩺 Ausentes (Vacaciones / DM)</span>
+          <span class="sub-count">{{ absentDayOperators.length }}</span>
         </div>
-        <div class="operator-list compact-list">
+        <div v-if="absentDayOperators.length === 0" class="empty-col-compact">Sin ausencias en turno día</div>
+        <div v-else class="operator-list compact-list">
           <div
             v-for="op in absentDayOperators"
             :key="op.operatorId"
@@ -153,16 +143,77 @@
             </div>
             <span :class="['shift-badge', op.absentClass]">{{ op.absentBadge }}</span>
           </div>
-          <div v-if="absentDayOperators.length === 0" class="empty-col-compact">Sin ausencias en turno día</div>
+        </div>
+      </div>
+
+      <!-- COLUMNA 2: TODO EL PERSONAL TURNO NOCHE -->
+      <div class="roster-col">
+        <div class="col-header night-header">
+          <span class="header-icon">🌙</span>
+          <span class="header-title">Personal Turno Noche</span>
+          <span class="header-count">{{ nightOperators.length + stNightOperators.length + absentNightOperators.length }} total</span>
         </div>
 
-        <!-- Ausentes Turno Noche (Vacaciones + Descanso Médico) -->
-        <div class="col-header absent-night-header mt-section">
-          <span class="header-icon">🌙🌴🩺</span>
-          <span class="header-title">Ausentes Turno Noche</span>
-          <span class="header-count" title="Vacaciones + Descanso Médico">{{ absentNightOperators.length }}</span>
+        <!-- 1. Activos en Guardia -->
+        <div class="sub-header active-night-sub-header">
+          <span class="sub-title">🔵 Activos / En Guardia</span>
+          <span class="sub-count">{{ nightOperators.length }}</span>
         </div>
-        <div class="operator-list compact-list">
+        <div v-if="nightOperators.length === 0" class="empty-col">
+          <p>Sin personal activo en turno noche.</p>
+        </div>
+        <div v-else class="operator-list">
+          <div
+            v-for="(op, idx) in nightOperators"
+            :key="op.operatorId"
+            class="operator-card night-card"
+          >
+            <span class="op-idx">{{ idx + 1 }}</span>
+            <div class="op-info">
+              <span class="op-name">{{ op.name }}</span>
+              <div class="op-meta">
+                <span v-if="op.code" class="op-code">{{ op.code }}</span>
+                <span class="op-guardia" :style="{ backgroundColor: op.groupColor || '#4f46e5' }">
+                  {{ op.groupName }}
+                </span>
+              </div>
+            </div>
+            <span class="shift-badge shift-n">N</span>
+          </div>
+        </div>
+
+        <!-- 2. Sobretiempo Noche -->
+        <div class="sub-header st-sub-header mt-section">
+          <span class="sub-title">⏰ Sobretiempo (Día Libre Trabajado)</span>
+          <span class="sub-count">{{ stNightOperators.length }}</span>
+        </div>
+        <div v-if="stNightOperators.length === 0" class="empty-col-compact">Sin sobretiempo de noche</div>
+        <div v-else class="operator-list compact-list">
+          <div
+            v-for="op in stNightOperators"
+            :key="op.operatorId"
+            class="operator-card compact-card st-card"
+          >
+            <div class="op-info">
+              <span class="op-name compact-name">{{ op.name }}</span>
+              <div class="op-meta">
+                <span v-if="op.code" class="op-code">{{ op.code }}</span>
+                <span class="op-guardia" :style="{ backgroundColor: op.groupColor || '#4f46e5' }">
+                  {{ op.groupName }}
+                </span>
+              </div>
+            </div>
+            <span class="shift-badge shift-st-n">ST-N</span>
+          </div>
+        </div>
+
+        <!-- 3. Ausentes Turno Noche (Vacaciones / Descanso Médico) -->
+        <div class="sub-header absent-night-sub-header mt-section">
+          <span class="sub-title">🏖️🩺 Ausentes (Vacaciones / DM)</span>
+          <span class="sub-count">{{ absentNightOperators.length }}</span>
+        </div>
+        <div v-if="absentNightOperators.length === 0" class="empty-col-compact">Sin ausencias en turno noche</div>
+        <div v-else class="operator-list compact-list">
           <div
             v-for="op in absentNightOperators"
             :key="op.operatorId"
@@ -179,38 +230,9 @@
             </div>
             <span :class="['shift-badge', op.absentClass]">{{ op.absentBadge }}</span>
           </div>
-          <div v-if="absentNightOperators.length === 0" class="empty-col-compact">Sin ausencias en turno noche</div>
         </div>
-
-        <!-- Sobretiempo (Trabajo Extra) -->
-        <div class="col-header st-header mt-section">
-          <span class="header-icon">⏰</span>
-          <span class="header-title">Sobretiempo</span>
-          <span class="header-count">{{ stDayOperators.length + stNightOperators.length }}</span>
-        </div>
-        <div class="operator-list compact-list">
-          <div
-            v-for="op in [...stDayOperators, ...stNightOperators]"
-            :key="op.operatorId"
-            class="operator-card compact-card st-card"
-          >
-            <div class="op-info">
-              <span class="op-name compact-name">{{ op.name }}</span>
-              <div class="op-meta">
-                <span v-if="op.code" class="op-code">{{ op.code }}</span>
-                <span class="op-guardia" :style="{ backgroundColor: op.groupColor || '#4f46e5' }">
-                  {{ op.groupName }}
-                </span>
-              </div>
-            </div>
-            <span :class="['shift-badge', op.todayShift === 'ST-N' ? 'shift-st-n' : 'shift-st-d']">
-              {{ op.todayShift === 'ST-N' ? 'ST-N' : 'ST-D' }}
-            </span>
-          </div>
-          <div v-if="stDayOperators.length + stNightOperators.length === 0" class="empty-col-compact">Sin sobretiempo registrado</div>
-        </div>
-
       </div>
+
     </div>
 
     <!-- Estado inicial -->
@@ -293,6 +315,9 @@ const exportDailyRosterPDF = () => {
 
   let currentY = 32;
 
+  const totalDay = dayOperators.value.length + stDayOperators.value.length + absentDayOperators.value.length;
+  const totalNight = nightOperators.value.length + stNightOperators.value.length + absentNightOperators.value.length;
+
   // Cuadro de Resumen Ejecutivo
   doc.setFillColor(248, 250, 252);
   doc.setDrawColor(226, 232, 240);
@@ -301,25 +326,29 @@ const exportDailyRosterPDF = () => {
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(8.5);
   doc.setTextColor(15, 23, 42);
-  doc.text(`Turno Día: ${dayOperators.value.length}`, 18, currentY + 9);
-  doc.text(`Turno Noche: ${nightOperators.value.length}`, 54, currentY + 9);
-  doc.text(`Ausentes Día: ${absentDayOperators.value.length}`, 92, currentY + 9);
-  doc.text(`Ausentes Noche: ${absentNightOperators.value.length}`, 132, currentY + 9);
-  doc.text(`Sobretiempo: ${stDayOperators.value.length + stNightOperators.value.length}`, 168, currentY + 9);
+  doc.text(`TURNO DÍA TOTAL: ${totalDay} (Activos: ${dayOperators.value.length} | ST: ${stDayOperators.value.length} | Ausentes: ${absentDayOperators.value.length})`, 18, currentY + 9);
+  doc.text(`TURNO NOCHE TOTAL: ${totalNight} (Activos: ${nightOperators.value.length} | ST: ${stNightOperators.value.length} | Ausentes: ${absentNightOperators.value.length})`, 115, currentY + 9);
 
   currentY += 18;
+
+  // Construir filas de Día
+  const dayRows = [
+    ...dayOperators.value.map((op, idx) => [idx + 1, op.code || '-', op.name, op.groupName || 'Sin Guardia', '🟢 Activo (D)']),
+    ...stDayOperators.value.map((op, idx) => [dayOperators.value.length + idx + 1, op.code || '-', op.name, op.groupName || 'Sin Guardia', '⏰ Sobretiempo (ST-D)']),
+    ...absentDayOperators.value.map((op, idx) => [
+      dayOperators.value.length + stDayOperators.value.length + idx + 1,
+      op.code || '-',
+      op.name,
+      op.groupName || 'Sin Guardia',
+      op.absentBadge === 'V-D' ? '🌴 Vacaciones (V-D)' : '🩺 Descanso Médico (DM-D)'
+    ])
+  ];
 
   // 1. Tabla Turno Día
   autoTable(doc, {
     startY: currentY,
-    head: [['#', 'Código', 'Nombre del Operador', 'Guardia / Grupo', 'Estado']],
-    body: dayOperators.value.map((op, idx) => [
-      idx + 1,
-      op.code || '-',
-      op.name,
-      op.groupName || 'Sin Guardia',
-      'Turno Día (D)'
-    ]),
+    head: [[{ content: `☀️ PERSONAL TURNO DÍA (${totalDay} TOTAL)`, colSpan: 5, styles: { halign: 'left', fontSize: 9 } }], ['#', 'Código', 'Nombre del Operador', 'Guardia / Grupo', 'Condición / Estado']],
+    body: dayRows.length > 0 ? dayRows : [[{ content: 'Sin personal en Turno Día', colSpan: 5, styles: { halign: 'center' } }]],
     headStyles: { fillColor: [16, 185, 129], textColor: [255, 255, 255], fontStyle: 'bold' },
     margin: { left: 14, right: 14 },
     styles: { fontSize: 8, cellPadding: 2 },
@@ -328,23 +357,30 @@ const exportDailyRosterPDF = () => {
       1: { cellWidth: 25 },
       2: { cellWidth: 'auto' },
       3: { cellWidth: 40 },
-      4: { cellWidth: 35, halign: 'center' }
+      4: { cellWidth: 45, halign: 'center' }
     }
   });
 
   currentY = doc.lastAutoTable.finalY + 8;
 
-  // 2. Tabla Turno Noche
-  autoTable(doc, {
-    startY: currentY,
-    head: [['#', 'Código', 'Nombre del Operador', 'Guardia / Grupo', 'Estado']],
-    body: nightOperators.value.map((op, idx) => [
-      idx + 1,
+  // Construir filas de Noche
+  const nightRows = [
+    ...nightOperators.value.map((op, idx) => [idx + 1, op.code || '-', op.name, op.groupName || 'Sin Guardia', '🔵 Activo (N)']),
+    ...stNightOperators.value.map((op, idx) => [nightOperators.value.length + idx + 1, op.code || '-', op.name, op.groupName || 'Sin Guardia', '⏰ Sobretiempo (ST-N)']),
+    ...absentNightOperators.value.map((op, idx) => [
+      nightOperators.value.length + stNightOperators.value.length + idx + 1,
       op.code || '-',
       op.name,
       op.groupName || 'Sin Guardia',
-      'Turno Noche (N)'
-    ]),
+      op.absentBadge === 'V-N' ? '🌴 Vacaciones (V-N)' : '🩺 Descanso Médico (DM-N)'
+    ])
+  ];
+
+  // 2. Tabla Turno Noche
+  autoTable(doc, {
+    startY: currentY,
+    head: [[{ content: `🌙 PERSONAL TURNO NOCHE (${totalNight} TOTAL)`, colSpan: 5, styles: { halign: 'left', fontSize: 9 } }], ['#', 'Código', 'Nombre del Operador', 'Guardia / Grupo', 'Condición / Estado']],
+    body: nightRows.length > 0 ? nightRows : [[{ content: 'Sin personal en Turno Noche', colSpan: 5, styles: { halign: 'center' } }]],
     headStyles: { fillColor: [99, 102, 241], textColor: [255, 255, 255], fontStyle: 'bold' },
     margin: { left: 14, right: 14 },
     styles: { fontSize: 8, cellPadding: 2 },
@@ -353,91 +389,9 @@ const exportDailyRosterPDF = () => {
       1: { cellWidth: 25 },
       2: { cellWidth: 'auto' },
       3: { cellWidth: 40 },
-      4: { cellWidth: 35, halign: 'center' }
+      4: { cellWidth: 45, halign: 'center' }
     }
   });
-
-  currentY = doc.lastAutoTable.finalY + 8;
-
-  // 3. Tabla Ausentes Turno Día (si hay)
-  if (absentDayOperators.value.length > 0) {
-    autoTable(doc, {
-      startY: currentY,
-      head: [['#', 'Código', 'Nombre del Operador', 'Guardia / Grupo', 'Tipo de Ausencia']],
-      body: absentDayOperators.value.map((op, idx) => [
-        idx + 1,
-        op.code || '-',
-        op.name,
-        op.groupName || 'Sin Guardia',
-        op.absentBadge === 'V-D' ? 'Vacaciones Día (V-D)' : 'Descanso Médico Día (DM-D)'
-      ]),
-      headStyles: { fillColor: [217, 119, 6], textColor: [255, 255, 255], fontStyle: 'bold' },
-      margin: { left: 14, right: 14 },
-      styles: { fontSize: 8, cellPadding: 2 },
-      columnStyles: {
-        0: { cellWidth: 10, halign: 'center' },
-        1: { cellWidth: 25 },
-        2: { cellWidth: 'auto' },
-        3: { cellWidth: 40 },
-        4: { cellWidth: 45, halign: 'center' }
-      }
-    });
-
-    currentY = doc.lastAutoTable.finalY + 8;
-  }
-
-  // 4. Tabla Ausentes Turno Noche (si hay)
-  if (absentNightOperators.value.length > 0) {
-    autoTable(doc, {
-      startY: currentY,
-      head: [['#', 'Código', 'Nombre del Operador', 'Guardia / Grupo', 'Tipo de Ausencia']],
-      body: absentNightOperators.value.map((op, idx) => [
-        idx + 1,
-        op.code || '-',
-        op.name,
-        op.groupName || 'Sin Guardia',
-        op.absentBadge === 'V-N' ? 'Vacaciones Noche (V-N)' : 'Descanso Médico Noche (DM-N)'
-      ]),
-      headStyles: { fillColor: [126, 34, 206], textColor: [255, 255, 255], fontStyle: 'bold' },
-      margin: { left: 14, right: 14 },
-      styles: { fontSize: 8, cellPadding: 2 },
-      columnStyles: {
-        0: { cellWidth: 10, halign: 'center' },
-        1: { cellWidth: 25 },
-        2: { cellWidth: 'auto' },
-        3: { cellWidth: 40 },
-        4: { cellWidth: 45, halign: 'center' }
-      }
-    });
-
-    currentY = doc.lastAutoTable.finalY + 8;
-  }
-
-  // 5. Tabla Sobretiempo (si hay)
-  const stAll = [...stDayOperators.value, ...stNightOperators.value];
-  if (stAll.length > 0) {
-    autoTable(doc, {
-      startY: currentY,
-      head: [['#', 'Código', 'Nombre del Operador', 'Guardia / Grupo', 'Sobretiempo']],
-      body: stAll.map((op, idx) => [
-        idx + 1,
-        op.code || '-',
-        op.name,
-        op.groupName || 'Sin Guardia',
-        op.todayShift === 'ST-N' ? 'Sobretiempo Noche (ST-N)' : 'Sobretiempo Día (ST-D)'
-      ]),
-      headStyles: { fillColor: [2, 132, 199], textColor: [255, 255, 255], fontStyle: 'bold' },
-      margin: { left: 14, right: 14 },
-      styles: { fontSize: 8, cellPadding: 2 },
-      columnStyles: {
-        0: { cellWidth: 10, halign: 'center' },
-        1: { cellWidth: 25 },
-        2: { cellWidth: 'auto' },
-        3: { cellWidth: 40 },
-        4: { cellWidth: 45, halign: 'center' }
-      }
-    });
-  }
 
   // Numerales de pie de página
   const pageCount = doc.internal.getNumberOfPages();
@@ -628,7 +582,7 @@ const absentNightOperators = computed(() => {
 /* === Grilla de resultados === */
 .roster-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr 360px;
+  grid-template-columns: 1fr 1fr;
   gap: 1.25rem;
   align-items: start;
 }
@@ -653,6 +607,30 @@ const absentNightOperators = computed(() => {
   gap: 0.6rem;
   padding: 0.9rem 1.25rem;
   border-bottom: 2px solid #e2e8f0;
+}
+
+.sub-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.6rem 1rem;
+  font-size: 0.82rem;
+  font-weight: 800;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.active-day-sub-header   { background: #f0fdf4; color: #166534; }
+.active-night-sub-header { background: #eef2ff; color: #3730a3; }
+.st-sub-header           { background: #e0f2fe; color: #0369a1; }
+.absent-day-sub-header   { background: #fffbe8; color: #92400e; }
+.absent-night-sub-header { background: #fdf4ff; color: #86198f; }
+
+.sub-title { font-weight: 800; }
+.sub-count {
+  background: rgba(0, 0, 0, 0.08);
+  padding: 0.1rem 0.45rem;
+  border-radius: 10px;
+  font-size: 0.78rem;
 }
 
 .day-header            { background: #f0fdf4; border-bottom-color: #86efac; }
