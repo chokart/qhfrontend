@@ -27,29 +27,17 @@
           <span>🌙</span>
           <span><b>{{ nightOperators.length }}</b> Turno Noche</span>
         </div>
-        <div class="pill pill-st">
-          <span>☀️⏰</span>
-          <span><b>{{ stDayOperators.length }}</b> Sobretiempo Día</span>
+        <div class="pill pill-absent-day">
+          <span>☀️🌴🩺</span>
+          <span><b>{{ absentDayOperators.length }}</b> Ausentes Día</span>
+        </div>
+        <div class="pill pill-absent-night">
+          <span>🌙🌴🩺</span>
+          <span><b>{{ absentNightOperators.length }}</b> Ausentes Noche</span>
         </div>
         <div class="pill pill-st">
-          <span>🌙⏰</span>
-          <span><b>{{ stNightOperators.length }}</b> Sobretiempo Noche</span>
-        </div>
-        <div class="pill pill-vacation-day">
-          <span>☀️🌴</span>
-          <span><b>{{ vacationDayOperators.length }}</b> Vacaciones Día</span>
-        </div>
-        <div class="pill pill-vacation-night">
-          <span>🌙🌴</span>
-          <span><b>{{ vacationNightOperators.length }}</b> Vacaciones Noche</span>
-        </div>
-        <div class="pill pill-dm">
-          <span>☀️🩺</span>
-          <span><b>{{ dmDayOperators.length }}</b> DM Día</span>
-        </div>
-        <div class="pill pill-dm">
-          <span>🌙🩺</span>
-          <span><b>{{ dmNightOperators.length }}</b> DM Noche</span>
+          <span>⏰</span>
+          <span><b>{{ stDayOperators.length + stNightOperators.length }}</b> Sobretiempo</span>
         </div>
       </div>
     </div>
@@ -133,17 +121,18 @@
 
       <!-- Ausencias y Sobretiempo (columna compacta) -->
       <div class="roster-col roster-col-compact">
-        <!-- Sobretiempo Día -->
-        <div class="col-header st-header">
-          <span class="header-icon">☀️⏰</span>
-          <span class="header-title">Sobretiempo (De Día)</span>
-          <span class="header-count">{{ stDayOperators.length }}</span>
+
+        <!-- Ausentes Turno Día (Vacaciones + Descanso Médico) -->
+        <div class="col-header absent-day-header">
+          <span class="header-icon">☀️🌴🩺</span>
+          <span class="header-title">Ausentes Turno Día</span>
+          <span class="header-count" title="Vacaciones + Descanso Médico">{{ absentDayOperators.length }}</span>
         </div>
         <div class="operator-list compact-list">
           <div
-            v-for="op in stDayOperators"
+            v-for="op in absentDayOperators"
             :key="op.operatorId"
-            class="operator-card compact-card st-card"
+            :class="['operator-card', 'compact-card', op.absentBadge.startsWith('V') ? 'vacation-card' : 'dm-card']"
           >
             <div class="op-info">
               <span class="op-name compact-name">{{ op.name }}</span>
@@ -154,20 +143,46 @@
                 </span>
               </div>
             </div>
-            <span class="shift-badge shift-st-d">ST-D</span>
+            <span :class="['shift-badge', op.absentClass]">{{ op.absentBadge }}</span>
           </div>
-          <div v-if="stDayOperators.length === 0" class="empty-col-compact">Sin sobretiempo de día</div>
+          <div v-if="absentDayOperators.length === 0" class="empty-col-compact">Sin ausencias en turno día</div>
         </div>
 
-        <!-- Sobretiempo Noche -->
+        <!-- Ausentes Turno Noche (Vacaciones + Descanso Médico) -->
+        <div class="col-header absent-night-header mt-section">
+          <span class="header-icon">🌙🌴🩺</span>
+          <span class="header-title">Ausentes Turno Noche</span>
+          <span class="header-count" title="Vacaciones + Descanso Médico">{{ absentNightOperators.length }}</span>
+        </div>
+        <div class="operator-list compact-list">
+          <div
+            v-for="op in absentNightOperators"
+            :key="op.operatorId"
+            :class="['operator-card', 'compact-card', op.absentBadge.startsWith('V') ? 'vacation-card' : 'dm-card']"
+          >
+            <div class="op-info">
+              <span class="op-name compact-name">{{ op.name }}</span>
+              <div class="op-meta">
+                <span v-if="op.code" class="op-code">{{ op.code }}</span>
+                <span class="op-guardia" :style="{ backgroundColor: op.groupColor || '#4f46e5' }">
+                  {{ op.groupName }}
+                </span>
+              </div>
+            </div>
+            <span :class="['shift-badge', op.absentClass]">{{ op.absentBadge }}</span>
+          </div>
+          <div v-if="absentNightOperators.length === 0" class="empty-col-compact">Sin ausencias en turno noche</div>
+        </div>
+
+        <!-- Sobretiempo (Trabajo Extra) -->
         <div class="col-header st-header mt-section">
-          <span class="header-icon">🌙⏰</span>
-          <span class="header-title">Sobretiempo (De Noche)</span>
-          <span class="header-count">{{ stNightOperators.length }}</span>
+          <span class="header-icon">⏰</span>
+          <span class="header-title">Sobretiempo</span>
+          <span class="header-count">{{ stDayOperators.length + stNightOperators.length }}</span>
         </div>
         <div class="operator-list compact-list">
           <div
-            v-for="op in stNightOperators"
+            v-for="op in [...stDayOperators, ...stNightOperators]"
             :key="op.operatorId"
             class="operator-card compact-card st-card"
           >
@@ -180,120 +195,13 @@
                 </span>
               </div>
             </div>
-            <span class="shift-badge shift-st-n">ST-N</span>
+            <span :class="['shift-badge', op.todayShift === 'ST-N' ? 'shift-st-n' : 'shift-st-d']">
+              {{ op.todayShift === 'ST-N' ? 'ST-N' : 'ST-D' }}
+            </span>
           </div>
-          <div v-if="stNightOperators.length === 0" class="empty-col-compact">Sin sobretiempo de noche</div>
+          <div v-if="stDayOperators.length + stNightOperators.length === 0" class="empty-col-compact">Sin sobretiempo registrado</div>
         </div>
 
-        <!-- Vacaciones Turno Día -->
-        <div class="col-header vacation-day-header mt-section">
-          <span class="header-icon">☀️🌴</span>
-          <span class="header-title">Vacaciones (De Día)</span>
-          <span class="header-count">{{ vacationDayOperators.length }}</span>
-        </div>
-        <div class="operator-list compact-list">
-          <div
-            v-for="op in vacationDayOperators"
-            :key="op.operatorId"
-            class="operator-card compact-card vacation-card"
-          >
-            <div class="op-info">
-              <span class="op-name compact-name">{{ op.name }}</span>
-              <div class="op-meta">
-                <span v-if="op.code" class="op-code">{{ op.code }}</span>
-                <span
-                  class="op-guardia"
-                  :style="{ backgroundColor: op.groupColor || '#4f46e5' }"
-                >
-                  {{ op.groupName }}
-                </span>
-              </div>
-            </div>
-            <span class="shift-badge shift-v-d">V-D</span>
-          </div>
-          <div v-if="vacationDayOperators.length === 0" class="empty-col-compact">Sin vacaciones de día</div>
-        </div>
-
-        <!-- Vacaciones Turno Noche -->
-        <div class="col-header vacation-night-header mt-section">
-          <span class="header-icon">🌙🌴</span>
-          <span class="header-title">Vacaciones (De Noche)</span>
-          <span class="header-count">{{ vacationNightOperators.length }}</span>
-        </div>
-        <div class="operator-list compact-list">
-          <div
-            v-for="op in vacationNightOperators"
-            :key="op.operatorId"
-            class="operator-card compact-card vacation-card"
-          >
-            <div class="op-info">
-              <span class="op-name compact-name">{{ op.name }}</span>
-              <div class="op-meta">
-                <span v-if="op.code" class="op-code">{{ op.code }}</span>
-                <span
-                  class="op-guardia"
-                  :style="{ backgroundColor: op.groupColor || '#4f46e5' }"
-                >
-                  {{ op.groupName }}
-                </span>
-              </div>
-            </div>
-            <span class="shift-badge shift-v-n">V-N</span>
-          </div>
-          <div v-if="vacationNightOperators.length === 0" class="empty-col-compact">Sin vacaciones de noche</div>
-        </div>
-
-        <!-- Descanso Médico Día -->
-        <div class="col-header dm-header mt-section">
-          <span class="header-icon">☀️🩺</span>
-          <span class="header-title">Descanso Médico (De Día)</span>
-          <span class="header-count">{{ dmDayOperators.length }}</span>
-        </div>
-        <div class="operator-list compact-list">
-          <div
-            v-for="op in dmDayOperators"
-            :key="op.operatorId"
-            class="operator-card compact-card dm-card"
-          >
-            <div class="op-info">
-              <span class="op-name compact-name">{{ op.name }}</span>
-              <div class="op-meta">
-                <span v-if="op.code" class="op-code">{{ op.code }}</span>
-                <span class="op-guardia" :style="{ backgroundColor: op.groupColor || '#4f46e5' }">
-                  {{ op.groupName }}
-                </span>
-              </div>
-            </div>
-            <span class="shift-badge shift-dm-d">DM-D</span>
-          </div>
-          <div v-if="dmDayOperators.length === 0" class="empty-col-compact">Sin descanso médico de día</div>
-        </div>
-
-        <!-- Descanso Médico Noche -->
-        <div class="col-header dm-header mt-section">
-          <span class="header-icon">🌙🩺</span>
-          <span class="header-title">Descanso Médico (De Noche)</span>
-          <span class="header-count">{{ dmNightOperators.length }}</span>
-        </div>
-        <div class="operator-list compact-list">
-          <div
-            v-for="op in dmNightOperators"
-            :key="op.operatorId"
-            class="operator-card compact-card dm-card"
-          >
-            <div class="op-info">
-              <span class="op-name compact-name">{{ op.name }}</span>
-              <div class="op-meta">
-                <span v-if="op.code" class="op-code">{{ op.code }}</span>
-                <span class="op-guardia" :style="{ backgroundColor: op.groupColor || '#4f46e5' }">
-                  {{ op.groupName }}
-                </span>
-              </div>
-            </div>
-            <span class="shift-badge shift-dm-n">DM-N</span>
-          </div>
-          <div v-if="dmNightOperators.length === 0" class="empty-col-compact">Sin descanso médico de noche</div>
-        </div>
       </div>
     </div>
 
@@ -394,6 +302,19 @@ const dmNightOperators = computed(() =>
     .filter(op => op.todayShift === 'DM' && op.todayBaseShift === 'N')
     .sort((a, b) => (a.groupId || 999) - (b.groupId || 999) || a.name.localeCompare(b.name))
 );
+
+// Ausentes Unificados (Vacaciones + Descanso Médico) por Turno
+const absentDayOperators = computed(() => {
+  const v = vacationDayOperators.value.map(op => ({ ...op, absentBadge: 'V-D', absentClass: 'shift-v-d' }));
+  const dm = dmDayOperators.value.map(op => ({ ...op, absentBadge: 'DM-D', absentClass: 'shift-dm-d' }));
+  return [...v, ...dm].sort((a, b) => (a.groupId || 999) - (b.groupId || 999) || a.name.localeCompare(b.name));
+});
+
+const absentNightOperators = computed(() => {
+  const v = vacationNightOperators.value.map(op => ({ ...op, absentBadge: 'V-N', absentClass: 'shift-v-n' }));
+  const dm = dmNightOperators.value.map(op => ({ ...op, absentBadge: 'DM-N', absentClass: 'shift-dm-n' }));
+  return [...v, ...dm].sort((a, b) => (a.groupId || 999) - (b.groupId || 999) || a.name.localeCompare(b.name));
+});
 </script>
 
 <style scoped>
@@ -479,6 +400,8 @@ const dmNightOperators = computed(() =>
 .pill-vacation     { background: #fef3c7; color: #92400e; }
 .pill-vacation-day { background: #fef9c3; color: #854d0e; border: 1px solid #fde047; }
 .pill-vacation-night{ background: #fae8ff; color: #86198f; border: 1px solid #f0abfc; }
+.pill-absent-day   { background: #fef3c7; color: #92400e; border: 1px solid #fde047; }
+.pill-absent-night { background: #fae8ff; color: #86198f; border: 1px solid #f0abfc; }
 .pill-st           { background: #e0f2fe; color: #0369a1; border: 1px solid #7dd3fc; }
 .pill-dm           { background: #ffe4e6; color: #9f1239; border: 1px solid #fecdd3; }
 
@@ -514,6 +437,8 @@ const dmNightOperators = computed(() =>
 
 .day-header            { background: #f0fdf4; border-bottom-color: #86efac; }
 .night-header          { background: #eef2ff; border-bottom-color: #a5b4fc; }
+.absent-day-header     { background: #fffbe8; border-bottom-color: #fde047; }
+.absent-night-header   { background: #fdf4ff; border-bottom-color: #f0abfc; }
 .vacation-header       { background: #fef9c3; border-bottom-color: #fde047; }
 .vacation-day-header   { background: #fef9c3; border-bottom-color: #fde047; }
 .vacation-night-header { background: #fae8ff; border-bottom-color: #f0abfc; }
