@@ -29,8 +29,8 @@
 
     <div class="navbar-links">
       <router-link :to="homePath" class="nav-item" :class="{ active: isHomeActive }">
-        <span class="nav-icon">🗺️</span>
-        <span class="nav-label">Mapa Equipos</span>
+        <span class="nav-icon">🚜</span>
+        <span class="nav-label">Equipos</span>
       </router-link>
 
       <router-link to="/canchas" class="nav-item" active-class="active">

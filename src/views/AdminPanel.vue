@@ -4,7 +4,7 @@
 
     <div class="panel-container">
       <div class="sub-header">
-        <h1>Sistema de Ubicación de Equipos</h1>
+        <h1>Gestión de Equipos</h1>
         <button class="btn-outline" @click="downloadReport">
           <span>📄</span> Exportar PDF
         </button>

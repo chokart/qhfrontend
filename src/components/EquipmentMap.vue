@@ -14,7 +14,24 @@
         </div>
 
         <div class="toolbar-actions">
+          <!-- Selector de Modo Mapa / Lista -->
+          <div class="mode-switch-group">
+            <button 
+              :class="['btn-mode-switch', { active: viewMode === 'MAP' }]" 
+              @click="setViewMode('MAP')"
+            >
+              🗺️ Modo Mapa
+            </button>
+            <button 
+              :class="['btn-mode-switch', { active: viewMode === 'LIST' }]" 
+              @click="setViewMode('LIST')"
+            >
+              📋 Modo Lista
+            </button>
+          </div>
+
           <button 
+            v-if="viewMode === 'MAP'"
             class="btn-toggle-drag" 
             :class="{ 'active': isMoveMode }"
             @click="isMoveMode = !isMoveMode"
@@ -124,8 +141,8 @@
       </transition>
     </div>
 
-    <!-- Contenedor del Mapa (Lienzo Leaflet) -->
-    <div id="map-container">
+    <!-- Contenedor del Mapa (Modo Mapa) -->
+    <div v-show="viewMode === 'MAP'" id="map-container">
       <div id="map"></div>
       
       <!-- Leyenda de Estados en Esquina Inferior -->
@@ -146,6 +163,14 @@
         <span>{{ isMoveMode ? '🔓 Arrastre Activado' : '🔒 Habilitar Arrastre' }}</span>
       </button>
     </div>
+
+    <!-- Contenedor de la Lista (Modo Lista) -->
+    <div v-if="viewMode === 'LIST'" class="list-mode-container">
+      <EquipmentList 
+        :equipment="filteredEquipment" 
+        @update-required="loadData" 
+      />
+    </div>
   </div>
 </template>
 
@@ -158,6 +183,7 @@ import 'leaflet-draw';
 import * as turf from '@turf/turf';
 import api from '../api';
 import { useAuthStore } from '../stores/auth';
+import EquipmentList from './EquipmentList.vue';
 
 const authStore = useAuthStore();
 const equipmentList = ref([]);
@@ -169,6 +195,18 @@ const areaLayers = ref({});
 const processedPolygons = ref([]);
 const isDrawingMode = ref(false);
 const isMoveMode = ref(false);
+const viewMode = ref('MAP'); // 'MAP' | 'LIST'
+
+const setViewMode = (mode) => {
+  viewMode.value = mode;
+  if (mode === 'MAP') {
+    setTimeout(() => {
+      if (map.value) {
+        map.value.invalidateSize();
+      }
+    }, 150);
+  }
+};
 
 const isSaving = ref(false);
 const editStatus = ref('');
@@ -553,11 +591,42 @@ onMounted(() => {
   letter-spacing: -0.02em;
 }
 
-.counter-badge {
-  font-size: 0.78rem;
+.toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.mode-switch-group {
+  display: flex;
+  background: #f1f5f9;
+  padding: 0.25rem;
+  border-radius: 10px;
+  border: 1px solid #cbd5e1;
+  gap: 0.25rem;
+}
+
+.btn-mode-switch {
+  background: transparent;
+  border: none;
   color: #64748b;
-  font-weight: 500;
-  display: block;
+  padding: 0.4rem 0.85rem;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-mode-switch:hover {
+  color: #0f172a;
+}
+
+.btn-mode-switch.active {
+  background: #4f46e5;
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(79, 70, 229, 0.25);
 }
 
 .btn-toggle-drag {

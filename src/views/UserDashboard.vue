@@ -4,7 +4,7 @@
 
     <div class="dashboard-container">
       <div class="sub-header">
-        <h1>EQUIPOS PESADOS QH</h1>
+        <h1>EQUIPOS</h1>
         <button class="btn-outline" @click="downloadReport">
           <span>📄</span> Exportar PDF
         </button>

@@ -56,9 +56,14 @@
                 <button @click="saveUpdate(eq.id)" class="btn-icon btn-save" title="Guardar">✓</button>
                 <button @click="cancelEdit" class="btn-icon btn-cancel" title="Cancelar">×</button>
               </div>
-              <button v-else @click="startEdit(eq)" class="btn-outline-edit">
-                <span>✏️</span> Editar
-              </button>
+              <div v-else class="action-buttons-group">
+                <button @click="startEdit(eq)" class="btn-outline-edit" title="Editar estado">
+                  <span>✏️</span> Editar
+                </button>
+                <button @click="deleteEquipment(eq)" class="btn-outline-delete" title="Eliminar equipo">
+                  <span>🗑️</span> Eliminar
+                </button>
+              </div>
             </td>
           </tr>
         </tbody>
@@ -121,6 +126,21 @@ const saveUpdate = async (id) => {
     emit('update-required');
   } catch (error) {
     alert("Error al actualizar");
+  } finally {
+    loading.value = false;
+  }
+};
+
+const deleteEquipment = async (eq) => {
+  if (!confirm(`¿Estás seguro de eliminar el equipo "${eq.name}" del sistema?`)) {
+    return;
+  }
+  loading.value = true;
+  try {
+    await api.delete(`/api/v1/equipment/${eq.id}`);
+    emit('update-required');
+  } catch (error) {
+    alert("Error al eliminar el equipo");
   } finally {
     loading.value = false;
   }
@@ -188,6 +208,13 @@ td { padding: 1rem 1.5rem; border-bottom: 1px solid #f1f5f9; font-size: 0.9rem; 
 
 .text-right { text-align: right; }
 
+.action-buttons-group {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
 .btn-outline-edit {
   background: white;
   border: 1px solid #e2e8f0;
@@ -198,8 +225,31 @@ td { padding: 1rem 1.5rem; border-bottom: 1px solid #f1f5f9; font-size: 0.9rem; 
   color: #475569;
   cursor: pointer;
   transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
 }
 .btn-outline-edit:hover { background: #f8fafc; border-color: #cbd5e1; }
+
+.btn-outline-delete {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  padding: 0.4rem 0.8rem;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #dc2626;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.btn-outline-delete:hover {
+  background: #dc2626;
+  color: #ffffff;
+  border-color: #dc2626;
+}
 
 .btn-icon {
   width: 32px; height: 32px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold;
