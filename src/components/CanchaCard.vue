@@ -18,6 +18,15 @@
     <div class="cancha-label" :style="{ borderTopColor: statusColor }">
       <span class="number">#{{ cancha.number }}</span>
 
+      <!-- Resumen de Estado de Cancha -->
+      <div 
+        class="short-badge status-badge" 
+        :style="{ backgroundColor: statusColor, color: '#ffffff' }"
+        :title="'Estado: ' + formatStatusText(cancha.status)"
+      >
+        {{ getStatusShortText(cancha.status) }}
+      </div>
+
       <!-- Primeras 3 letras de Tractores y Operadores -->
       <div v-if="cancha.assignedEquipment" class="short-badge eq-badge" :title="'Tractores: ' + cancha.assignedEquipment">
         {{ formatShort3(cancha.assignedEquipment) }}
@@ -34,7 +43,7 @@
 
 <script setup>
 import { computed } from 'vue';
-import { getStatusColor, formatStatusText } from '../utils/canchaColors';
+import { getStatusColor, formatStatusText, getStatusShortText } from '../utils/canchaColors';
 
 const props = defineProps({
   cancha: { type: Object, required: true }
@@ -172,6 +181,16 @@ const formatShort3 = (text) => {
   background: #e0e7ff;
   color: #3730a3;
   border: 1px solid #c7d2fe;
+}
+
+.status-badge {
+  font-size: 0.55rem;
+  font-weight: 900;
+  padding: 1px 3px;
+  border-radius: 4px;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
 }
 
 .comment-dot {
