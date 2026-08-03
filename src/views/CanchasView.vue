@@ -42,6 +42,26 @@
           </div>
 
           <div class="toolbar-quick-actions">
+            <!-- Selector de Modo de Vista -->
+            <div class="view-mode-toggle">
+              <button 
+                :class="['btn-view-mode', { active: viewMode === 'cards' }]" 
+                @click="viewMode = 'cards'"
+                title="Vista Gráfica / Tarjetas"
+              >
+                📊 Tarjetas
+              </button>
+              <button 
+                :class="['btn-view-mode', { active: viewMode === 'list' }]" 
+                @click="viewMode = 'list'"
+                title="Vista de Lista / Tabla"
+              >
+                📋 Lista
+              </button>
+            </div>
+
+            <div class="v-divider"></div>
+
             <button 
               class="btn-toggle-section" 
               :class="{ active: showSectionPrincipal }"
@@ -144,7 +164,9 @@
               <span class="stat-badge">Promedio Altura: {{ avgHeight.toFixed(2) }}m</span>
               <span class="counter-text">({{ filteredNiveles.length }} de {{ canchasNiveles.length }} visibles)</span>
             </div>
-            <div class="parallel-container">
+
+            <!-- VISTA DE TARJETAS PARALELAS -->
+            <div v-if="viewMode === 'cards'" class="parallel-container">
               <div v-if="filteredNiveles.length > 0" class="canchas-parallel">
                 <CanchaCard 
                   v-for="cancha in filteredNiveles" 
@@ -153,6 +175,72 @@
                   @click="openModalNivel(cancha)"
                   @hide="toggleCanchaPrincipal(cancha.id)"
                 />
+              </div>
+              <div v-else class="empty-section-msg">
+                No hay canchas visibles en esta sección (ocultadas o filtradas).
+              </div>
+            </div>
+
+            <!-- VISTA DE LISTA / TABLA -->
+            <div v-else class="list-container">
+              <div v-if="filteredNiveles.length > 0" class="table-responsive">
+                <table class="canchas-table">
+                  <thead>
+                    <tr>
+                      <th>N° Cancha</th>
+                      <th>Estado</th>
+                      <th>Altura Actual</th>
+                      <th>Tractores Asignados</th>
+                      <th>Operadores Asignados</th>
+                      <th>Comentarios</th>
+                      <th class="text-center">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr 
+                      v-for="cancha in filteredNiveles" 
+                      :key="'tbl_n_'+cancha.id"
+                      :class="{ 'row-observed': cancha.status === 'OBSERVADA' }"
+                    >
+                      <td class="col-number">
+                        <span class="cancha-num-badge">#{{ cancha.number }}</span>
+                      </td>
+                      <td>
+                        <span 
+                          class="table-status-pill" 
+                          :style="{ backgroundColor: getStatusColor(cancha.status) + '18', color: getStatusColor(cancha.status), borderColor: getStatusColor(cancha.status) + '50' }"
+                        >
+                          <span class="dot" :style="{ backgroundColor: getStatusColor(cancha.status) }"></span>
+                          <b class="short-code">{{ getStatusShortText(cancha.status) }}</b>
+                          <span class="full-name">{{ formatStatusText(cancha.status) }}</span>
+                        </span>
+                      </td>
+                      <td class="col-metric">
+                        <strong>{{ cancha.currentHeight }} m</strong>
+                      </td>
+                      <td>
+                        <span v-if="cancha.assignedEquipment" class="tag tag-eq">🚜 {{ cancha.assignedEquipment }}</span>
+                        <span v-else class="text-muted">-</span>
+                      </td>
+                      <td>
+                        <span v-if="cancha.operatorName" class="tag tag-op">👤 {{ cancha.operatorName }}</span>
+                        <span v-else class="text-muted">-</span>
+                      </td>
+                      <td class="col-comment">
+                        <span v-if="cancha.comment" class="comment-text" :title="cancha.comment">💬 {{ cancha.comment }}</span>
+                        <span v-else class="text-muted">-</span>
+                      </td>
+                      <td class="col-actions">
+                        <button class="btn-action-edit" @click="openModalNivel(cancha)" title="Editar Cancha">
+                          ✏️ Editar
+                        </button>
+                        <button class="btn-action-hide" @click="toggleCanchaPrincipal(cancha.id)" title="Ocultar Cancha">
+                          🙈 Ocultar
+                        </button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
               <div v-else class="empty-section-msg">
                 No hay canchas visibles en esta sección (ocultadas o filtradas).
@@ -168,7 +256,9 @@
               <h2>Canchas Dique Lateral</h2>
               <span class="counter-text">({{ filteredCapas.length }} de {{ canchasCapas.length }} visibles)</span>
             </div>
-            <div class="parallel-container">
+
+            <!-- VISTA DE TARJETAS PARALELAS -->
+            <div v-if="viewMode === 'cards'" class="parallel-container">
               <div v-if="filteredCapas.length > 0" class="canchas-parallel canchas-capas-parallel">
                 <CanchaCapaCard 
                   v-for="cancha in filteredCapas" 
@@ -177,6 +267,72 @@
                   @click="openModalCapa(cancha)"
                   @hide="toggleCanchaLateral(cancha.id)"
                 />
+              </div>
+              <div v-else class="empty-section-msg">
+                No hay canchas visibles en esta sección (ocultadas o filtradas).
+              </div>
+            </div>
+
+            <!-- VISTA DE LISTA / TABLA -->
+            <div v-else class="list-container">
+              <div v-if="filteredCapas.length > 0" class="table-responsive">
+                <table class="canchas-table">
+                  <thead>
+                    <tr>
+                      <th>N° Cancha</th>
+                      <th>Estado</th>
+                      <th>Capa Actual</th>
+                      <th>Tractores Asignados</th>
+                      <th>Operadores Asignados</th>
+                      <th>Comentarios</th>
+                      <th class="text-center">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr 
+                      v-for="cancha in filteredCapas" 
+                      :key="'tbl_c_'+cancha.id"
+                      :class="{ 'row-observed': cancha.status === 'OBSERVADA' }"
+                    >
+                      <td class="col-number">
+                        <span class="cancha-num-badge">#{{ cancha.number }}</span>
+                      </td>
+                      <td>
+                        <span 
+                          class="table-status-pill" 
+                          :style="{ backgroundColor: getStatusColor(cancha.status) + '18', color: getStatusColor(cancha.status), borderColor: getStatusColor(cancha.status) + '50' }"
+                        >
+                          <span class="dot" :style="{ backgroundColor: getStatusColor(cancha.status) }"></span>
+                          <b class="short-code">{{ getStatusShortText(cancha.status) }}</b>
+                          <span class="full-name">{{ formatStatusText(cancha.status) }}</span>
+                        </span>
+                      </td>
+                      <td class="col-metric">
+                        <span class="capa-badge">Capa {{ cancha.currentCapa }}</span>
+                      </td>
+                      <td>
+                        <span v-if="cancha.assignedEquipment" class="tag tag-eq">🚜 {{ cancha.assignedEquipment }}</span>
+                        <span v-else class="text-muted">-</span>
+                      </td>
+                      <td>
+                        <span v-if="cancha.operatorName" class="tag tag-op">👤 {{ cancha.operatorName }}</span>
+                        <span v-else class="text-muted">-</span>
+                      </td>
+                      <td class="col-comment">
+                        <span v-if="cancha.comment" class="comment-text" :title="cancha.comment">💬 {{ cancha.comment }}</span>
+                        <span v-else class="text-muted">-</span>
+                      </td>
+                      <td class="col-actions">
+                        <button class="btn-action-edit" @click="openModalCapa(cancha)" title="Editar Cancha">
+                          ✏️ Editar
+                        </button>
+                        <button class="btn-action-hide" @click="toggleCanchaLateral(cancha.id)" title="Ocultar Cancha">
+                          🙈 Ocultar
+                        </button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
               <div v-else class="empty-section-msg">
                 No hay canchas visibles en esta sección (ocultadas o filtradas).
@@ -261,7 +417,7 @@ import CanchaCapaCard from '../components/CanchaCapaCard.vue';
 import CanchaModal from '../components/CanchaModal.vue';
 import CanchaCapaModal from '../components/CanchaCapaModal.vue';
 import { generateCanchasPDF } from '../utils/reportGenerator';
-import { getStatusColor } from '../utils/canchaColors';
+import { getStatusColor, formatStatusText, getStatusShortText } from '../utils/canchaColors';
 
 const canchasNiveles = ref([]);
 const canchasCapas = ref([]);
@@ -272,6 +428,9 @@ const selectedCanchaNivel = ref(null);
 
 const showModalCapa = ref(false);
 const selectedCanchaCapa = ref(null);
+
+// Modo de Vista ('cards' | 'list')
+const viewMode = ref('cards');
 
 // Estado de Visibilidad
 const showVisibilityPanel = ref(false);
@@ -323,6 +482,7 @@ const loadVisibilityPreferences = () => {
       if (Array.isArray(parsed.hiddenLateral)) hiddenLateralIds.value = new Set(parsed.hiddenLateral);
       if (typeof parsed.showPrincipal === 'boolean') showSectionPrincipal.value = parsed.showPrincipal;
       if (typeof parsed.showLateral === 'boolean') showSectionLateral.value = parsed.showLateral;
+      if (typeof parsed.viewMode === 'string') viewMode.value = parsed.viewMode;
       if (Array.isArray(parsed.statusFilters)) {
         selectedStatusFilters.value = parsed.statusFilters;
       } else if (typeof parsed.statusFilter === 'string' && parsed.statusFilter !== 'ALL') {
@@ -342,6 +502,7 @@ const saveVisibilityPreferences = () => {
       hiddenLateral: Array.from(hiddenLateralIds.value),
       showPrincipal: showSectionPrincipal.value,
       showLateral: showSectionLateral.value,
+      viewMode: viewMode.value,
       statusFilters: selectedStatusFilters.value
     };
     localStorage.setItem('canchas_visibility_prefs', JSON.stringify(data));
@@ -350,7 +511,7 @@ const saveVisibilityPreferences = () => {
   }
 };
 
-watch([showSectionPrincipal, showSectionLateral, selectedStatusFilters], saveVisibilityPreferences, { deep: true });
+watch([showSectionPrincipal, showSectionLateral, selectedStatusFilters, viewMode], saveVisibilityPreferences, { deep: true });
 
 const toggleCanchaPrincipal = (id) => {
   const newSet = new Set(hiddenPrincipalIds.value);
@@ -614,6 +775,233 @@ h1 { font-size: 1.5rem; font-weight: 800; color: #0f172a; margin: 0; }
   align-items: center;
   gap: 0.65rem;
   flex-wrap: wrap;
+}
+
+/* Botones de Selector de Modo de Vista (Tarjetas / Lista) */
+.view-mode-toggle {
+  display: flex;
+  background: #f1f5f9;
+  padding: 3px;
+  border-radius: 12px;
+  border: 1px solid #cbd5e1;
+  gap: 2px;
+}
+
+.btn-view-mode {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: transparent;
+  border: none;
+  padding: 0.35rem 0.75rem;
+  border-radius: 9px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-view-mode.active {
+  background: white;
+  color: #4338ca;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.v-divider {
+  width: 1px;
+  height: 24px;
+  background: #cbd5e1;
+  margin: 0 0.15rem;
+}
+
+/* Estilos de Vista Lista / Tabla */
+.list-container {
+  background: white;
+  border-radius: 14px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+  margin-top: 1rem;
+}
+
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.canchas-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.88rem;
+}
+
+.canchas-table th {
+  background: #f8fafc;
+  color: #475569;
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.canchas-table td {
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid #f1f5f9;
+  color: #1e293b;
+  vertical-align: middle;
+}
+
+.canchas-table tbody tr {
+  transition: background-color 0.15s;
+}
+
+.canchas-table tbody tr:hover {
+  background-color: #f8fafc;
+}
+
+.canchas-table tbody tr.row-observed {
+  background-color: #fef2f2;
+}
+
+.canchas-table tbody tr.row-observed:hover {
+  background-color: #fee2e2;
+}
+
+.cancha-num-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #0f172a;
+  color: white;
+  font-weight: 900;
+  font-size: 0.82rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 8px;
+}
+
+.table-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.3rem 0.7rem;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+
+.table-status-pill .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.table-status-pill .short-code {
+  font-weight: 900;
+  letter-spacing: 0.03em;
+}
+
+.table-status-pill .full-name {
+  font-weight: 600;
+  opacity: 0.9;
+}
+
+.capa-badge {
+  display: inline-block;
+  background: #e0e7ff;
+  color: #3730a3;
+  font-weight: 800;
+  font-size: 0.78rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 6px;
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+}
+
+.tag-eq {
+  background: #f1f5f9;
+  color: #334155;
+  border: 1px solid #cbd5e1;
+}
+
+.tag-op {
+  background: #eff6ff;
+  color: #1e40af;
+  border: 1px solid #bfdbfe;
+}
+
+.text-muted {
+  color: #94a3b8;
+  font-style: italic;
+}
+
+.col-comment {
+  max-width: 220px;
+}
+
+.comment-text {
+  font-size: 0.82rem;
+  color: #d97706;
+  font-weight: 600;
+  display: inline-block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.col-actions {
+  display: flex;
+  gap: 0.4rem;
+  justify-content: center;
+  align-items: center;
+}
+
+.btn-action-edit {
+  background: #e0e7ff;
+  color: #4338ca;
+  border: 1px solid #c7d2fe;
+  padding: 0.35rem 0.75rem;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-action-edit:hover {
+  background: #4338ca;
+  color: white;
+}
+
+.btn-action-hide {
+  background: #f1f5f9;
+  color: #64748b;
+  border: 1px solid #cbd5e1;
+  padding: 0.35rem 0.65rem;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-action-hide:hover {
+  background: #e2e8f0;
+  color: #0f172a;
 }
 
 .btn-toggle-section {
