@@ -60,7 +60,7 @@
                 <button @click="startEdit(eq)" class="btn-outline-edit" title="Editar estado">
                   <span>✏️</span> Editar
                 </button>
-                <button @click="deleteEquipment(eq)" class="btn-outline-delete" title="Eliminar equipo">
+                <button v-if="authStore.isAdmin" @click="deleteEquipment(eq)" class="btn-outline-delete" title="Eliminar equipo">
                   <span>🗑️</span> Eliminar
                 </button>
               </div>
@@ -75,6 +75,9 @@
 <script setup>
 import { ref, reactive } from 'vue';
 import api from '../api';
+import { useAuthStore } from '../stores/auth';
+
+const authStore = useAuthStore();
 
 const props = defineProps({
   equipment: { type: Array, required: true }
