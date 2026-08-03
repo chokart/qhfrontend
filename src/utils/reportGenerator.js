@@ -183,10 +183,13 @@ export const generateCanchasPDF = (canchasNiveles, canchasCapas) => {
       if (data.section === 'body' && data.column.index === 2) {
         const status = data.cell.raw;
         if (status === 'CICLONEANDO') {
-          data.cell.styles.textColor = [5, 150, 105]; // Verde
+          data.cell.styles.textColor = [59, 130, 246]; // Azul
           data.cell.styles.fontStyle = 'bold';
-        } else if (status === 'OBSERVADA') {
-          data.cell.styles.textColor = [239, 68, 68]; // Rojo
+        } else if (status === 'POR_CICLONEAR') {
+          data.cell.styles.textColor = [16, 185, 129]; // Verde
+          data.cell.styles.fontStyle = 'bold';
+        } else {
+          data.cell.styles.textColor = [249, 115, 22]; // Naranja
           data.cell.styles.fontStyle = 'bold';
         }
       }
@@ -229,10 +232,13 @@ export const generateCanchasPDF = (canchasNiveles, canchasCapas) => {
       if (data.section === 'body' && data.column.index === 2) {
         const status = data.cell.raw;
         if (status === 'CICLONEANDO') {
-          data.cell.styles.textColor = [5, 150, 105]; // Verde
+          data.cell.styles.textColor = [59, 130, 246]; // Azul
           data.cell.styles.fontStyle = 'bold';
-        } else if (status === 'OBSERVADA') {
-          data.cell.styles.textColor = [239, 68, 68]; // Rojo
+        } else if (status === 'POR_CICLONEAR') {
+          data.cell.styles.textColor = [16, 185, 129]; // Verde
+          data.cell.styles.fontStyle = 'bold';
+        } else {
+          data.cell.styles.textColor = [249, 115, 22]; // Naranja
           data.cell.styles.fontStyle = 'bold';
         }
       }

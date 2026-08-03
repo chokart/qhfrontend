@@ -1,20 +1,21 @@
 export const STATUS_COLORS = {
-  'CICLONEANDO': '#10b981',       // Verde Esmeralda
-  'POR_CICLONEAR': '#06b6d4',     // Turquesa / Cian
-  'POR_COMPACTAR': '#8b5cf6',     // Violeta / Púrpura
-  'COMPACTADO': '#3b82f6',        // Azul
+  'CICLONEANDO': '#3b82f6',       // Azul
+  'POR_CICLONEAR': '#10b981',     // Verde
+  'POR_COMPACTAR': '#f97316',     // Naranja
+  'COMPACTADO': '#f97316',        // Naranja
   'POR_PREPARAR_BERMA': '#f97316',// Naranja
-  'DRENANDO': '#0284c7',          // Azul Océano
-  'STAND_BY': '#eab308',          // Amarillo / Ámbar Dorado
-  'OBSERVADA': '#ef4444'          // Rojo Alerta
+  'DRENANDO': '#f97316',          // Naranja
+  'STAND_BY': '#f97316',          // Naranja
+  'OBSERVADA': '#f97316'          // Naranja
 };
 
 export const getStatusColor = (status) => {
-  if (!status) return '#94a3b8';
-  return STATUS_COLORS[status] || '#94a3b8';
+  if (!status) return '#f97316';
+  return STATUS_COLORS[status] || '#f97316';
 };
 
 export const formatStatusText = (status) => {
   if (!status) return '';
   return status.replace(/_/g, ' ');
 };
+
