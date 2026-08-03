@@ -15,6 +15,14 @@
 
         <div class="toolbar-actions">
           <button 
+            class="btn-toggle-drag" 
+            :class="{ 'active': isMoveMode }"
+            @click="isMoveMode = !isMoveMode"
+            :title="isMoveMode ? 'Bloquear movimiento en el mapa' : 'Habilitar arrastre de equipos en el mapa'"
+          >
+            {{ isMoveMode ? '🔓 Arrastre Activado' : '🔒 Habilitar Arrastre' }}
+          </button>
+          <button 
             class="btn-toggle-all" 
             @click="toggleAllCategories"
           >
@@ -128,15 +136,14 @@
         <div class="legend-item"><span class="dot in"></span> Inoperativo</div>
       </div>
 
-      <!-- Botón de Candado Flotante (FAB) -->
+      <!-- Botón de Candado / Habilitar Arrastre Flotante Superior -->
       <button 
         @click="isMoveMode = !isMoveMode" 
         class="fab-lock" 
         :class="{ 'unlocked': isMoveMode }"
-        :title="isMoveMode ? 'Bloquear movimiento' : 'Habilitar arrastre'"
+        :title="isMoveMode ? 'Bloquear movimiento en el mapa' : 'Habilitar arrastre de equipos en el mapa'"
       >
-        <span v-if="isMoveMode">🔓</span>
-        <span v-else>🔒</span>
+        <span>{{ isMoveMode ? '🔓 Arrastre Activado' : '🔒 Habilitar Arrastre' }}</span>
       </button>
     </div>
   </div>
@@ -553,6 +560,29 @@ onMounted(() => {
   display: block;
 }
 
+.btn-toggle-drag {
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+  padding: 0.4rem 0.85rem;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-toggle-drag:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.btn-toggle-drag.active {
+  background: #dcfce7;
+  border-color: #86efac;
+  color: #15803d;
+}
+
 .btn-toggle-all {
   background: #f1f5f9;
   border: 1px solid #cbd5e1;
@@ -838,16 +868,27 @@ onMounted(() => {
 #map { height: 70vh; width: 100%; min-height: 520px; }
 
 .fab-lock {
-  position: absolute; bottom: 30px; right: 20px; z-index: 1000;
-  width: 50px; height: 50px; border-radius: 50%;
-  background: white; border: 2px solid #ddd;
+  position: absolute; top: 15px; right: 15px; z-index: 1000;
+  padding: 0.45rem 0.95rem; border-radius: 20px;
+  background: rgba(255, 255, 255, 0.95); border: 2px solid #cbd5e1;
   display: flex; align-items: center; justify-content: center;
-  font-size: 20px; cursor: pointer;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  font-size: 0.82rem; font-weight: 700; cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  color: #334155;
+  backdrop-filter: blur(4px);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
-.fab-lock.unlocked { background: #2ed573; border-color: #2ed573; transform: scale(1.1); color: white; }
-.fab-lock:active { transform: scale(0.9); }
+.fab-lock.unlocked { 
+  background: #2ed573; 
+  border-color: #26af5f; 
+  color: white; 
+  box-shadow: 0 4px 14px rgba(46, 213, 115, 0.4); 
+}
+.fab-lock:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+}
+.fab-lock:active { transform: scale(0.95); }
 
 .map-legend {
   position: absolute; bottom: 20px; left: 10px; z-index: 1000;
