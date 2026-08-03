@@ -159,10 +159,25 @@
         <!-- Sección de Niveles (Dique Principal) -->
         <transition name="fade">
           <div v-if="showSectionPrincipal" class="canchas-section-block">
-            <div class="section-title">
-              <h2>Canchas Dique Principal</h2>
-              <span class="stat-badge">Promedio Altura: {{ avgHeight.toFixed(2) }}m</span>
-              <span class="counter-text">({{ filteredNiveles.length }} de {{ canchasNiveles.length }} visibles)</span>
+            <div class="section-header-wrap">
+              <div class="section-title">
+                <h2>Canchas Dique Principal</h2>
+                <span class="stat-badge">Promedio Altura: {{ avgHeight.toFixed(2) }}m</span>
+                <span class="counter-text">({{ filteredNiveles.length }} de {{ canchasNiveles.length }} visibles)</span>
+              </div>
+
+              <!-- Resumen por Estado (Dique Principal) -->
+              <div class="status-summary-bar" v-if="filteredNiveles.length > 0">
+                <span 
+                  v-for="(count, stKey) in statusCountsPrincipal" 
+                  :key="'st_p_'+stKey"
+                  class="status-count-chip"
+                  :style="{ backgroundColor: getStatusColor(stKey) + '18', color: getStatusColor(stKey), borderColor: getStatusColor(stKey) + '50' }"
+                >
+                  <span class="dot" :style="{ backgroundColor: getStatusColor(stKey) }"></span>
+                  <b>{{ count }}</b> {{ formatStatusText(stKey) }}
+                </span>
+              </div>
             </div>
 
             <!-- VISTA DE TARJETAS PARALELAS -->
@@ -252,9 +267,25 @@
         <!-- Sección de Capas (Dique Lateral) -->
         <transition name="fade">
           <div v-if="showSectionLateral" class="canchas-section-block" style="margin-top: 1.5rem;">
-            <div class="section-title">
-              <h2>Canchas Dique Lateral</h2>
-              <span class="counter-text">({{ filteredCapas.length }} de {{ canchasCapas.length }} visibles)</span>
+            <div class="section-header-wrap">
+              <div class="section-title">
+                <h2>Canchas Dique Lateral</h2>
+                <span class="stat-badge">Promedio Capa: {{ avgCapa.toFixed(2) }}</span>
+                <span class="counter-text">({{ filteredCapas.length }} de {{ canchasCapas.length }} visibles)</span>
+              </div>
+
+              <!-- Resumen por Estado (Dique Lateral) -->
+              <div class="status-summary-bar" v-if="filteredCapas.length > 0">
+                <span 
+                  v-for="(count, stKey) in statusCountsLateral" 
+                  :key="'st_l_'+stKey"
+                  class="status-count-chip"
+                  :style="{ backgroundColor: getStatusColor(stKey) + '18', color: getStatusColor(stKey), borderColor: getStatusColor(stKey) + '50' }"
+                >
+                  <span class="dot" :style="{ backgroundColor: getStatusColor(stKey) }"></span>
+                  <b>{{ count }}</b> {{ formatStatusText(stKey) }}
+                </span>
+              </div>
             </div>
 
             <!-- VISTA DE TARJETAS PARALELAS -->
@@ -647,6 +678,28 @@ const avgHeight = computed(() => {
   if (filteredNiveles.value.length === 0) return 0;
   const sum = filteredNiveles.value.reduce((acc, c) => acc + c.currentHeight, 0);
   return sum / filteredNiveles.value.length;
+});
+
+const avgCapa = computed(() => {
+  if (filteredCapas.value.length === 0) return 0;
+  const sum = filteredCapas.value.reduce((acc, c) => acc + (c.currentCapa || 0), 0);
+  return sum / filteredCapas.value.length;
+});
+
+const statusCountsPrincipal = computed(() => {
+  const counts = {};
+  filteredNiveles.value.forEach(c => {
+    if (c.status) counts[c.status] = (counts[c.status] || 0) + 1;
+  });
+  return counts;
+});
+
+const statusCountsLateral = computed(() => {
+  const counts = {};
+  filteredCapas.value.forEach(c => {
+    if (c.status) counts[c.status] = (counts[c.status] || 0) + 1;
+  });
+  return counts;
 });
 
 const observedCount = computed(() => {
@@ -1157,6 +1210,12 @@ h1 { font-size: 1.5rem; font-weight: 800; color: #0f172a; margin: 0; }
   gap: 0.75rem;
 }
 
+.section-header-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
 .section-title {
   display: flex;
   align-items: center;
@@ -1166,6 +1225,32 @@ h1 { font-size: 1.5rem; font-weight: 800; color: #0f172a; margin: 0; }
 .section-title h2 { margin: 0; font-size: 1.1rem; font-weight: 700; color: #334155; }
 .stat-badge { background: #e0e7ff; color: #4338ca; padding: 0.25rem 0.75rem; border-radius: 50px; font-size: 0.7rem; font-weight: 800; }
 .counter-text { font-size: 0.78rem; color: #64748b; font-weight: 600; }
+
+.status-summary-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  align-items: center;
+}
+
+.status-count-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border: 1px solid transparent;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.status-count-chip .dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
 
 .parallel-container {
   background: white;
