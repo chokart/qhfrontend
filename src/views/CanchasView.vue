@@ -169,13 +169,13 @@
               <!-- Resumen por Estado (Dique Principal) -->
               <div class="status-summary-bar" v-if="filteredNiveles.length > 0">
                 <span 
-                  v-for="(count, stKey) in statusCountsPrincipal" 
-                  :key="'st_p_'+stKey"
+                  v-for="item in statusCountsPrincipal" 
+                  :key="'st_p_'+item.status"
                   class="status-count-chip"
-                  :style="{ backgroundColor: getStatusColor(stKey) + '18', color: getStatusColor(stKey), borderColor: getStatusColor(stKey) + '50' }"
+                  :style="{ backgroundColor: getStatusColor(item.status) + '18', color: getStatusColor(item.status), borderColor: getStatusColor(item.status) + '50' }"
                 >
-                  <span class="dot" :style="{ backgroundColor: getStatusColor(stKey) }"></span>
-                  <b>{{ count }}</b> {{ formatStatusText(stKey) }}
+                  <span class="dot" :style="{ backgroundColor: getStatusColor(item.status) }"></span>
+                  <b>{{ item.count }}</b> {{ formatStatusText(item.status) }}
                 </span>
               </div>
             </div>
@@ -277,13 +277,13 @@
               <!-- Resumen por Estado (Dique Lateral) -->
               <div class="status-summary-bar" v-if="filteredCapas.length > 0">
                 <span 
-                  v-for="(count, stKey) in statusCountsLateral" 
-                  :key="'st_l_'+stKey"
+                  v-for="item in statusCountsLateral" 
+                  :key="'st_l_'+item.status"
                   class="status-count-chip"
-                  :style="{ backgroundColor: getStatusColor(stKey) + '18', color: getStatusColor(stKey), borderColor: getStatusColor(stKey) + '50' }"
+                  :style="{ backgroundColor: getStatusColor(item.status) + '18', color: getStatusColor(item.status), borderColor: getStatusColor(item.status) + '50' }"
                 >
-                  <span class="dot" :style="{ backgroundColor: getStatusColor(stKey) }"></span>
-                  <b>{{ count }}</b> {{ formatStatusText(stKey) }}
+                  <span class="dot" :style="{ backgroundColor: getStatusColor(item.status) }"></span>
+                  <b>{{ item.count }}</b> {{ formatStatusText(item.status) }}
                 </span>
               </div>
             </div>
@@ -476,12 +476,23 @@ const statusOptions = [
   { value: 'ALL', label: 'Todos los Estados' },
   { value: 'CICLONEANDO', label: 'Cicloneando' },
   { value: 'POR_CICLONEAR', label: 'Por Ciclonear' },
-  { value: 'POR_COMPACTAR', label: 'Por Compactar' },
   { value: 'COMPACTADO', label: 'Compactado' },
+  { value: 'POR_COMPACTAR', label: 'Por Compactar' },
   { value: 'POR_PREPARAR_BERMA', label: 'Por Preparar Berma' },
   { value: 'DRENANDO', label: 'Drenando' },
   { value: 'STAND_BY', label: 'Stand By' },
   { value: 'OBSERVADA', label: 'Observadas' }
+];
+
+const STATUS_ORDER = [
+  'CICLONEANDO',
+  'POR_CICLONEAR',
+  'COMPACTADO',
+  'POR_COMPACTAR',
+  'POR_PREPARAR_BERMA',
+  'DRENANDO',
+  'STAND_BY',
+  'OBSERVADA'
 ];
 
 const isStatusSelected = (val) => {
@@ -687,19 +698,31 @@ const avgCapa = computed(() => {
 });
 
 const statusCountsPrincipal = computed(() => {
-  const counts = {};
+  const countsMap = {};
   filteredNiveles.value.forEach(c => {
-    if (c.status) counts[c.status] = (counts[c.status] || 0) + 1;
+    if (c.status) countsMap[c.status] = (countsMap[c.status] || 0) + 1;
   });
-  return counts;
+
+  return STATUS_ORDER
+    .filter(st => countsMap[st] > 0)
+    .map(st => ({
+      status: st,
+      count: countsMap[st]
+    }));
 });
 
 const statusCountsLateral = computed(() => {
-  const counts = {};
+  const countsMap = {};
   filteredCapas.value.forEach(c => {
-    if (c.status) counts[c.status] = (counts[c.status] || 0) + 1;
+    if (c.status) countsMap[c.status] = (countsMap[c.status] || 0) + 1;
   });
-  return counts;
+
+  return STATUS_ORDER
+    .filter(st => countsMap[st] > 0)
+    .map(st => ({
+      status: st,
+      count: countsMap[st]
+    }));
 });
 
 const observedCount = computed(() => {
