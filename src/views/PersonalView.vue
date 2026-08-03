@@ -92,12 +92,13 @@
             <table class="personal-table">
               <thead>
                 <tr>
-                  <th style="width: 60px;">#</th>
-                  <th style="width: 120px;">CÓDIGO</th>
+                  <th style="width: 50px;">#</th>
+                  <th style="width: 100px;">CÓDIGO</th>
                   <th>NOMBRE COMPLETO</th>
-                  <th style="width: 160px;">GUARDIA / GRUPO</th>
-                  <th style="width: 100px; text-align: center;">ESTADO</th>
-                  <th style="width: 240px; text-align: center;">ACCIONES</th>
+                  <th style="width: 160px;">ROL / CARGO</th>
+                  <th style="width: 150px;">GUARDIA / GRUPO</th>
+                  <th style="width: 90px; text-align: center;">ESTADO</th>
+                  <th style="width: 280px; text-align: center;">ACCIONES</th>
                 </tr>
               </thead>
               <tbody>
@@ -108,6 +109,11 @@
                     <span v-else class="no-code">Sin código</span>
                   </td>
                   <td class="col-name">{{ op.name }}</td>
+                  <td class="col-role">
+                    <span class="role-pill" @click="openRoleModal(op)" title="Clic para editar rol">
+                      🏷️ {{ op.role || 'OPERADOR' }}
+                    </span>
+                  </td>
                   <td class="col-guardia">
                     <span 
                       v-if="op.group" 
@@ -124,6 +130,13 @@
                   <td class="col-actions" style="text-align: center;">
                     <div class="actions-group">
                       <button 
+                        class="action-btn-role"
+                        @click="openRoleModal(op)"
+                        title="Cambiar Rol / Cargo de este trabajador"
+                      >
+                        🏷️ Rol
+                      </button>
+                      <button 
                         class="action-btn-guard"
                         @click="openChangeGuardModal(op)"
                         title="Cambiar Guardia de este operador"
@@ -135,7 +148,7 @@
                         @click="openVacationModal(op, 'V')"
                         title="Programar Vacaciones, Descanso Médico o Sobretiempo"
                       >
-                        📝 Programar Excepción
+                        📝 Excepción
                       </button>
                     </div>
                   </td>
@@ -275,6 +288,48 @@
       </div>
     </div>
 
+    <!-- Modal Cambiar Rol / Cargo de Operador -->
+    <div v-if="showRoleModal" class="modal-backdrop" @click.self="closeRoleModal">
+      <div class="modal-dialog">
+        <div class="modal-header">
+          <h3>🏷️ Cambiar Rol / Cargo de Personal</h3>
+          <button class="btn-close" @click="closeRoleModal">✕</button>
+        </div>
+        <div class="modal-body" v-if="selectedRoleOperator">
+          <div class="op-card-summary">
+            <span v-if="selectedRoleOperator.code" class="code-badge">{{ selectedRoleOperator.code }}</span>
+            <span class="op-name-bold">{{ selectedRoleOperator.name }}</span>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Seleccionar Rol / Cargo:</label>
+            <select v-model="selectedRole" class="form-select">
+              <option v-for="r in rolePresetOptions" :key="r" :value="r">
+                {{ r }}
+              </option>
+            </select>
+          </div>
+
+          <div v-if="selectedRole === 'OTRO'" class="form-group">
+            <label class="form-label">Especificar Cargo / Rol Personalizado:</label>
+            <input 
+              type="text" 
+              v-model="customRole" 
+              placeholder="Ej. Técnico Mecánico, Rigger, etc." 
+              class="form-input-text" 
+            />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-cancel" @click="closeRoleModal">Cancelar</button>
+          <button class="btn-save" :disabled="savingRole" @click="saveOperatorRole">
+            <span v-if="savingRole">Guardando...</span>
+            <span v-else>💾 Guardar Rol</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Modal Gestor de Guardias -->
     <GroupManagerModal 
       :show="showGroupManagerModal"
@@ -305,6 +360,26 @@ const showChangeGuardModal = ref(false);
 const selectedOperator = ref(null);
 const selectedGroupId = ref(null);
 const savingGuard = ref(false);
+
+// Estados para Modal de Cambio de Rol
+const showRoleModal = ref(false);
+const selectedRoleOperator = ref(null);
+const selectedRole = ref('OPERADOR');
+const customRole = ref('');
+const savingRole = ref(false);
+
+const rolePresetOptions = [
+  'OPERADOR',
+  'OPERADOR TRACTOR',
+  'OPERADOR EXCAVADORA',
+  'OPERADOR CARGADOR',
+  'OPERADOR RODILLO',
+  'OPERADOR MOTONIVELADORA',
+  'SUPERVISOR',
+  'CAPATAZ',
+  'CHOFER / CONDUCTOR',
+  'OTRO'
+];
 
 // Estados para Modal de Vacaciones / Descanso Médico / Sobretiempo
 const showVacationModal = ref(false);
@@ -346,6 +421,44 @@ const refreshAllData = () => {
   fetchGroups();
   if (shiftCalendarRef.value && shiftCalendarRef.value.fetchMatrix) {
     shiftCalendarRef.value.fetchMatrix();
+  }
+};
+
+const openRoleModal = (op) => {
+  selectedRoleOperator.value = op;
+  const current = op.role || 'OPERADOR';
+  if (rolePresetOptions.includes(current)) {
+    selectedRole.value = current;
+    customRole.value = '';
+  } else {
+    selectedRole.value = 'OTRO';
+    customRole.value = current;
+  }
+  showRoleModal.value = true;
+};
+
+const closeRoleModal = () => {
+  showRoleModal.value = false;
+  selectedRoleOperator.value = null;
+};
+
+const saveOperatorRole = async () => {
+  if (!selectedRoleOperator.value) return;
+
+  const roleToSave = selectedRole.value === 'OTRO' ? customRole.value.trim() : selectedRole.value;
+  if (!roleToSave) return;
+
+  savingRole.value = true;
+  try {
+    await api.put(`/api/v1/operators/${selectedRoleOperator.value.id}/role`, {
+      role: roleToSave
+    });
+    closeRoleModal();
+    refreshAllData();
+  } catch (err) {
+    console.error("Error al actualizar rol de operador:", err);
+  } finally {
+    savingRole.value = false;
   }
 };
 
@@ -760,6 +873,43 @@ const filteredOperators = computed(() => {
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
+}
+
+.role-pill {
+  background: #f1f5f9;
+  color: #334155;
+  border: 1px solid #cbd5e1;
+  font-weight: 700;
+  font-size: 0.76rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 6px;
+  display: inline-block;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.role-pill:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.action-btn-role {
+  background: #e0e7ff;
+  color: #4338ca;
+  border: 1px solid #c7d2fe;
+  padding: 0.35rem 0.65rem;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.action-btn-role:hover {
+  background: #4338ca;
+  color: white;
+  border-color: #4338ca;
+  box-shadow: 0 2px 6px rgba(67, 56, 202, 0.25);
 }
 
 .action-btn-guard {

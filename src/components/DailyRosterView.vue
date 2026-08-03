@@ -95,6 +95,9 @@
               <span class="op-name">{{ op.name }}</span>
               <div class="op-meta">
                 <span v-if="op.code" class="op-code">{{ op.code }}</span>
+                <span class="op-role-tag" @click.stop="openRoleEditModal(op)" title="Clic para editar Rol / Cargo">
+                  🏷️ {{ op.role || 'OPERADOR' }}
+                </span>
                 <span class="op-guardia" :style="{ backgroundColor: op.groupColor || '#4f46e5' }">
                   {{ op.groupName }}
                 </span>
@@ -120,6 +123,9 @@
               <span class="op-name compact-name">{{ op.name }}</span>
               <div class="op-meta">
                 <span v-if="op.code" class="op-code">{{ op.code }}</span>
+                <span class="op-role-tag" @click.stop="openRoleEditModal(op)" title="Clic para editar Rol / Cargo">
+                  🏷️ {{ op.role || 'OPERADOR' }}
+                </span>
                 <span class="op-guardia" :style="{ backgroundColor: op.groupColor || '#4f46e5' }">
                   {{ op.groupName }}
                 </span>
@@ -145,6 +151,9 @@
               <span class="op-name compact-name">{{ op.name }}</span>
               <div class="op-meta">
                 <span v-if="op.code" class="op-code">{{ op.code }}</span>
+                <span class="op-role-tag" @click.stop="openRoleEditModal(op)" title="Clic para editar Rol / Cargo">
+                  🏷️ {{ op.role || 'OPERADOR' }}
+                </span>
                 <span class="op-guardia" :style="{ backgroundColor: op.groupColor || '#4f46e5' }">
                   {{ op.groupName }}
                 </span>
@@ -183,6 +192,9 @@
               <span class="op-name">{{ op.name }}</span>
               <div class="op-meta">
                 <span v-if="op.code" class="op-code">{{ op.code }}</span>
+                <span class="op-role-tag" @click.stop="openRoleEditModal(op)" title="Clic para editar Rol / Cargo">
+                  🏷️ {{ op.role || 'OPERADOR' }}
+                </span>
                 <span class="op-guardia" :style="{ backgroundColor: op.groupColor || '#4f46e5' }">
                   {{ op.groupName }}
                 </span>
@@ -208,6 +220,9 @@
               <span class="op-name compact-name">{{ op.name }}</span>
               <div class="op-meta">
                 <span v-if="op.code" class="op-code">{{ op.code }}</span>
+                <span class="op-role-tag" @click.stop="openRoleEditModal(op)" title="Clic para editar Rol / Cargo">
+                  🏷️ {{ op.role || 'OPERADOR' }}
+                </span>
                 <span class="op-guardia" :style="{ backgroundColor: op.groupColor || '#4f46e5' }">
                   {{ op.groupName }}
                 </span>
@@ -233,6 +248,9 @@
               <span class="op-name compact-name">{{ op.name }}</span>
               <div class="op-meta">
                 <span v-if="op.code" class="op-code">{{ op.code }}</span>
+                <span class="op-role-tag" @click.stop="openRoleEditModal(op)" title="Clic para editar Rol / Cargo">
+                  🏷️ {{ op.role || 'OPERADOR' }}
+                </span>
                 <span class="op-guardia" :style="{ backgroundColor: op.groupColor || '#4f46e5' }">
                   {{ op.groupName }}
                 </span>
@@ -251,6 +269,41 @@
       <h3>Selecciona una fecha</h3>
       <p>Consulta quién está en turno día, turno noche, de vacaciones o libre para cualquier día de Julio a Diciembre 2026.</p>
     </div>
+
+    <!-- Modal Cambiar Rol en Guardia del Día -->
+    <div v-if="showRoleModal" class="modal-backdrop" @click.self="showRoleModal = false">
+      <div class="modal-dialog">
+        <div class="modal-header">
+          <h3>🏷️ Editar Rol / Cargo del Trabajador</h3>
+          <button class="btn-close" @click="showRoleModal = false">✕</button>
+        </div>
+        <div class="modal-body" v-if="selectedOpForRole">
+          <div class="op-card-summary">
+            <span v-if="selectedOpForRole.code" class="code-badge">{{ selectedOpForRole.code }}</span>
+            <span class="op-name-bold">{{ selectedOpForRole.name }}</span>
+          </div>
+
+          <div class="form-group" style="margin-top: 1rem;">
+            <label class="form-label">Seleccionar Rol / Cargo:</label>
+            <select v-model="selectedRolePreset" class="form-select">
+              <option v-for="r in rolePresetOptions" :key="r" :value="r">{{ r }}</option>
+            </select>
+          </div>
+
+          <div v-if="selectedRolePreset === 'OTRO'" class="form-group" style="margin-top: 0.75rem;">
+            <label class="form-label">Especificar Cargo / Rol Personalizado:</label>
+            <input type="text" v-model="customRoleInput" placeholder="Ej. Técnico Mecánico, Rigger..." class="form-input-text" />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-cancel" @click="showRoleModal = false">Cancelar</button>
+          <button class="btn-save" :disabled="savingRole" @click="saveRoleInDailyRoster">
+            <span v-if="savingRole">Guardando...</span>
+            <span v-else>💾 Guardar Rol</span>
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -264,6 +317,65 @@ const selectedDate = ref('');
 const loading = ref(false);
 const matrixOperators = ref([]);
 const rosterReady = ref(false);
+
+// Estados para Cambio de Rol desde Guardia del Día
+const showRoleModal = ref(false);
+const selectedOpForRole = ref(null);
+const selectedRolePreset = ref('OPERADOR');
+const customRoleInput = ref('');
+const savingRole = ref(false);
+
+const rolePresetOptions = [
+  'OPERADOR',
+  'OPERADOR TRACTOR',
+  'OPERADOR EXCAVADORA',
+  'OPERADOR CARGADOR',
+  'OPERADOR RODILLO',
+  'OPERADOR MOTONIVELADORA',
+  'SUPERVISOR',
+  'CAPATAZ',
+  'CHOFER / CONDUCTOR',
+  'OTRO'
+];
+
+const openRoleEditModal = (op) => {
+  selectedOpForRole.value = op;
+  const current = op.role || 'OPERADOR';
+  if (rolePresetOptions.includes(current)) {
+    selectedRolePreset.value = current;
+    customRoleInput.value = '';
+  } else {
+    selectedRolePreset.value = 'OTRO';
+    customRoleInput.value = current;
+  }
+  showRoleModal.value = true;
+};
+
+const saveRoleInDailyRoster = async () => {
+  if (!selectedOpForRole.value) return;
+
+  const newRole = selectedRolePreset.value === 'OTRO' ? customRoleInput.value.trim() : selectedRolePreset.value;
+  if (!newRole) return;
+
+  savingRole.value = true;
+  try {
+    await api.put(`/api/v1/operators/${selectedOpForRole.value.operatorId}/role`, {
+      role: newRole
+    });
+
+    const target = matrixOperators.value.find(o => o.operatorId === selectedOpForRole.value.operatorId);
+    if (target) {
+      target.role = newRole;
+    }
+    selectedOpForRole.value.role = newRole;
+
+    showRoleModal.value = false;
+  } catch (err) {
+    console.error("Error al actualizar rol de operador desde Guardia del Día:", err);
+  } finally {
+    savingRole.value = false;
+  }
+};
 
 const formattedDate = computed(() => {
   if (!selectedDate.value) return '';
@@ -342,12 +454,13 @@ const exportDayRosterPDF = () => {
   currentY += 18;
 
   const dayRows = [
-    ...dayOperators.value.map((op, idx) => [idx + 1, op.code || '-', op.name, op.groupName || 'Sin Guardia', 'Activo (D)']),
-    ...stDayOperators.value.map((op, idx) => [dayOperators.value.length + idx + 1, op.code || '-', op.name, op.groupName || 'Sin Guardia', 'Sobretiempo (ST-D)']),
+    ...dayOperators.value.map((op, idx) => [idx + 1, op.code || '-', op.name, op.role || 'OPERADOR', op.groupName || 'Sin Guardia', 'Activo (D)']),
+    ...stDayOperators.value.map((op, idx) => [dayOperators.value.length + idx + 1, op.code || '-', op.name, op.role || 'OPERADOR', op.groupName || 'Sin Guardia', 'Sobretiempo (ST-D)']),
     ...absentDayOperators.value.map((op, idx) => [
       dayOperators.value.length + stDayOperators.value.length + idx + 1,
       op.code || '-',
       op.name,
+      op.role || 'OPERADOR',
       op.groupName || 'Sin Guardia',
       op.absentBadge === 'V-D' ? 'Vacaciones (V-D)' : 'Descanso Medico (DM-D)'
     ])
@@ -355,17 +468,18 @@ const exportDayRosterPDF = () => {
 
   autoTable(doc, {
     startY: currentY,
-    head: [[{ content: `DETALLE DE PERSONAL TURNO DIA (${totalDay} OPERADORES)`, colSpan: 5, styles: { halign: 'left', fontSize: 9 } }], ['#', 'Código', 'Nombre del Operador', 'Guardia / Grupo', 'Estado']],
-    body: dayRows.length > 0 ? dayRows : [[{ content: 'Sin personal registrado en Turno Día', colSpan: 5, styles: { halign: 'center' } }]],
+    head: [[{ content: `DETALLE DE PERSONAL TURNO DIA (${totalDay} OPERADORES)`, colSpan: 6, styles: { halign: 'left', fontSize: 9 } }], ['#', 'Código', 'Nombre del Operador', 'Rol / Cargo', 'Guardia / Grupo', 'Estado']],
+    body: dayRows.length > 0 ? dayRows : [[{ content: 'Sin personal registrado en Turno Día', colSpan: 6, styles: { halign: 'center' } }]],
     headStyles: { fillColor: [5, 150, 105], textColor: [255, 255, 255], fontStyle: 'bold' },
     margin: { left: 14, right: 14 },
     styles: { fontSize: 8, cellPadding: 2.5 },
     columnStyles: {
       0: { cellWidth: 10, halign: 'center' },
-      1: { cellWidth: 25 },
+      1: { cellWidth: 22 },
       2: { cellWidth: 'auto' },
-      3: { cellWidth: 40 },
-      4: { cellWidth: 45, halign: 'center' }
+      3: { cellWidth: 38 },
+      4: { cellWidth: 32 },
+      5: { cellWidth: 38, halign: 'center' }
     }
   });
 
@@ -426,12 +540,13 @@ const exportNightRosterPDF = () => {
   currentY += 18;
 
   const nightRows = [
-    ...nightOperators.value.map((op, idx) => [idx + 1, op.code || '-', op.name, op.groupName || 'Sin Guardia', 'Activo (N)']),
-    ...stNightOperators.value.map((op, idx) => [nightOperators.value.length + idx + 1, op.code || '-', op.name, op.groupName || 'Sin Guardia', 'Sobretiempo (ST-N)']),
+    ...nightOperators.value.map((op, idx) => [idx + 1, op.code || '-', op.name, op.role || 'OPERADOR', op.groupName || 'Sin Guardia', 'Activo (N)']),
+    ...stNightOperators.value.map((op, idx) => [nightOperators.value.length + idx + 1, op.code || '-', op.name, op.role || 'OPERADOR', op.groupName || 'Sin Guardia', 'Sobretiempo (ST-N)']),
     ...absentNightOperators.value.map((op, idx) => [
       nightOperators.value.length + stNightOperators.value.length + idx + 1,
       op.code || '-',
       op.name,
+      op.role || 'OPERADOR',
       op.groupName || 'Sin Guardia',
       op.absentBadge === 'V-N' ? 'Vacaciones (V-N)' : 'Descanso Medico (DM-N)'
     ])
@@ -439,17 +554,18 @@ const exportNightRosterPDF = () => {
 
   autoTable(doc, {
     startY: currentY,
-    head: [[{ content: `DETALLE DE PERSONAL TURNO NOCHE (${totalNight} OPERADORES)`, colSpan: 5, styles: { halign: 'left', fontSize: 9 } }], ['#', 'Código', 'Nombre del Operador', 'Guardia / Grupo', 'Estado']],
-    body: nightRows.length > 0 ? nightRows : [[{ content: 'Sin personal registrado en Turno Noche', colSpan: 5, styles: { halign: 'center' } }]],
+    head: [[{ content: `DETALLE DE PERSONAL TURNO NOCHE (${totalNight} OPERADORES)`, colSpan: 6, styles: { halign: 'left', fontSize: 9 } }], ['#', 'Código', 'Nombre del Operador', 'Rol / Cargo', 'Guardia / Grupo', 'Estado']],
+    body: nightRows.length > 0 ? nightRows : [[{ content: 'Sin personal registrado en Turno Noche', colSpan: 6, styles: { halign: 'center' } }]],
     headStyles: { fillColor: [67, 56, 202], textColor: [255, 255, 255], fontStyle: 'bold' },
     margin: { left: 14, right: 14 },
     styles: { fontSize: 8, cellPadding: 2.5 },
     columnStyles: {
       0: { cellWidth: 10, halign: 'center' },
-      1: { cellWidth: 25 },
+      1: { cellWidth: 22 },
       2: { cellWidth: 'auto' },
-      3: { cellWidth: 40 },
-      4: { cellWidth: 45, halign: 'center' }
+      3: { cellWidth: 38 },
+      4: { cellWidth: 32 },
+      5: { cellWidth: 38, halign: 'center' }
     }
   });
 
@@ -832,11 +948,30 @@ const absentNightOperators = computed(() => {
 .op-code {
   background: #3b82f6;
   color: white;
-  font-size: 0.7rem;
-  font-weight: 800;
-  padding: 0.1rem 0.35rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.1rem 0.4rem;
   border-radius: 4px;
   font-family: monospace;
+}
+
+.op-role-tag {
+  background: #f1f5f9;
+  color: #334155;
+  border: 1px solid #cbd5e1;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.1rem 0.45rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.op-role-tag:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+  border-color: #94a3b8;
 }
 
 .op-guardia {
