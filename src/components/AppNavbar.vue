@@ -35,7 +35,7 @@
 
       <router-link to="/canchas" class="nav-item" active-class="active">
         <span class="nav-icon">📊</span>
-        <span class="nav-label">Control Canchas</span>
+        <span class="nav-label">Canchas</span>
       </router-link>
 
       <router-link to="/personal" class="nav-item" active-class="active">

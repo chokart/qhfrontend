@@ -5,7 +5,7 @@
     <div class="canchas-container">
       <div class="sub-header">
         <div class="title-section">
-          <h1>Control de Canchas</h1>
+          <h1>Canchas</h1>
         </div>
         <div class="stats-bar">
           <div class="stat-item">

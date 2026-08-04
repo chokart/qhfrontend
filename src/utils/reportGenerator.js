@@ -145,7 +145,7 @@ export const generateCanchasPDF = (canchasNiveles, canchasCapas) => {
   // Encabezado
   doc.setFontSize(20);
   doc.setTextColor(40);
-  doc.text('Reporte de Control de Canchas', 14, 22);
+  doc.text('Reporte de Canchas', 14, 22);
   
   doc.setFontSize(10);
   doc.setTextColor(100);
