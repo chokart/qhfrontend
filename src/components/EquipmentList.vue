@@ -14,20 +14,38 @@
       <table>
         <thead>
           <tr>
-            <th style="width: 50px;">#</th>
-            <th>NOMBRE / CÓDIGO</th>
-            <th style="width: 110px;">RESUMEN</th>
-            <th style="width: 140px;">TIPO DE EQUIPO</th>
-            <th style="width: 110px;">PLACA</th>
-            <th style="width: 120px;">CÓDIGO SPCC</th>
-            <th>DESCRIPCIÓN</th>
-            <th style="width: 120px;">ESTADO</th>
-            <th style="width: 140px;">UBICACIÓN</th>
+            <th @click="sortBy('id')" class="sortable-th" style="width: 55px;" title="Ordenar por número">
+              # <span class="sort-icon">{{ getSortIcon('id') }}</span>
+            </th>
+            <th @click="sortBy('name')" class="sortable-th" title="Ordenar por nombre">
+              NOMBRE / CÓDIGO <span class="sort-icon">{{ getSortIcon('name') }}</span>
+            </th>
+            <th @click="sortBy('shortCode')" class="sortable-th" style="width: 110px;" title="Ordenar por resumen">
+              RESUMEN <span class="sort-icon">{{ getSortIcon('shortCode') }}</span>
+            </th>
+            <th @click="sortBy('equipmentType')" class="sortable-th" style="width: 140px;" title="Ordenar por tipo de equipo">
+              TIPO DE EQUIPO <span class="sort-icon">{{ getSortIcon('equipmentType') }}</span>
+            </th>
+            <th @click="sortBy('plate')" class="sortable-th" style="width: 110px;" title="Ordenar por placa">
+              PLACA <span class="sort-icon">{{ getSortIcon('plate') }}</span>
+            </th>
+            <th @click="sortBy('spccCode')" class="sortable-th" style="width: 120px;" title="Ordenar por código SPCC">
+              CÓDIGO SPCC <span class="sort-icon">{{ getSortIcon('spccCode') }}</span>
+            </th>
+            <th @click="sortBy('description')" class="sortable-th" title="Ordenar por descripción">
+              DESCRIPCIÓN <span class="sort-icon">{{ getSortIcon('description') }}</span>
+            </th>
+            <th @click="sortBy('status')" class="sortable-th" style="width: 120px;" title="Ordenar por estado">
+              ESTADO <span class="sort-icon">{{ getSortIcon('status') }}</span>
+            </th>
+            <th @click="sortBy('currentArea')" class="sortable-th" style="width: 140px;" title="Ordenar por ubicación">
+              UBICACIÓN <span class="sort-icon">{{ getSortIcon('currentArea') }}</span>
+            </th>
             <th style="width: 160px;" class="text-center">ACCIONES</th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="(eq, idx) in equipment" :key="eq.id">
+          <tr v-for="(eq, idx) in sortedEquipment" :key="eq.id">
             <td class="col-idx">{{ idx + 1 }}</td>
 
             <td class="col-name">
@@ -169,7 +187,7 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue';
+import { ref, reactive, computed } from 'vue';
 import api from '../api';
 import { useAuthStore } from '../stores/auth';
 
@@ -180,6 +198,70 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['update-required', 'open-create-modal']);
+
+// Estado de Ordenamiento
+const sortKey = ref('name');
+const sortOrder = ref('asc');
+
+const sortBy = (key) => {
+  if (sortKey.value === key) {
+    sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc';
+  } else {
+    sortKey.value = key;
+    sortOrder.value = 'asc';
+  }
+};
+
+const getSortIcon = (key) => {
+  if (sortKey.value !== key) return '↕';
+  return sortOrder.value === 'asc' ? '▲' : '▼';
+};
+
+const sortedEquipment = computed(() => {
+  const list = [...props.equipment];
+  if (!sortKey.value) return list;
+
+  return list.sort((a, b) => {
+    if (sortKey.value === 'id') {
+      const valA = a.id || 0;
+      const valB = b.id || 0;
+      return sortOrder.value === 'asc' ? valA - valB : valB - valA;
+    }
+
+    let valA = '';
+    let valB = '';
+
+    if (sortKey.value === 'name') {
+      valA = (a.name || '').toLowerCase();
+      valB = (b.name || '').toLowerCase();
+    } else if (sortKey.value === 'shortCode') {
+      valA = (a.shortCode || getFallbackShortCode(a.name) || '').toLowerCase();
+      valB = (b.shortCode || getFallbackShortCode(b.name) || '').toLowerCase();
+    } else if (sortKey.value === 'equipmentType') {
+      valA = (formatTypeLabel(a.equipmentType || getCategoryType(a.name)) || '').toLowerCase();
+      valB = (formatTypeLabel(b.equipmentType || getCategoryType(b.name)) || '').toLowerCase();
+    } else if (sortKey.value === 'plate') {
+      valA = (a.plate || '').toLowerCase();
+      valB = (b.plate || '').toLowerCase();
+    } else if (sortKey.value === 'spccCode') {
+      valA = (a.spccCode || '').toLowerCase();
+      valB = (b.spccCode || '').toLowerCase();
+    } else if (sortKey.value === 'description') {
+      valA = (a.description || '').toLowerCase();
+      valB = (b.description || '').toLowerCase();
+    } else if (sortKey.value === 'status') {
+      valA = (a.status || '').toLowerCase();
+      valB = (b.status || '').toLowerCase();
+    } else if (sortKey.value === 'currentArea') {
+      valA = (a.currentArea || 'ZZZ').toLowerCase();
+      valB = (b.currentArea || 'ZZZ').toLowerCase();
+    }
+
+    if (valA < valB) return sortOrder.value === 'asc' ? -1 : 1;
+    if (valA > valB) return sortOrder.value === 'asc' ? 1 : -1;
+    return 0;
+  });
+});
 
 const showEditModal = ref(false);
 const editingId = ref(null);
@@ -371,6 +453,22 @@ th {
   letter-spacing: 0.05em;
   font-weight: 800;
   border-bottom: 2px solid #e2e8f0;
+}
+
+th.sortable-th {
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s ease;
+}
+th.sortable-th:hover {
+  background: #eef2ff;
+  color: #4f46e5;
+}
+.sort-icon {
+  font-size: 0.7rem;
+  margin-left: 3px;
+  color: #6366f1;
+  display: inline-block;
 }
 
 td { padding: 0.85rem 1.2rem; border-bottom: 1px solid #f1f5f9; font-size: 0.88rem; color: #334155; vertical-align: middle; }
