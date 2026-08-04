@@ -54,7 +54,7 @@ defineEmits(['hide']);
 const statusColor = computed(() => getStatusColor(props.cancha.status));
 
 const levelPercentage = computed(() => {
-  const min = 1050; 
+  const min = 1110; 
   const max = 1220;
   const current = props.cancha.currentHeight;
   const pct = ((current - min) / (max - min)) * 100;
