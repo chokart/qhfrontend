@@ -316,6 +316,14 @@ const createForm = reactive({
 });
 
 const openCreateModal = () => {
+  let defaultLat = -17.459974;
+  let defaultLng = -70.801105;
+  if (map.value) {
+    const center = map.value.getCenter();
+    defaultLat = center.lat;
+    defaultLng = center.lng;
+  }
+
   createForm.name = '';
   createForm.shortCode = '';
   createForm.description = '';
@@ -324,6 +332,8 @@ const openCreateModal = () => {
   createForm.equipmentType = 'TRACTOR';
   createForm.status = 'OPERATIVO';
   createForm.comment = '';
+  createForm.latitude = defaultLat;
+  createForm.longitude = defaultLng;
   showCreateModal.value = true;
 };
 
@@ -339,9 +349,21 @@ const saveNewEquipment = async () => {
 
   creating.value = true;
   try {
-    await api.post('/api/v1/equipment', createForm);
+    const response = await api.post('/api/v1/equipment', createForm);
+    const newEq = response.data;
     closeCreateModal();
     await loadData();
+    if (newEq && newEq.id) {
+      selectedEquipmentId.value = newEq.id;
+      if (newEq.latitude && newEq.longitude && map.value) {
+        map.value.setView([newEq.latitude, newEq.longitude], 16, { animate: true });
+        setTimeout(() => {
+          if (markers.value[newEq.id]) {
+            markers.value[newEq.id].openPopup();
+          }
+        }, 300);
+      }
+    }
   } catch (error) {
     console.error("Error al registrar nuevo equipo:", error);
     alert("Ocurrió un error al registrar el nuevo equipo.");
@@ -658,12 +680,9 @@ const renderMarkers = () => {
         markers.value[eq.id].setLatLng([eq.latitude, eq.longitude]);
         markers.value[eq.id].setIcon(customIcon);
         markers.value[eq.id].setPopupContent(popupContent);
-        if (isMoveMode.value) markers.value[eq.id].dragging.enable();
-        else markers.value[eq.id].dragging.disable();
       } else {
         markers.value[eq.id] = L.marker([eq.latitude, eq.longitude], { 
-          icon: customIcon,
-          draggable: isMoveMode.value 
+          icon: customIcon
         }).addTo(map.value)
           .bindPopup(popupContent);
 
@@ -683,6 +702,15 @@ const renderMarkers = () => {
             loadData();
           } catch (error) { loadData(); }
         });
+      }
+
+      // Habilitar o deshabilitar arrastre según el modo activo
+      if (markers.value[eq.id] && markers.value[eq.id].dragging) {
+        if (isMoveMode.value) {
+          markers.value[eq.id].dragging.enable();
+        } else {
+          markers.value[eq.id].dragging.disable();
+        }
       }
     }
   });
