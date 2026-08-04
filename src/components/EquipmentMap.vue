@@ -297,6 +297,8 @@ const editComment = ref('');
 // Estado de Filtros
 const searchQuery = ref('');
 const statusFilter = ref('ALL');
+const selectedFilters = ref(['TRACTOR', 'EXCAVADORA', 'CISTERNA', 'TRACTO', 'CAMION_GRUA', 'CAMABAJA', 'MOTONIVELADORA', 'VOLQUETE', 'RODILLO', 'CARGADOR', 'HIDROCICLON', 'OTROS']);
+
 // Estados para Modal Crear Nuevo Equipo
 const showCreateModal = ref(false);
 const creating = ref(false);
