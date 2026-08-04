@@ -15,9 +15,13 @@
           <button class="btn-pdf" @click="downloadReport" :disabled="loading">
             <span>📄</span> Exportar PDF
           </button>
-          <label class="btn-upload-report" :class="{ disabled: uploadingReport || loading }">
-            <span>📤</span> {{ uploadingReport ? 'Procesando PDF...' : 'Subir Reporte Geotecnia' }}
-            <input type="file" accept=".pdf" @change="onPdfFileSelected" hidden :disabled="uploadingReport || loading" />
+          <label class="btn-upload-report btn-upload-perfil" :class="{ disabled: uploadingReport || loading }" title="Subir perfil.pdf para actualizar alturas msnm">
+            <span>📐</span> {{ uploadingReportType === 'perfil' ? 'Procesando...' : 'Subir Perfil (Niveles)' }}
+            <input type="file" accept=".pdf" @change="onPerfilSelected" hidden :disabled="uploadingReport || loading" />
+          </label>
+          <label class="btn-upload-report btn-upload-canchas" :class="{ disabled: uploadingReport || loading }" title="Subir canchas.pdf para actualizar estados y comentarios">
+            <span>📋</span> {{ uploadingReportType === 'canchas' ? 'Procesando...' : 'Subir Canchas (Estados)' }}
+            <input type="file" accept=".pdf" @change="onCanchasSelected" hidden :disabled="uploadingReport || loading" />
           </label>
         </div>
       </div>
@@ -392,7 +396,7 @@
     <div v-if="showUploadModal" class="modal-backdrop" @click.self="showUploadModal = false">
       <div class="modal-card import-modal">
         <div class="modal-header">
-          <h3>Procesamiento de Reporte Geotecnia (.pdf)</h3>
+          <h3>{{ uploadModalTitle || 'Procesamiento de Reporte Geotecnia (.pdf)' }}</h3>
           <button class="btn-close" @click="showUploadModal = false">✕</button>
         </div>
         <div class="modal-body">
@@ -626,37 +630,52 @@ const downloadReport = () => {
   generateCanchasPDF(filteredNiveles.value, filteredCapas.value);
 };
 
-// Carga de Reporte Geotecnia (.pdf)
+// Carga de Reportes Geotecnia (.pdf) - Perfil (Niveles) y Canchas (Estados)
 const uploadingReport = ref(false);
+const uploadingReportType = ref('');
 const showUploadModal = ref(false);
 const uploadResult = ref(null);
 const uploadError = ref('');
+const uploadModalTitle = ref('');
 
-const onPdfFileSelected = async (event) => {
+const onPerfilSelected = async (event) => {
   const file = event.target.files[0];
   if (!file) return;
+  await processPdfUpload('/api/v1/canchas/upload-perfil', file, 'perfil', 'Procesamiento de Perfil (Niveles msnm)');
+  event.target.value = '';
+};
 
+const onCanchasSelected = async (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+  await processPdfUpload('/api/v1/canchas/upload-canchas', file, 'canchas', 'Procesamiento de Canchas (Estados y Comentarios)');
+  event.target.value = '';
+};
+
+const processPdfUpload = async (endpoint, file, typeKey, title) => {
   uploadingReport.value = true;
+  uploadingReportType.value = typeKey;
   uploadError.value = '';
   uploadResult.value = null;
+  uploadModalTitle.value = title;
   showUploadModal.value = true;
 
   try {
     const formData = new FormData();
     formData.append('file', file);
-    const response = await api.post('/api/v1/canchas/import-report', formData, {
+    const response = await api.post(endpoint, formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     });
     uploadResult.value = response.data;
     await fetchData();
   } catch (err) {
-    console.error('Error al procesar el reporte de Geotecnia:', err);
+    console.error('Error al procesar reporte PDF:', err);
     uploadError.value = typeof err.response?.data === 'string' 
       ? err.response.data 
       : 'Ocurrió un error al procesar el reporte PDF.';
   } finally {
     uploadingReport.value = false;
-    event.target.value = '';
+    uploadingReportType.value = '';
   }
 };
 
@@ -794,6 +813,45 @@ h1 { font-size: 1.5rem; font-weight: 800; color: #0f172a; margin: 0; }
   color: white;
 }
 .btn-pdf:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-upload-report {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.5rem 0.9rem;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-upload-perfil {
+  background: #0284c7;
+  color: white;
+  border: 2px solid #0284c7;
+}
+.btn-upload-perfil:hover:not(.disabled) {
+  background: #0369a1;
+  border-color: #0369a1;
+  box-shadow: 0 2px 8px rgba(2, 132, 199, 0.3);
+}
+
+.btn-upload-canchas {
+  background: #16a34a;
+  color: white;
+  border: 2px solid #16a34a;
+}
+.btn-upload-canchas:hover:not(.disabled) {
+  background: #15803d;
+  border-color: #15803d;
+  box-shadow: 0 2px 8px rgba(22, 163, 74, 0.3);
+}
+
+.btn-upload-report.disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
