@@ -659,8 +659,9 @@ const renderMarkers = () => {
       const customIcon = L.divIcon({
         html: getProSVG(eq, eq.status),
         className: 'leaflet-pro-icon',
-        iconSize: [36, 46],
-        iconAnchor: [18, 40]
+        iconSize: [36, 48],
+        iconAnchor: [18, 24],
+        popupAnchor: [0, -24]
       });
       
       const popupContent = `
@@ -693,7 +694,10 @@ const renderMarkers = () => {
         markers.value[eq.id].on('dragend', async (event) => {
           const marker = event.target;
           const position = marker.getLatLng();
+          eq.latitude = position.lat;
+          eq.longitude = position.lng;
           const area = checkAreaForPoint(position.lat, position.lng);
+          eq.currentArea = area;
           try {
             await api.put(`/api/v1/equipment/${eq.id}/location`, 
               { latitude: position.lat, longitude: position.lng, currentArea: area },
@@ -1242,11 +1246,35 @@ onMounted(() => {
   }
 }
 
-:deep(.leaflet-pro-icon) { background: none; border: none; }
-:deep(.pro-icon-wrapper) { display: flex; flex-direction: column; align-items: center; }
+:deep(.leaflet-pro-icon) {
+  background: transparent !important;
+  border: none !important;
+  width: 36px !important;
+  height: 48px !important;
+  overflow: visible !important;
+}
+
+:deep(.pro-icon-wrapper) {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  width: 36px !important;
+  height: 48px !important;
+  pointer-events: auto !important;
+}
+
 :deep(.icon-label) {
-  font-size: 9px; font-weight: bold; color: #000; padding: 1px 4px; border-radius: 3px;
-  margin-top: -5px; white-space: nowrap; border: 1px solid rgba(0,0,0,0.3);
+  font-size: 9px;
+  font-weight: 800;
+  color: #0f172a;
+  padding: 1px 5px;
+  border-radius: 4px;
+  margin-top: -6px;
+  white-space: nowrap;
+  border: 1px solid rgba(0,0,0,0.25);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  z-index: 10;
 }
 
 /* Transiciones */
