@@ -86,7 +86,7 @@
           <select v-model="selectedEquipmentId" class="select-input highlight-select">
             <option :value="null">-- Seleccionar Equipo --</option>
             <option v-for="eq in filteredEquipment" :key="eq.id" :value="eq.id">
-              {{ eq.name }} ({{ eq.status }})
+              {{ eq.shortCode ? eq.shortCode + ' - ' : '' }}{{ eq.name }} ({{ eq.status }})
             </option>
           </select>
         </div>
@@ -499,7 +499,9 @@ const currentAreaName = computed(() => {
 
 const formatShortName = (eqOrName) => {
   if (!eqOrName) return '';
-  if (typeof eqOrName === 'object' && eqOrName.shortCode) return eqOrName.shortCode;
+  if (typeof eqOrName === 'object' && eqOrName.shortCode && eqOrName.shortCode.trim()) {
+    return eqOrName.shortCode.trim();
+  }
 
   const name = typeof eqOrName === 'string' ? eqOrName : (eqOrName.name || '');
   if (name.startsWith('BATERIA')) return 'B' + name.replace('BATERIA', '').trim();
@@ -640,9 +642,12 @@ const renderMarkers = () => {
       
       const popupContent = `
         <div style="font-family: inherit; color: #333; padding: 4px;">
-          <b style="font-size: 14px;">${eq.name}</b><br>
+          <b style="font-size: 14px;">${eq.shortCode ? eq.shortCode + ' - ' : ''}${eq.name}</b><br>
           <span style="font-size: 12px;"><b>Estado:</b> ${eq.status}</span><br>
+          ${eq.spccCode ? `<span style="font-size: 11px;"><b>SPCC:</b> ${eq.spccCode}</span><br>` : ''}
+          ${eq.plate ? `<span style="font-size: 11px;"><b>Placa:</b> ${eq.plate}</span><br>` : ''}
           <span style="font-size: 11px; color: #666;"><b>Ubicación:</b> ${eq.currentArea || 'Fuera de zona'}</span><br>
+          ${eq.description ? `<span style="font-size: 11px; color: #475569;"><b>Desc:</b> ${eq.description}</span><br>` : ''}
           ${eq.comment ? `<hr style="margin: 5px 0; border: 0; border-top: 1px solid #eee;"><span style="font-size: 11px; color: #666;"><i>${eq.comment}</i></span>` : ''}
         </div>
       `;
