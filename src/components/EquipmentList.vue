@@ -252,12 +252,18 @@ const getCategoryColor = (eq) => {
 
 const getFallbackShortCode = (name) => {
   if (!name) return '-';
-  if (name.startsWith('BATERIA')) return 'B' + name.replace('BATERIA', '').trim();
-  if (name.startsWith('NIDO')) return 'N' + name.replace('NIDO', '').trim();
-  if (name.startsWith('Rodillo #')) return 'R' + name.replace('Rodillo #', '');
-  if (name.startsWith('Volquete #')) return 'V' + name.replace('Volquete #', '');
-  if (name.startsWith('Cisterna')) return 'CIS' + name.replace('Cisterna', '').trim();
-  return name.slice(0, 6);
+  const n = name.trim();
+  if (n.startsWith('BATERIA')) return 'B' + n.replace('BATERIA', '').trim();
+  if (n.startsWith('NIDO')) return 'N' + n.replace('NIDO', '').trim();
+  if (n.startsWith('Rodillo #')) return 'R' + n.replace('Rodillo #', '').trim();
+  if (n.startsWith('Volquete #')) return 'V' + n.replace('Volquete #', '').trim();
+  if (n.toLowerCase().startsWith('cisterna')) return 'CIS' + n.replace(/cisterna/gi, '').replace('#', '').trim();
+  if (n.toLowerCase().startsWith('tracto')) return 'TR' + n.replace(/tracto/gi, '').replace('#', '').trim();
+  if (n.toLowerCase().startsWith('retroexcavadora')) return 'RT' + n.replace(/retroexcavadora/gi, '').trim();
+  if (n.toLowerCase().startsWith('motoniveladora')) return 'MN' + n.replace(/motoniveladora/gi, '').trim();
+  if (n.toLowerCase().startsWith('cargador')) return 'CF' + n.replace(/cargador/gi, '').trim();
+  if (n.toLowerCase().startsWith('exc.')) return 'EXC-' + n.replace('Exc.', '').trim();
+  return n;
 };
 
 const openEditModal = (eq) => {
