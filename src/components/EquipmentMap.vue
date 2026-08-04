@@ -14,6 +14,10 @@
         </div>
 
         <div class="toolbar-actions">
+          <button class="btn-create-header" @click="openCreateModal" title="Registrar un nuevo equipo">
+            ➕ Crear Equipo
+          </button>
+
           <!-- Selector de Modo Mapa / Lista -->
           <div class="mode-switch-group">
             <button 
@@ -168,8 +172,86 @@
     <div v-if="viewMode === 'LIST'" class="list-mode-container">
       <EquipmentList 
         :equipment="filteredEquipment" 
-        @update-required="loadData" 
+        @update-required="loadData"
+        @open-create-modal="openCreateModal"
       />
+    </div>
+
+    <!-- Modal Crear Nuevo Equipo -->
+    <div v-if="showCreateModal" class="modal-backdrop" @click.self="closeCreateModal">
+      <div class="modal-dialog">
+        <div class="modal-header">
+          <h3>➕ Registrar Nuevo Equipo</h3>
+          <button class="btn-close" @click="closeCreateModal">✕</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label">Nombre / Código Equipo *:</label>
+              <input type="text" v-model="createForm.name" class="form-input-text" placeholder="Ej. Cisterna #01, D85-1" />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Resumen / Iniciales:</label>
+              <input type="text" v-model="createForm.shortCode" class="form-input-text" placeholder="Ej. CIS-01, D8-01" />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Tipo de Equipo:</label>
+              <select v-model="createForm.equipmentType" class="form-select">
+                <option value="TRACTOR">Tractor de Oruga</option>
+                <option value="EXCAVADORA">Excavadora</option>
+                <option value="CISTERNA">Camión Cisterna</option>
+                <option value="TRACTO">Tractocamión / Tracto</option>
+                <option value="CAMION_GRUA">Camión Grúa / Pluma</option>
+                <option value="CAMABAJA">Camabaja / Lowboy</option>
+                <option value="MOTONIVELADORA">Motoniveladora</option>
+                <option value="VOLQUETE">Volquete</option>
+                <option value="RODILLO">Rodillo Compactador</option>
+                <option value="CARGADOR">Cargador Frontal</option>
+                <option value="HIDROCICLON">Hidrociclón / Nido</option>
+                <option value="OTROS">Otros Equipos</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Placa:</label>
+              <input type="text" v-model="createForm.plate" class="form-input-text" placeholder="Ej. ABC-123" />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Código SPCC:</label>
+              <input type="text" v-model="createForm.spccCode" class="form-input-text" placeholder="Ej. SPCC-9012" />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Estado Inicial:</label>
+              <select v-model="createForm.status" class="form-select">
+                <option value="OPERATIVO">🟢 OPERATIVO</option>
+                <option value="STAND_BY">🟡 STAND_BY</option>
+                <option value="INOPERATIVO">🔴 INOPERATIVO</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group full-width" style="margin-top: 1rem;">
+            <label class="form-label">Descripción Detallada:</label>
+            <input type="text" v-model="createForm.description" class="form-input-text" placeholder="Ej. Camión Cisterna 5000 GAL para regado de acceso en dique" />
+          </div>
+
+          <div class="form-group full-width" style="margin-top: 0.75rem;">
+            <label class="form-label">Observaciones / Comentarios:</label>
+            <input type="text" v-model="createForm.comment" class="form-input-text" placeholder="Comentarios iniciales..." />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-cancel-modal" @click="closeCreateModal">Cancelar</button>
+          <button class="btn-save-modal" :disabled="creating" @click="saveNewEquipment">
+            <span v-if="creating">Creando...</span>
+            <span v-else>💾 Registrar Equipo</span>
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -215,31 +297,98 @@ const editComment = ref('');
 // Estado de Filtros
 const searchQuery = ref('');
 const statusFilter = ref('ALL');
-const selectedFilters = ref(['TRACTOR', 'EXCAVADORA']);
+// Estados para Modal Crear Nuevo Equipo
+const showCreateModal = ref(false);
+const creating = ref(false);
+const createForm = reactive({
+  name: '',
+  shortCode: '',
+  description: '',
+  plate: '',
+  spccCode: '',
+  equipmentType: 'TRACTOR',
+  status: 'OPERATIVO',
+  comment: '',
+  latitude: -17.2750,
+  longitude: -70.9200
+});
+
+const openCreateModal = () => {
+  createForm.name = '';
+  createForm.shortCode = '';
+  createForm.description = '';
+  createForm.plate = '';
+  createForm.spccCode = '';
+  createForm.equipmentType = 'TRACTOR';
+  createForm.status = 'OPERATIVO';
+  createForm.comment = '';
+  showCreateModal.value = true;
+};
+
+const closeCreateModal = () => {
+  showCreateModal.value = false;
+};
+
+const saveNewEquipment = async () => {
+  if (!createForm.name.trim()) {
+    alert("Por favor ingresa un nombre o código para el equipo.");
+    return;
+  }
+
+  creating.value = true;
+  try {
+    await api.post('/api/v1/equipment', createForm);
+    closeCreateModal();
+    await loadData();
+  } catch (error) {
+    console.error("Error al registrar nuevo equipo:", error);
+    alert("Ocurrió un error al registrar el nuevo equipo.");
+  } finally {
+    creating.value = false;
+  }
+};
 
 const categories = [
   { id: 'TRACTOR', label: 'Tractores', short: 'Trac', color: '#ff4757' },
   { id: 'EXCAVADORA', label: 'Excavadoras', short: 'Exc', color: '#ffa502' },
-  { id: 'HIDROCICLON', label: 'Hidrociclones', short: 'Hidro', color: '#00cec9' },
+  { id: 'CISTERNA', label: 'Cisternas', short: 'Cist', color: '#0984e3' },
+  { id: 'TRACTO', label: 'Tractos', short: 'Tracto', color: '#d63031' },
+  { id: 'CAMION_GRUA', label: 'Camión Grúa', short: 'Grúa', color: '#e17055' },
+  { id: 'CAMABAJA', label: 'Camabaja', short: 'Cama', color: '#27ae60' },
+  { id: 'MOTONIVELADORA', label: 'Motoniveladoras', short: 'Moto', color: '#fdcb6e' },
   { id: 'VOLQUETE', label: 'Volquetes', short: 'Volq', color: '#1e272e' },
   { id: 'RODILLO', label: 'Rodillos', short: 'Rod', color: '#747d8c' },
   { id: 'CARGADOR', label: 'Cargadores', short: 'Carg', color: '#e17055' },
+  { id: 'HIDROCICLON', label: 'Hidrociclones', short: 'Hidro', color: '#00cec9' },
   { id: 'OTROS', label: 'Otros', short: 'Otro', color: '#6c5ce7' }
 ];
 
-const getCategory = (name) => {
-  if (!name) return 'OTROS';
+const getCategory = (eqOrName) => {
+  if (!eqOrName) return 'OTROS';
+  const name = typeof eqOrName === 'string' ? eqOrName : (eqOrName.name || '');
+  const type = typeof eqOrName === 'object' ? eqOrName.equipmentType : null;
+
+  if (type && categories.some(c => c.id === type)) {
+    return type;
+  }
+
+  const lower = name.toLowerCase();
   if (name.startsWith('BATERIA') || name.startsWith('NIDO')) return 'HIDROCICLON';
-  if (name.startsWith('D8') || name.startsWith('D9') || name.startsWith('D10')) return 'TRACTOR';
-  if (name.includes('Exc.')) return 'EXCAVADORA';
-  if (name.includes('Cargador')) return 'CARGADOR';
-  if (name.includes('Volquete')) return 'VOLQUETE';
-  if (name.includes('Rodillo')) return 'RODILLO';
+  if (name.startsWith('D8') || name.startsWith('D9') || name.startsWith('D10') || lower.includes('tractor')) return 'TRACTOR';
+  if (name.includes('Exc.') || lower.includes('excavadora')) return 'EXCAVADORA';
+  if (lower.includes('cisterna') || lower.includes('agua')) return 'CISTERNA';
+  if (lower.includes('tracto')) return 'TRACTO';
+  if (lower.includes('grúa') || lower.includes('grua')) return 'CAMION_GRUA';
+  if (lower.includes('camabaja')) return 'CAMABAJA';
+  if (lower.includes('cargador')) return 'CARGADOR';
+  if (lower.includes('volquete')) return 'VOLQUETE';
+  if (lower.includes('rodillo')) return 'RODILLO';
+  if (lower.includes('motoniveladora')) return 'MOTONIVELADORA';
   return 'OTROS';
 };
 
 const getCategoryCount = (catId) => {
-  return equipmentList.value.filter(eq => getCategory(eq.name) === catId).length;
+  return equipmentList.value.filter(eq => getCategory(eq) === catId).length;
 };
 
 const isAllSelected = computed(() => {
@@ -263,7 +412,7 @@ const toggleFilter = (id) => {
 const filteredEquipment = computed(() => {
   return equipmentList.value.filter(eq => {
     // 1. Filtro por Tipo / Categoría
-    const cat = getCategory(eq.name);
+    const cat = getCategory(eq);
     const matchesCategory = selectedFilters.value.length === 0 || selectedFilters.value.includes(cat);
 
     // 2. Filtro por Estado
@@ -273,6 +422,10 @@ const filteredEquipment = computed(() => {
     const query = searchQuery.value.trim().toLowerCase();
     const matchesSearch = !query || 
       eq.name.toLowerCase().includes(query) || 
+      (eq.shortCode && eq.shortCode.toLowerCase().includes(query)) ||
+      (eq.description && eq.description.toLowerCase().includes(query)) ||
+      (eq.plate && eq.plate.toLowerCase().includes(query)) ||
+      (eq.spccCode && eq.spccCode.toLowerCase().includes(query)) ||
       (eq.comment && eq.comment.toLowerCase().includes(query));
 
     return matchesCategory && matchesStatus && matchesSearch;
@@ -342,12 +495,16 @@ const currentAreaName = computed(() => {
   return eq ? eq.currentArea : '';
 });
 
-const formatShortName = (name) => {
-  if (!name) return '';
+const formatShortName = (eqOrName) => {
+  if (!eqOrName) return '';
+  if (typeof eqOrName === 'object' && eqOrName.shortCode) return eqOrName.shortCode;
+
+  const name = typeof eqOrName === 'string' ? eqOrName : (eqOrName.name || '');
   if (name.startsWith('BATERIA')) return 'B' + name.replace('BATERIA', '').trim();
   if (name.startsWith('NIDO')) return 'N' + name.replace('NIDO', '').trim();
   if (name.startsWith('Rodillo #')) return 'R' + name.replace('Rodillo #', '');
   if (name.startsWith('Volquete #')) return 'V' + name.replace('Volquete #', '');
+  if (name.startsWith('Cisterna')) return 'CIS' + name.replace('Cisterna', '').trim();
   if (name.startsWith('Retroexcavadora')) return 'Rt' + name.replace('Retroexcavadora', '').trim();
   if (name.startsWith('Motoniveladora')) return 'M' + name.replace('Motoniveladora', '').trim().split(' ')[0];
   if (name.startsWith('Cargador')) return 'C' + name.replace('Cargador', '').trim().split(' ')[0];
@@ -356,13 +513,16 @@ const formatShortName = (name) => {
   return name.slice(0, 6);
 };
 
-const getProSVG = (name, status) => {
+const getProSVG = (eqOrName, status) => {
   let mainColor = "#2ed573";
   if (status === 'INOPERATIVO') mainColor = "#ff4757";
   if (status === 'STAND_BY') mainColor = "#ffa502";
 
+  const cat = getCategory(eqOrName);
+  const name = typeof eqOrName === 'string' ? eqOrName : (eqOrName.name || '');
+
   let paths = "";
-  if (name.startsWith("BATERIA") || name.startsWith("NIDO")) {
+  if (cat === 'HIDROCICLON') {
     paths = `
       <path d="M7 5h10l-3 12h-4z" fill="${mainColor}"/>
       <path d="M10 17h4v4h-4z" fill="#555"/>
@@ -370,17 +530,50 @@ const getProSVG = (name, status) => {
       <path d="M4 7h4v2H4z" fill="#333"/>
       <circle cx="12" cy="11" r="2" fill="rgba(255,255,255,0.3)"/>
     `;
-  } else if (name.startsWith("D")) {
+  } else if (cat === 'CISTERNA') {
+    paths = `
+      <circle cx="6" cy="19" r="2" fill="#333"/>
+      <circle cx="17" cy="19" r="2" fill="#333"/>
+      <rect x="2" y="10" width="6" height="7" rx="1" fill="#555"/>
+      <rect x="7" y="9" width="14" height="8" rx="4" fill="${mainColor}"/>
+      <path d="M10 6h8v3h-8z" fill="#00cec9"/>
+    `;
+  } else if (cat === 'TRACTO') {
+    paths = `
+      <circle cx="6" cy="19" r="2.5" fill="#333"/>
+      <circle cx="14" cy="19" r="2.5" fill="#333"/>
+      <circle cx="18" cy="19" r="2.5" fill="#333"/>
+      <path d="M3 10h8v7H3z" fill="${mainColor}"/>
+      <path d="M11 13h10v4H11z" fill="#555"/>
+      <path d="M4 11h4v3H4z" fill="#dfe6e9"/>
+    `;
+  } else if (cat === 'CAMION_GRUA') {
+    paths = `
+      <circle cx="6" cy="19" r="2" fill="#333"/>
+      <circle cx="17" cy="19" r="2" fill="#333"/>
+      <rect x="3" y="12" width="15" height="5" fill="${mainColor}"/>
+      <path d="M5 12L17 3l2 2L8 14z" fill="#d63031"/>
+      <path d="M17 3v7" stroke="#333" stroke-width="1.5"/>
+    `;
+  } else if (cat === 'CAMABAJA') {
+    paths = `
+      <circle cx="5" cy="19" r="2" fill="#333"/>
+      <circle cx="15" cy="19" r="2" fill="#333"/>
+      <circle cx="19" cy="19" r="2" fill="#333"/>
+      <path d="M2 11h5v6H2z" fill="${mainColor}"/>
+      <path d="M7 16h15v2H7z" fill="#6366f1"/>
+    `;
+  } else if (cat === 'TRACTOR') {
     paths = `<path d="M4 18h16v2H4z" fill="#333"/><path d="M6 10h10l2 4H4z" fill="${mainColor}"/><path d="M2 14h20v2H2z" fill="${mainColor}"/><path d="M20 10l2 6h-2z" fill="#555"/>`;
-  } else if (name.includes("Exc.")) {
+  } else if (cat === 'EXCAVADORA') {
     paths = `<path d="M4 18h12v2H4z" fill="#333"/><path d="M4 12h10v6H4z" fill="${mainColor}"/><path d="M12 14l8-8 2 2-6 8z" fill="#555"/><path d="M20 4l3 3-2 2-3-3z" fill="#333"/>`;
-  } else if (name.includes("Volquete")) {
+  } else if (cat === 'VOLQUETE') {
     paths = `<circle cx="7" cy="19" r="2" fill="#333"/><circle cx="17" cy="19" r="2" fill="#333"/><path d="M3 14h10v4H3z" fill="${mainColor}"/><path d="M10 8l11 2v6H10z" fill="${mainColor}"/>`;
-  } else if (name.includes("Cargador")) {
+  } else if (cat === 'CARGADOR') {
     paths = `<circle cx="6" cy="18" r="3" fill="#333"/><circle cx="16" cy="18" r="3" fill="#333"/><path d="M5 12h8v4H5z" fill="${mainColor}"/><path d="M13 14l7-4v8z" fill="${mainColor}"/><path d="M20 10l3 6h-3z" fill="#555"/>`;
-  } else if (name.includes("Motoniveladora")) {
+  } else if (cat === 'MOTONIVELADORA') {
     paths = `<circle cx="5" cy="19" r="2" fill="#333"/><circle cx="15" cy="19" r="2" fill="#333"/><circle cx="19" cy="19" r="2" fill="#333"/><path d="M4 15h16v2H4z" fill="#555"/><path d="M14 10h5v5h-5z" fill="${mainColor}"/><path d="M8 17l6-2v1z" fill="#333"/>`;
-  } else if (name.includes("Rodillo")) {
+  } else if (cat === 'RODILLO') {
     paths = `<circle cx="6" cy="16" r="5" fill="#777" stroke="#333"/><circle cx="18" cy="18" r="3" fill="#333"/><path d="M8 12h10v4H8z" fill="${mainColor}"/>`;
   } else {
     paths = `<path d="M12 2L4 20h16L12 2z" fill="${mainColor}"/>`;
@@ -392,7 +585,7 @@ const getProSVG = (name, status) => {
         <rect x="0" y="0" width="24" height="24" rx="4" fill="rgba(255,255,255,0.2)" />
         ${paths}
       </svg>
-      <div class="icon-label" style="background: ${mainColor}">${formatShortName(name)}</div>
+      <div class="icon-label" style="background: ${mainColor}">${formatShortName(eqOrName)}</div>
     </div>
   `;
 };
@@ -437,7 +630,7 @@ const renderMarkers = () => {
   filteredEquipment.value.forEach(eq => {
     if (eq.latitude && eq.longitude) {
       const customIcon = L.divIcon({
-        html: getProSVG(eq.name, eq.status),
+        html: getProSVG(eq, eq.status),
         className: 'leaflet-pro-icon',
         iconSize: [36, 46],
         iconAnchor: [18, 40]
@@ -594,8 +787,27 @@ onMounted(() => {
 .toolbar-actions {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.6rem;
   flex-wrap: wrap;
+}
+
+.btn-create-header {
+  background: #4f46e5;
+  color: white;
+  border: none;
+  padding: 0.55rem 1rem;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition: all 0.2s ease;
+}
+.btn-create-header:hover {
+  background: #4338ca;
+  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.3);
 }
 
 .mode-switch-group {
