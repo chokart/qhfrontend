@@ -606,9 +606,9 @@ const removeOverride = async () => {
 }
 
 .col-operator {
-  min-width: 220px;
-  max-width: 240px;
-  padding: 0.75rem 1rem;
+  min-width: 170px;
+  max-width: 180px;
+  padding: 0.35rem 0.5rem;
   text-align: left;
 }
 
@@ -616,14 +616,14 @@ const removeOverride = async () => {
   background: #f8fafc;
   color: #475569;
   font-weight: 700;
-  padding: 0.6rem 0.4rem;
+  padding: 0.3rem 0.05rem;
   border-bottom: 2px solid #e2e8f0;
   text-align: center;
 }
 
 .col-day {
-  min-width: 38px;
-  width: 38px;
+  min-width: 27px;
+  width: 27px;
 }
 
 .weekend-header {
@@ -632,12 +632,12 @@ const removeOverride = async () => {
 }
 
 .day-num {
-  font-size: 0.9rem;
+  font-size: 0.76rem;
   font-weight: 800;
 }
 
 .day-name {
-  font-size: 0.68rem;
+  font-size: 0.6rem;
   color: #64748b;
   text-transform: uppercase;
 }
@@ -645,10 +645,11 @@ const removeOverride = async () => {
 .op-cell-info {
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
+  gap: 0.15rem;
 }
 
 .op-name {
+  font-size: 0.76rem;
   font-weight: 700;
   color: #0f172a;
   white-space: nowrap;
@@ -658,30 +659,30 @@ const removeOverride = async () => {
 
 .op-sub-info {
   display: flex;
-  gap: 0.4rem;
+  gap: 0.3rem;
   align-items: center;
 }
 
 .op-code-tag {
   background: #3b82f6;
   color: white;
-  font-size: 0.7rem;
+  font-size: 0.65rem;
   font-weight: 800;
-  padding: 0.1rem 0.35rem;
-  border-radius: 4px;
+  padding: 0.05rem 0.25rem;
+  border-radius: 3px;
   font-family: monospace;
 }
 
 .op-guardia-tag {
   color: white;
-  font-size: 0.68rem;
+  font-size: 0.65rem;
   font-weight: 800;
-  padding: 0.1rem 0.4rem;
-  border-radius: 4px;
+  padding: 0.05rem 0.3rem;
+  border-radius: 3px;
 }
 
 .col-shift-cell {
-  padding: 0.35rem 0.2rem;
+  padding: 0.15rem 0.05rem;
   text-align: center;
   border-bottom: 1px solid #f1f5f9;
   border-right: 1px solid #f1f5f9;
@@ -696,19 +697,19 @@ const removeOverride = async () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 24px;
+  height: 24px;
   margin: 0 auto;
-  border-radius: 8px;
-  font-weight: 800;
-  font-size: 0.85rem;
+  border-radius: 4px;
+  font-weight: 900;
+  font-size: 0.72rem;
   user-select: none;
   transition: all 0.15s ease;
 }
 
 .shift-d {
-  background: #10b981;
-  color: white;
+  background: #eab308;
+  color: #0f172a;
 }
 
 .shift-n {
@@ -747,19 +748,20 @@ const removeOverride = async () => {
 }
 
 .summary-row td {
-  padding: 0.5rem 0.4rem;
+  padding: 0.25rem 0.05rem;
   border-top: 1px solid #e2e8f0;
   font-weight: 800;
   text-align: center;
+  font-size: 0.72rem;
 }
 
 .summary-label {
-  font-size: 0.78rem;
+  font-size: 0.72rem;
   color: #334155;
   text-align: left !important;
 }
 
-.count-d { background: #ecfdf5; color: #047857; }
+.count-d { background: #fef9c3; color: #854d0e; }
 .count-n { background: #e0e7ff; color: #4338ca; }
 .count-l { background: #f8fafc; color: #64748b; }
 .count-v { background: #fef3c7; color: #b45309; }
@@ -857,7 +859,7 @@ const removeOverride = async () => {
   transition: all 0.15s ease;
 }
 
-.btn-shift-radio.active.d { background: #10b981; color: white; border-color: #10b981; }
+.btn-shift-radio.active.d { background: #eab308; color: #0f172a; border-color: #ca8a04; }
 .btn-shift-radio.active.n { background: #6366f1; color: white; border-color: #6366f1; }
 .btn-shift-radio.active.l { background: #64748b; color: white; border-color: #64748b; }
 .btn-shift-radio.active.v { background: #f59e0b; color: white; border-color: #f59e0b; }
