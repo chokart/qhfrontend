@@ -430,7 +430,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, reactive, computed, onMounted } from 'vue';
 import AppNavbar from '../components/AppNavbar.vue';
 import ShiftCalendar from '../components/ShiftCalendar.vue';
 import GroupManagerModal from '../components/GroupManagerModal.vue';
