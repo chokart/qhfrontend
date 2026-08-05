@@ -243,7 +243,9 @@ import api from '../api';
 
 const emit = defineEmits(['openGroupManager']);
 
-const currentMonth = ref(7); // Julio 2026 por defecto
+const now = new Date();
+const currentRealMonth = now.getMonth() + 1;
+const currentMonth = ref(currentRealMonth >= 1 && currentRealMonth <= 12 ? currentRealMonth : 8);
 const selectedGroupFilter = ref(null);
 const searchQuery = ref('');
 const loading = ref(true);
@@ -251,7 +253,7 @@ const groups = ref([]);
 
 const matrixData = ref({
   year: 2026,
-  month: 7,
+  month: currentMonth.value,
   daysInMonth: 31,
   operators: []
 });
@@ -264,6 +266,12 @@ const overrideComment = ref('');
 const savingOverride = ref(false);
 
 const monthOptions = [
+  { value: 1, label: 'Enero 2026' },
+  { value: 2, label: 'Febrero 2026' },
+  { value: 3, label: 'Marzo 2026' },
+  { value: 4, label: 'Abril 2026' },
+  { value: 5, label: 'Mayo 2026' },
+  { value: 6, label: 'Junio 2026' },
   { value: 7, label: 'Julio 2026' },
   { value: 8, label: 'Agosto 2026' },
   { value: 9, label: 'Septiembre 2026' },

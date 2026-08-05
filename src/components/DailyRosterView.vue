@@ -308,7 +308,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import api from '../api';
@@ -317,6 +317,15 @@ const selectedDate = ref('');
 const loading = ref(false);
 const matrixOperators = ref([]);
 const rosterReady = ref(false);
+
+onMounted(() => {
+  const today = new Date();
+  const yyyy = today.getFullYear();
+  const mm = String(today.getMonth() + 1).padStart(2, '0');
+  const dd = String(today.getDate()).padStart(2, '0');
+  selectedDate.value = `${yyyy}-${mm}-${dd}`;
+  fetchRoster();
+});
 
 // Estados para Cambio de Rol desde Guardia del Día
 const showRoleModal = ref(false);

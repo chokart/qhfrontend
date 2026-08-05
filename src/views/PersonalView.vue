@@ -7,7 +7,7 @@
       <div class="header-section">
         <div class="title-group">
           <h1>👥 Módulo de Personal y Turnos</h1>
-          <p class="subtitle">Directorio de los 127 operadores y programación de turnos (Julio - Diciembre 2026).</p>
+          <p class="subtitle">Directorio de los 127 operadores y programación de turnos 2026.</p>
         </div>
 
         <!-- Pestañas de Navegación del Módulo -->
@@ -22,7 +22,7 @@
             :class="['tab-btn', { active: activeTab === 'calendar' }]"
             @click="activeTab = 'calendar'"
           >
-            📅 Calendario de Turnos (Julio - Dic 2026)
+            📅 Calendario de Turnos (2026)
           </button>
           <button 
             :class="['tab-btn', { active: activeTab === 'daily' }]"
