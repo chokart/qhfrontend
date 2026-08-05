@@ -69,15 +69,20 @@
               <h3>Directorio de Operadores por Guardia</h3>
               <span class="badge-count">{{ filteredOperators.length }} registros</span>
             </div>
-            <div class="search-box">
-              <span class="search-icon">🔍</span>
-              <input 
-                v-model="searchQuery" 
-                type="text" 
-                placeholder="Buscar por código, nombre o guardia..." 
-                class="search-input"
-              />
-              <button v-if="searchQuery" @click="searchQuery = ''" class="clear-btn">✕</button>
+            <div class="header-right-actions">
+              <button class="btn-create-operator" @click="openCreateOperatorModal" title="Registrar un nuevo trabajador en el sistema">
+                ➕ Registrar Personal
+              </button>
+              <div class="search-box">
+                <span class="search-icon">🔍</span>
+                <input 
+                  v-model="searchQuery" 
+                  type="text" 
+                  placeholder="Buscar por código, nombre o guardia..." 
+                  class="search-input"
+                />
+                <button v-if="searchQuery" @click="searchQuery = ''" class="clear-btn">✕</button>
+              </div>
             </div>
           </div>
 
@@ -98,7 +103,7 @@
                   <th style="width: 160px;">ROL / CARGO</th>
                   <th style="width: 150px;">GUARDIA / GRUPO</th>
                   <th style="width: 90px; text-align: center;">ESTADO</th>
-                  <th style="width: 280px; text-align: center;">ACCIONES</th>
+                  <th style="width: 320px; text-align: center;">ACCIONES</th>
                 </tr>
               </thead>
               <tbody>
@@ -149,6 +154,13 @@
                         title="Programar Vacaciones, Descanso Médico o Sobretiempo"
                       >
                         📝 Excepción
+                      </button>
+                      <button 
+                        class="action-btn-delete"
+                        @click="confirmDeleteOperator(op)"
+                        title="Eliminar operador del sistema"
+                      >
+                        🗑️
                       </button>
                     </div>
                   </td>
@@ -325,6 +337,84 @@
           <button class="btn-save" :disabled="savingRole" @click="saveOperatorRole">
             <span v-if="savingRole">Guardando...</span>
             <span v-else>💾 Guardar Rol</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Registrar Nuevo Personal -->
+    <div v-if="showCreateOperatorModal" class="modal-backdrop" @click.self="showCreateOperatorModal = false">
+      <div class="modal-dialog">
+        <div class="modal-header">
+          <h3>➕ Registrar Nuevo Personal</h3>
+          <button class="btn-close" @click="showCreateOperatorModal = false">✕</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Código / ID de Ficha (Opcional):</label>
+            <input type="text" v-model="createOpForm.code" placeholder="Ej. 104031" class="form-input-text" />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Nombre Completo (* Requerido):</label>
+            <input type="text" v-model="createOpForm.name" placeholder="Ej. PÉREZ MORALES, JUAN CARLOS" class="form-input-text" />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Rol / Cargo Inicial:</label>
+            <select v-model="createOpForm.role" class="form-select">
+              <option v-for="r in rolePresetOptions" :key="r" :value="r">{{ r }}</option>
+            </select>
+          </div>
+
+          <div v-if="createOpForm.role === 'OTRO'" class="form-group">
+            <label class="form-label">Especificar Cargo Personalizado:</label>
+            <input type="text" v-model="createOpForm.customRole" placeholder="Ej. Técnico Mecánico" class="form-input-text" />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Guardia / Grupo de Trabajo:</label>
+            <select v-model="createOpForm.groupId" class="form-select">
+              <option :value="null">-- Sin Guardia Asignada --</option>
+              <option v-for="g in groups" :key="g.id" :value="g.id">
+                {{ g.name }} ({{ g.programType || 'Rotación' }})
+              </option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-cancel" @click="showCreateOperatorModal = false">Cancelar</button>
+          <button class="btn-save" :disabled="savingCreateOperator" @click="saveNewOperator">
+            <span v-if="savingCreateOperator">Guardando...</span>
+            <span v-else>💾 Registrar Personal</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Confirmar Eliminación de Personal -->
+    <div v-if="showDeleteOperatorModal" class="modal-backdrop" @click.self="showDeleteOperatorModal = false">
+      <div class="modal-dialog">
+        <div class="modal-header danger-header">
+          <h3>🗑️ Confirmar Eliminación de Personal</h3>
+          <button class="btn-close" @click="showDeleteOperatorModal = false">✕</button>
+        </div>
+        <div class="modal-body" v-if="operatorToDelete">
+          <p class="delete-warning-text">¿Estás seguro de que deseas eliminar permanentemente a este trabajador?</p>
+          <div class="op-card-summary danger-summary">
+            <span v-if="operatorToDelete.code" class="code-badge">{{ operatorToDelete.code }}</span>
+            <span class="op-name-bold">{{ operatorToDelete.name }}</span>
+            <span v-if="operatorToDelete.group" class="guardia-badge" :style="{ backgroundColor: operatorToDelete.group.color }">
+              {{ operatorToDelete.group.name }}
+            </span>
+          </div>
+          <p class="delete-sub-warning">⚠️ Esta acción eliminará al operador del directorio y todas sus excepciones asignadas.</p>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-cancel" @click="showDeleteOperatorModal = false">Cancelar</button>
+          <button class="btn-danger-confirm" :disabled="deletingOperator" @click="deleteOperatorConfirmed">
+            <span v-if="deletingOperator">Eliminando...</span>
+            <span v-else>🗑️ Sí, Eliminar Personal</span>
           </button>
         </div>
       </div>
@@ -591,6 +681,78 @@ const filteredOperators = computed(() => {
     return nameMatch || codeMatch || groupMatch;
   });
 });
+
+// Estados para Modal de Crear Nuevo Trabajador
+const showCreateOperatorModal = ref(false);
+const savingCreateOperator = ref(false);
+const createOpForm = reactive({
+  code: '',
+  name: '',
+  role: 'OPERADOR',
+  customRole: '',
+  groupId: null
+});
+
+const openCreateOperatorModal = () => {
+  createOpForm.code = '';
+  createOpForm.name = '';
+  createOpForm.role = 'OPERADOR';
+  createOpForm.customRole = '';
+  createOpForm.groupId = null;
+  showCreateOperatorModal.value = true;
+};
+
+const saveNewOperator = async () => {
+  if (!createOpForm.name.trim()) {
+    alert("Por favor ingrese el nombre completo del trabajador.");
+    return;
+  }
+
+  savingCreateOperator.value = true;
+  try {
+    const finalRole = createOpForm.role === 'OTRO' ? createOpForm.customRole.trim() : createOpForm.role;
+    await api.post('/api/v1/operators', {
+      code: createOpForm.code.trim(),
+      name: createOpForm.name.trim(),
+      role: finalRole || 'OPERADOR',
+      groupId: createOpForm.groupId
+    });
+
+    showCreateOperatorModal.value = false;
+    refreshAllData();
+  } catch (err) {
+    console.error("Error al registrar trabajador:", err);
+    alert("Ocurrió un error al registrar el nuevo trabajador.");
+  } finally {
+    savingCreateOperator.value = false;
+  }
+};
+
+// Estados para Modal de Eliminar Trabajador
+const showDeleteOperatorModal = ref(false);
+const operatorToDelete = ref(null);
+const deletingOperator = ref(false);
+
+const confirmDeleteOperator = (op) => {
+  operatorToDelete.value = op;
+  showDeleteOperatorModal.value = true;
+};
+
+const deleteOperatorConfirmed = async () => {
+  if (!operatorToDelete.value) return;
+  deletingOperator.value = true;
+  try {
+    await api.delete(`/api/v1/operators/${operatorToDelete.value.id}`);
+    showDeleteOperatorModal.value = false;
+    operatorToDelete.value = null;
+    refreshAllData();
+  } catch (err) {
+    console.error("Error al eliminar operador:", err);
+    alert("Ocurrió un error al intentar eliminar el operador.");
+  } finally {
+    deletingOperator.value = false;
+  }
+};
 </script>
 
 <style scoped>
@@ -743,6 +905,33 @@ const filteredOperators = computed(() => {
   font-weight: 700;
   padding: 0.25rem 0.65rem;
   border-radius: 20px;
+}
+
+.header-right-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.btn-create-operator {
+  background: #4f46e5;
+  color: white;
+  border: none;
+  padding: 0.55rem 1rem;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 10px rgba(79, 70, 229, 0.2);
+  white-space: nowrap;
+}
+
+.btn-create-operator:hover {
+  background: #4338ca;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(79, 70, 229, 0.3);
 }
 
 .search-box {
@@ -950,6 +1139,81 @@ const filteredOperators = computed(() => {
   color: white;
   border-color: #f59e0b;
   box-shadow: 0 2px 6px rgba(245, 158, 11, 0.3);
+}
+
+.action-btn-delete {
+  background: #fee2e2;
+  color: #ef4444;
+  border: 1px solid #fca5a5;
+  padding: 0.35rem 0.55rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.action-btn-delete:hover {
+  background: #ef4444;
+  color: white;
+  border-color: #dc2626;
+  box-shadow: 0 2px 6px rgba(239, 68, 68, 0.3);
+}
+
+.danger-header {
+  border-bottom: 2px solid #fca5a5 !important;
+}
+
+.danger-header h3 {
+  color: #b91c1c !important;
+}
+
+.danger-summary {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #fff5f5;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  border: 1px solid #fecdd3;
+  margin: 0.75rem 0;
+}
+
+.op-name-bold {
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.delete-warning-text {
+  color: #334155;
+  font-weight: 600;
+  font-size: 0.95rem;
+  margin-top: 0;
+}
+
+.delete-sub-warning {
+  color: #ef4444;
+  font-size: 0.82rem;
+  font-weight: 700;
+  margin-bottom: 0;
+}
+
+.btn-danger-confirm {
+  background: #dc2626;
+  color: white;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-danger-confirm:hover {
+  background: #b91c1c;
+  box-shadow: 0 4px 10px rgba(220, 38, 38, 0.3);
 }
 
 .loading-state {
