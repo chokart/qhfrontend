@@ -257,7 +257,7 @@
 </template>
 
 <script setup>
-import { onMounted, ref, reactive, computed, watch } from 'vue';
+import { onMounted, ref, reactive, computed, watch, shallowRef, markRaw } from 'vue';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-draw/dist/leaflet.draw.css';
@@ -271,9 +271,9 @@ const authStore = useAuthStore();
 const equipmentList = ref([]);
 const dynamicAreas = ref([]);
 const selectedEquipmentId = ref(null);
-const map = ref(null);
-const markers = ref({}); 
-const areaLayers = ref({});
+const map = shallowRef(null);
+const markers = shallowRef({}); 
+const areaLayers = shallowRef({});
 const processedPolygons = ref([]);
 const isDrawingMode = ref(false);
 const isMoveMode = ref(false);
@@ -688,16 +688,18 @@ const renderMarkers = () => {
         markers.value[eq.id].setIcon(customIcon);
         markers.value[eq.id].setPopupContent(popupContent);
       } else {
-        markers.value[eq.id] = L.marker([eq.latitude, eq.longitude], { 
+        const markerInstance = markRaw(L.marker([eq.latitude, eq.longitude], { 
           icon: customIcon
-        }).addTo(map.value)
-          .bindPopup(popupContent);
+        }));
 
-        markers.value[eq.id].on('click', () => {
+        markers.value[eq.id] = markerInstance;
+        markerInstance.addTo(map.value).bindPopup(popupContent);
+
+        markerInstance.on('click', () => {
           selectedEquipmentId.value = eq.id;
         });
 
-        markers.value[eq.id].on('dragend', async (event) => {
+        markerInstance.on('dragend', async (event) => {
           const marker = event.target;
           const position = marker.getLatLng();
           eq.latitude = position.lat;
@@ -732,9 +734,10 @@ const renderAreas = () => {
   areaLayers.value = {};
   dynamicAreas.value.forEach(area => {
     try {
-      const polygon = L.polygon(JSON.parse(area.coordinatesJson), {
+      const polygon = markRaw(L.polygon(JSON.parse(area.coordinatesJson), {
         color: '#aa3bff', fillOpacity: 0.2, weight: 2
-      }).addTo(map.value);
+      }));
+      polygon.addTo(map.value);
       polygon.bindTooltip(area.name, { permanent: false });
       areaLayers.value[area.id] = polygon;
     } catch (e) {}
@@ -772,7 +775,7 @@ onMounted(() => {
     }
   }
 
-  map.value = L.map('map', { zoomSnap: 0.5 }).setView([-17.459974, -70.801105], 14);
+  map.value = markRaw(L.map('map', { zoomSnap: 0.5 }).setView([-17.459974, -70.801105], 14));
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; OpenStreetMap'
   }).addTo(map.value);
