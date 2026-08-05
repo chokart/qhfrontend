@@ -484,8 +484,10 @@ watch(selectedEquipmentId, (newId) => {
 
 watch(isMoveMode, (enabled) => {
   Object.values(markers.value).forEach(marker => {
-    if (enabled) marker.dragging.enable();
-    else marker.dragging.disable();
+    if (marker && marker._map && marker.dragging) {
+      if (enabled) marker.dragging.enable();
+      else marker.dragging.disable();
+    }
   });
 });
 
@@ -643,12 +645,16 @@ const renderMarkers = () => {
 
   const visibleIds = new Set(filteredEquipment.value.map(e => e.id));
 
-  // Remover marcadores no visibles
+  // Remover marcadores no visibles y limpiar referencias
   Object.keys(markers.value).forEach(id => {
     const numericId = parseInt(id);
     if (!visibleIds.has(numericId)) {
-      if (map.value.hasLayer(markers.value[id])) {
-        map.value.removeLayer(markers.value[id]);
+      if (markers.value[id]) {
+        if (markers.value[id].dragging) markers.value[id].dragging.disable();
+        if (map.value.hasLayer(markers.value[id])) {
+          map.value.removeLayer(markers.value[id]);
+        }
+        delete markers.value[id];
       }
     }
   });
@@ -709,7 +715,7 @@ const renderMarkers = () => {
       }
 
       // Habilitar o deshabilitar arrastre según el modo activo
-      if (markers.value[eq.id] && markers.value[eq.id].dragging) {
+      if (markers.value[eq.id] && markers.value[eq.id]._map && markers.value[eq.id].dragging) {
         if (isMoveMode.value) {
           markers.value[eq.id].dragging.enable();
         } else {
@@ -744,6 +750,28 @@ const checkAreaForPoint = (lat, lng) => {
 };
 
 onMounted(() => {
+  // Parche preventivo en L.Marker para evitar errores si _map es null durante transiciones de zoom
+  if (L.Marker && L.Marker.prototype) {
+    if (!L.Marker.prototype._safePositionPatched) {
+      const origUpdatePos = L.Marker.prototype._updatePosition;
+      if (origUpdatePos) {
+        L.Marker.prototype._updatePosition = function () {
+          if (!this._map) return;
+          return origUpdatePos.apply(this, arguments);
+        };
+      }
+
+      const origAnimateZoom = L.Marker.prototype._animateZoom;
+      if (origAnimateZoom) {
+        L.Marker.prototype._animateZoom = function (opt) {
+          if (!this._map) return;
+          return origAnimateZoom.apply(this, arguments);
+        };
+      }
+      L.Marker.prototype._safePositionPatched = true;
+    }
+  }
+
   map.value = L.map('map', { zoomSnap: 0.5 }).setView([-17.459974, -70.801105], 14);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; OpenStreetMap'
