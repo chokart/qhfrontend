@@ -79,16 +79,14 @@
             <!-- Columna fija de Operador -->
             <td class="sticky-col col-operator">
               <div class="op-cell-info">
+                <span v-if="op.code" class="op-code-tag">{{ op.code }}</span>
                 <span class="op-name" :title="op.name">{{ op.name }}</span>
-                <div class="op-sub-info">
-                  <span v-if="op.code" class="op-code-tag">{{ op.code }}</span>
-                  <span 
-                    class="op-guardia-tag" 
-                    :style="{ backgroundColor: op.groupColor || '#94a3b8' }"
-                  >
-                    {{ op.groupName }}
-                  </span>
-                </div>
+                <span 
+                  class="op-guardia-tag" 
+                  :style="{ backgroundColor: op.groupColor || '#94a3b8' }"
+                >
+                  {{ op.groupName }}
+                </span>
               </div>
             </td>
 
@@ -606,9 +604,9 @@ const removeOverride = async () => {
 }
 
 .col-operator {
-  min-width: 170px;
-  max-width: 180px;
-  padding: 0.35rem 0.5rem;
+  min-width: 250px;
+  max-width: 270px;
+  padding: 0.2rem 0.5rem;
   text-align: left;
 }
 
@@ -644,8 +642,10 @@ const removeOverride = async () => {
 
 .op-cell-info {
   display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
+  align-items: center;
+  gap: 0.35rem;
+  white-space: nowrap;
+  overflow: hidden;
 }
 
 .op-name {
@@ -655,12 +655,8 @@ const removeOverride = async () => {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-.op-sub-info {
-  display: flex;
-  gap: 0.3rem;
-  align-items: center;
+  flex: 1;
+  min-width: 0;
 }
 
 .op-code-tag {
@@ -668,17 +664,19 @@ const removeOverride = async () => {
   color: white;
   font-size: 0.65rem;
   font-weight: 800;
-  padding: 0.05rem 0.25rem;
+  padding: 0.05rem 0.28rem;
   border-radius: 3px;
   font-family: monospace;
+  flex-shrink: 0;
 }
 
 .op-guardia-tag {
   color: white;
   font-size: 0.65rem;
   font-weight: 800;
-  padding: 0.05rem 0.3rem;
+  padding: 0.05rem 0.35rem;
   border-radius: 3px;
+  flex-shrink: 0;
 }
 
 .col-shift-cell {
