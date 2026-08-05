@@ -708,7 +708,7 @@ const removeOverride = async () => {
 }
 
 .shift-d {
-  background: #eab308;
+  background: #ffe600;
   color: #0f172a;
 }
 
@@ -723,7 +723,7 @@ const removeOverride = async () => {
 }
 
 .shift-v {
-  background: #f59e0b;
+  background: #2ecc71;
   color: white;
 }
 
@@ -761,10 +761,10 @@ const removeOverride = async () => {
   text-align: left !important;
 }
 
-.count-d { background: #fef9c3; color: #854d0e; }
+.count-d { background: #fffde7; color: #827717; }
 .count-n { background: #e0e7ff; color: #4338ca; }
 .count-l { background: #f8fafc; color: #64748b; }
-.count-v { background: #fef3c7; color: #b45309; }
+.count-v { background: #dcfce7; color: #15803d; }
 .count-st-d { background: #e0f2fe; color: #0369a1; }
 .count-st-n { background: #bae6fd; color: #075985; }
 .count-dm { background: #ffe4e6; color: #be123c; }
@@ -859,10 +859,10 @@ const removeOverride = async () => {
   transition: all 0.15s ease;
 }
 
-.btn-shift-radio.active.d { background: #eab308; color: #0f172a; border-color: #ca8a04; }
+.btn-shift-radio.active.d { background: #ffe600; color: #0f172a; border-color: #e6cf00; }
 .btn-shift-radio.active.n { background: #6366f1; color: white; border-color: #6366f1; }
 .btn-shift-radio.active.l { background: #64748b; color: white; border-color: #64748b; }
-.btn-shift-radio.active.v { background: #f59e0b; color: white; border-color: #f59e0b; }
+.btn-shift-radio.active.v { background: #2ecc71; color: white; border-color: #27ae60; }
 .btn-shift-radio.active.st-d { background: #0284c7; color: white; border-color: #0284c7; }
 .btn-shift-radio.active.st-n { background: #0369a1; color: white; border-color: #0369a1; }
 .btn-shift-radio.active.dm { background: #e11d48; color: white; border-color: #e11d48; }

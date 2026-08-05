@@ -796,10 +796,10 @@ const absentNightOperators = computed(() => {
   font-weight: 600;
 }
 
-.pill-day          { background: #dcfce7; color: #166534; }
+.pill-day          { background: #fffde7; color: #827717; border: 1px solid #fef08a; }
 .pill-night        { background: #e0e7ff; color: #3730a3; }
 .pill-free         { background: #f1f5f9; color: #475569; }
-.pill-vacation     { background: #fef3c7; color: #92400e; }
+.pill-vacation     { background: #dcfce7; color: #15803d; border: 1px solid #86efac; }
 .pill-vacation-day { background: #fef9c3; color: #854d0e; border: 1px solid #fde047; }
 .pill-vacation-night{ background: #fae8ff; color: #86198f; border: 1px solid #f0abfc; }
 .pill-absent-day   { background: #fef3c7; color: #92400e; border: 1px solid #fde047; }
