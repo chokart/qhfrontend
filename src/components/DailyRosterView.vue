@@ -330,20 +330,23 @@ onMounted(() => {
 // Estados para Cambio de Rol desde Guardia del Día
 const showRoleModal = ref(false);
 const selectedOpForRole = ref(null);
-const selectedRolePreset = ref('OPERADOR');
+const selectedRolePreset = ref('PAT');
 const customRoleInput = ref('');
 const savingRole = ref(false);
 
 const rolePresetOptions = [
-  'OPERADOR',
+  'PAT',
+  '2101',
+  'QH6',
+  'CICLONEROL',
+  'CICLONEROP',
+  'ESPESADOR',
+  'SUPERVISOR',
+  'SALA',
   'OPERADOR TRACTOR',
   'OPERADOR EXCAVADORA',
-  'OPERADOR CARGADOR',
   'OPERADOR RODILLO',
-  'OPERADOR MOTONIVELADORA',
-  'SUPERVISOR',
-  'CAPATAZ',
-  'CHOFER / CONDUCTOR',
+  'FILTRERO',
   'OTRO'
 ];
 

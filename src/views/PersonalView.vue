@@ -459,15 +459,18 @@ const customRole = ref('');
 const savingRole = ref(false);
 
 const rolePresetOptions = [
-  'OPERADOR',
+  'PAT',
+  '2101',
+  'QH6',
+  'CICLONEROL',
+  'CICLONEROP',
+  'ESPESADOR',
+  'SUPERVISOR',
+  'SALA',
   'OPERADOR TRACTOR',
   'OPERADOR EXCAVADORA',
-  'OPERADOR CARGADOR',
   'OPERADOR RODILLO',
-  'OPERADOR MOTONIVELADORA',
-  'SUPERVISOR',
-  'CAPATAZ',
-  'CHOFER / CONDUCTOR',
+  'FILTRERO',
   'OTRO'
 ];
 
@@ -688,7 +691,7 @@ const savingCreateOperator = ref(false);
 const createOpForm = reactive({
   code: '',
   name: '',
-  role: 'OPERADOR',
+  role: 'PAT',
   customRole: '',
   groupId: null
 });
@@ -696,7 +699,7 @@ const createOpForm = reactive({
 const openCreateOperatorModal = () => {
   createOpForm.code = '';
   createOpForm.name = '';
-  createOpForm.role = 'OPERADOR';
+  createOpForm.role = 'PAT';
   createOpForm.customRole = '';
   createOpForm.groupId = null;
   showCreateOperatorModal.value = true;
