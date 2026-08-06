@@ -162,7 +162,10 @@
               <thead>
                 <tr>
                   <th style="width: 35px;">#</th>
-                  <th class="sticky-col col-operator">OPERADOR / GUARDIA</th>
+                  <th class="col-code-hdr">CÓDIGO</th>
+                  <th class="col-name-hdr">NOMBRES Y APELLIDOS</th>
+                  <th class="col-guardia-hdr">GUARDIA</th>
+                  <th class="col-role-hdr">ROL / CARGO</th>
                   <th 
                     v-for="d in rangeDatesList" 
                     :key="d.fullDate" 
@@ -176,15 +179,20 @@
               <tbody>
                 <tr v-for="(op, idx) in filteredRangeOperators" :key="op.operatorId">
                   <td class="col-idx">{{ idx + 1 }}</td>
-                  <td class="sticky-col col-operator">
-                    <div class="op-cell-info">
-                      <span v-if="op.code" class="op-code-tag">{{ op.code }}</span>
-                      <span class="op-name-bold" :title="op.name">{{ op.name }}</span>
-                      <span class="op-role-tag">🏷️ {{ op.role || 'OPERADOR' }}</span>
-                      <span class="op-guardia-tag" :style="{ backgroundColor: op.groupColor || '#94a3b8' }">
-                        {{ op.groupName }}
-                      </span>
-                    </div>
+                  <td class="col-code-cell">
+                    <span v-if="op.code" class="op-code-tag">{{ op.code }}</span>
+                    <span v-else class="no-code-tag">-</span>
+                  </td>
+                  <td class="col-name-cell">
+                    <span class="op-name-bold" :title="op.name">{{ op.name }}</span>
+                  </td>
+                  <td class="col-guardia-cell">
+                    <span class="op-guardia-tag" :style="{ backgroundColor: op.groupColor || '#94a3b8' }">
+                      {{ op.groupName }}
+                    </span>
+                  </td>
+                  <td class="col-role-cell">
+                    <span class="op-role-tag">🏷️ {{ op.role || 'OPERADOR' }}</span>
                   </td>
                   <td 
                     v-for="d in rangeDatesList" 
@@ -1488,9 +1496,34 @@ const absentNightOperators = computed(() => {
   vertical-align: middle;
 }
 
-.col-shift-cell {
-  padding: 0.15rem 0.05rem;
-  text-align: center;
+.col-code-hdr, .col-code-cell {
+  width: 75px;
+  min-width: 75px;
+  text-align: center !important;
+}
+
+.col-name-hdr, .col-name-cell {
+  min-width: 200px;
+  max-width: 240px;
+  text-align: left !important;
+  padding-left: 0.5rem !important;
+}
+
+.col-guardia-hdr, .col-guardia-cell {
+  width: 85px;
+  min-width: 85px;
+  text-align: center !important;
+}
+
+.col-role-hdr, .col-role-cell {
+  width: 140px;
+  min-width: 130px;
+  text-align: center !important;
+}
+
+.no-code-tag {
+  color: #94a3b8;
+  font-size: 0.72rem;
 }
 
 .op-cell-info {
