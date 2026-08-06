@@ -15,13 +15,37 @@
       </div>
 
       <div class="filter-controls">
-        <!-- Selector de Guardia -->
-        <select v-model="selectedGroupFilter" class="control-select">
-          <option :value="null">Todas las Guardias (12)</option>
-          <option v-for="g in groups" :key="g.id" :value="g.id">
-            {{ g.name }} ({{ g.programType }})
-          </option>
-        </select>
+        <!-- Selector Multiselección de Guardias -->
+        <div class="multi-select-container" ref="multiSelectContainerRef">
+          <button class="multi-select-trigger" @click.stop="showGroupDropdown = !showGroupDropdown">
+            <span v-if="selectedGroupIds.length === 0">Todas las Guardias ({{ groups.length }})</span>
+            <span v-else-if="selectedGroupIds.length === 1">1 Guardia Seleccionada</span>
+            <span v-else>{{ selectedGroupIds.length }} Guardias Seleccionadas</span>
+            <span class="dropdown-arrow">▼</span>
+          </button>
+
+          <div v-if="showGroupDropdown" class="multi-select-dropdown" @click.stop>
+            <div class="dropdown-actions">
+              <button class="btn-select-all" @click="selectAllGroups">Seleccionar Todas</button>
+              <button class="btn-clear-all" @click="clearAllGroups">Limpiar Todo</button>
+            </div>
+            <div class="dropdown-options-list">
+              <label 
+                v-for="g in groups" 
+                :key="g.id" 
+                class="dropdown-checkbox-label"
+              >
+                <input 
+                  type="checkbox" 
+                  :value="g.id" 
+                  v-model="selectedGroupIds"
+                />
+                <span class="badge-dot" :style="{ backgroundColor: g.color || '#94a3b8' }"></span>
+                <span class="group-option-name">{{ g.name }} ({{ g.programType || 'Rotación' }})</span>
+              </label>
+            </div>
+          </div>
+        </div>
 
         <!-- Buscador de Operador -->
         <div class="search-input-wrapper">
@@ -243,7 +267,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import api from '../api';
 
 const emit = defineEmits(['openGroupManager']);
@@ -251,7 +275,12 @@ const emit = defineEmits(['openGroupManager']);
 const now = new Date();
 const currentRealMonth = now.getMonth() + 1;
 const currentMonth = ref(currentRealMonth >= 1 && currentRealMonth <= 12 ? currentRealMonth : 8);
-const selectedGroupFilter = ref(null);
+
+// Filtro Multiselección de Guardias
+const selectedGroupIds = ref([]); // Lista de IDs de guardias seleccionadas (vacío = todas)
+const showGroupDropdown = ref(false);
+const multiSelectContainerRef = ref(null);
+
 const searchQuery = ref('');
 const loading = ref(true);
 const groups = ref([]);
@@ -285,6 +314,20 @@ const monthOptions = [
   { value: 12, label: 'Diciembre 2026' }
 ];
 
+const selectAllGroups = () => {
+  selectedGroupIds.value = groups.value.map(g => g.id);
+};
+
+const clearAllGroups = () => {
+  selectedGroupIds.value = [];
+};
+
+const handleOutsideClick = (e) => {
+  if (multiSelectContainerRef.value && !multiSelectContainerRef.value.contains(e.target)) {
+    showGroupDropdown.value = false;
+  }
+};
+
 const fetchGroups = async () => {
   try {
     const res = await api.get('/api/v1/groups');
@@ -297,11 +340,7 @@ const fetchGroups = async () => {
 const fetchMatrix = async () => {
   loading.value = true;
   try {
-    let url = `/api/v1/shifts/matrix?year=2026&month=${currentMonth.value}`;
-    if (selectedGroupFilter.value) {
-      url += `&groupId=${selectedGroupFilter.value}`;
-    }
-    const res = await api.get(url);
+    const res = await api.get(`/api/v1/shifts/matrix?year=2026&month=${currentMonth.value}`);
     matrixData.value = res.data;
   } catch (err) {
     console.error("Error al cargar matriz de turnos:", err);
@@ -313,9 +352,14 @@ const fetchMatrix = async () => {
 onMounted(() => {
   fetchGroups();
   fetchMatrix();
+  window.addEventListener('click', handleOutsideClick);
 });
 
-watch([currentMonth, selectedGroupFilter], () => {
+onUnmounted(() => {
+  window.removeEventListener('click', handleOutsideClick);
+});
+
+watch(currentMonth, () => {
   fetchMatrix();
 });
 
@@ -328,6 +372,13 @@ const daysInMonth = computed(() => matrixData.value.daysInMonth || 31);
 
 const filteredOperators = computed(() => {
   let list = matrixData.value.operators || [];
+
+  // Filtro por multiselección de guardias
+  if (selectedGroupIds.value.length > 0) {
+    list = list.filter(op => op.groupId && selectedGroupIds.value.includes(op.groupId));
+  }
+
+  // Filtro por búsqueda de texto
   if (searchQuery.value.trim()) {
     const q = searchQuery.value.toLowerCase().trim();
     list = list.filter(op => {
@@ -338,7 +389,7 @@ const filteredOperators = computed(() => {
     });
   }
 
-  // Ordenar de forma garantizada por Guardia (groupId: 1 a 12) y luego por nombre
+  // Ordenar por Guardia (groupId: 1 a 12) y luego por nombre
   return [...list].sort((a, b) => {
     const gA = a.groupId || 999;
     const gB = b.groupId || 999;
@@ -516,13 +567,113 @@ const removeOverride = async () => {
   flex-wrap: wrap;
 }
 
-.control-select {
-  padding: 0.55rem 0.8rem;
+.multi-select-container {
+  position: relative;
+}
+
+.multi-select-trigger {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: white;
   border: 1px solid #cbd5e1;
+  padding: 0.55rem 0.85rem;
   border-radius: 8px;
   font-size: 0.85rem;
-  outline: none;
-  font-family: inherit;
+  font-weight: 700;
+  color: #1e293b;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  min-width: 210px;
+  justify-content: space-between;
+}
+
+.multi-select-trigger:hover {
+  border-color: #4f46e5;
+  background: #f8fafc;
+}
+
+.dropdown-arrow {
+  font-size: 0.65rem;
+  color: #64748b;
+}
+
+.multi-select-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  width: 260px;
+  background: white;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
+  z-index: 100;
+  padding: 0.6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.dropdown-actions {
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 0.4rem;
+}
+
+.btn-select-all, .btn-clear-all {
+  background: none;
+  border: none;
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+}
+
+.btn-select-all { color: #4f46e5; }
+.btn-select-all:hover { background: #e0e7ff; }
+
+.btn-clear-all { color: #ef4444; }
+.btn-clear-all:hover { background: #fee2e2; }
+
+.dropdown-options-list {
+  max-height: 240px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.dropdown-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.4rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #334155;
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+
+.dropdown-checkbox-label:hover {
+  background: #f1f5f9;
+}
+
+.dropdown-checkbox-label input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
+  accent-color: #4f46e5;
+  cursor: pointer;
+}
+
+.badge-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
 }
 
 .search-input-wrapper {
