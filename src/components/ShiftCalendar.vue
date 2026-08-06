@@ -590,7 +590,7 @@ const removeOverride = async () => {
 }
 
 .shift-matrix-table {
-  width: 100%;
+  width: max-content;
   border-collapse: separate;
   border-spacing: 0;
   font-size: 0.82rem;
@@ -609,12 +609,13 @@ th.sticky-col {
   left: 0;
   z-index: 25;
   background: #f8fafc;
+  text-align: left !important;
+  padding-left: 0.5rem !important;
 }
 
 .col-operator {
-  min-width: 150px;
-  max-width: 260px;
-  width: auto;
+  width: max-content;
+  max-width: 250px;
   padding: 0.08rem 0.35rem;
   text-align: left;
 }
