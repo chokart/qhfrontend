@@ -1,62 +1,225 @@
 <template>
   <div class="daily-roster-container">
 
-    <!-- Selector de Fecha -->
-    <div class="date-selector-card">
-      <div class="date-selector-left">
-        <span class="calendar-emoji">📅</span>
-        <div class="date-label-group">
-          <span class="date-label">Consultar personal activo para el día:</span>
-          <input
-            type="date"
-            v-model="selectedDate"
-            min="2026-07-01"
-            max="2026-12-31"
-            class="date-input"
-            @change="fetchRoster"
-          />
-        </div>
-        <div class="pdf-buttons-group" v-if="!loading && rosterReady">
-          <button
-            class="btn-export-pdf btn-pdf-day"
-            @click="exportDayRosterPDF"
-            title="Descargar reporte PDF exclusivo de Turno Día"
-          >
-            ☀️ PDF Día
-          </button>
-          <button
-            class="btn-export-pdf btn-pdf-night"
-            @click="exportNightRosterPDF"
-            title="Descargar reporte PDF exclusivo de Turno Noche"
-          >
-            🌙 PDF Noche
-          </button>
-        </div>
-      </div>
-
-      <div class="date-summary-pills" v-if="!loading && rosterReady">
-        <div class="pill pill-day">
-          <span>☀️</span>
-          <span><b>{{ dayOperators.length }}</b> Turno Día</span>
-        </div>
-        <div class="pill pill-night">
-          <span>🌙</span>
-          <span><b>{{ nightOperators.length }}</b> Turno Noche</span>
-        </div>
-        <div class="pill pill-absent-day">
-          <span>☀️🌴🩺</span>
-          <span><b>{{ absentDayOperators.length }}</b> Ausentes Día</span>
-        </div>
-        <div class="pill pill-absent-night">
-          <span>🌙🌴🩺</span>
-          <span><b>{{ absentNightOperators.length }}</b> Ausentes Noche</span>
-        </div>
-        <div class="pill pill-st">
-          <span>⏰</span>
-          <span><b>{{ stDayOperators.length + stNightOperators.length }}</b> Sobretiempo</span>
-        </div>
-      </div>
+    <!-- Conmutador de Modo de Consulta -->
+    <div class="mode-switch-bar">
+      <button 
+        :class="['mode-tab-btn', { active: searchMode === 'single' }]"
+        @click="searchMode = 'single'"
+      >
+        📅 Consulta Día Único
+      </button>
+      <button 
+        :class="['mode-tab-btn', { active: searchMode === 'range' }]"
+        @click="searchMode = 'range'; if (!rangeReady && rangeStartDate && rangeEndDate) fetchRangeRoster();"
+      >
+        🗓️ Rango de Fechas (Turno Día / Noche / Ausencias)
+      </button>
     </div>
+
+    <!-- MODO 1: DÍA ÚNICO -->
+    <template v-if="searchMode === 'single'">
+      <!-- Selector de Fecha -->
+      <div class="date-selector-card">
+        <div class="date-selector-left">
+          <span class="calendar-emoji">📅</span>
+          <div class="date-label-group">
+            <span class="date-label">Consultar personal activo para el día:</span>
+            <input
+              type="date"
+              v-model="selectedDate"
+              min="2026-07-01"
+              max="2026-12-31"
+              class="date-input"
+              @change="fetchRoster"
+            />
+          </div>
+          <div class="pdf-buttons-group" v-if="!loading && rosterReady">
+            <button
+              class="btn-export-pdf btn-pdf-day"
+              @click="exportDayRosterPDF"
+              title="Descargar reporte PDF exclusivo de Turno Día"
+            >
+              ☀️ PDF Día
+            </button>
+            <button
+              class="btn-export-pdf btn-pdf-night"
+              @click="exportNightRosterPDF"
+              title="Descargar reporte PDF exclusivo de Turno Noche"
+            >
+              🌙 PDF Noche
+            </button>
+          </div>
+        </div>
+
+        <div class="date-summary-pills" v-if="!loading && rosterReady">
+          <div class="pill pill-day">
+            <span>☀️</span>
+            <span><b>{{ dayOperators.length }}</b> Turno Día</span>
+          </div>
+          <div class="pill pill-night">
+            <span>🌙</span>
+            <span><b>{{ nightOperators.length }}</b> Turno Noche</span>
+          </div>
+          <div class="pill pill-absent-day">
+            <span>☀️🌴🩺</span>
+            <span><b>{{ absentDayOperators.length }}</b> Ausentes Día</span>
+          </div>
+          <div class="pill pill-absent-night">
+            <span>🌙🌴🩺</span>
+            <span><b>{{ absentNightOperators.length }}</b> Ausentes Noche</span>
+          </div>
+          <div class="pill pill-st">
+            <span>⏰</span>
+            <span><b>{{ stDayOperators.length + stNightOperators.length }}</b> Sobretiempo</span>
+          </div>
+        </div>
+      </div>
+    </template>
+
+    <!-- MODO 2: RANGO DE FECHAS -->
+    <template v-else-if="searchMode === 'range'">
+      <div class="range-search-container">
+        <div class="date-selector-card range-card">
+          <div class="range-inputs-group">
+            <span class="calendar-emoji">🗓️</span>
+            <div class="date-label-group">
+              <span class="date-label">Desde:</span>
+              <input type="date" v-model="rangeStartDate" class="date-input" />
+            </div>
+            <div class="date-label-group">
+              <span class="date-label">Hasta:</span>
+              <input type="date" v-model="rangeEndDate" class="date-input" />
+            </div>
+            <button class="btn-fetch-range" @click="fetchRangeRoster">
+              🔍 Consultar Rango
+            </button>
+          </div>
+
+          <!-- Filtros de categoría de turno / ausencia -->
+          <div class="range-filter-tabs">
+            <button 
+              :class="['range-filter-btn', { active: rangeFilterCategory === 'ALL' }]"
+              @click="rangeFilterCategory = 'ALL'"
+            >
+              🌐 Todos ({{ rangeOperators.length }})
+            </button>
+            <button 
+              :class="['range-filter-btn', 'btn-cat-day', { active: rangeFilterCategory === 'DIA' }]"
+              @click="rangeFilterCategory = 'DIA'"
+            >
+              ☀️ En Turno Día
+            </button>
+            <button 
+              :class="['range-filter-btn', 'btn-cat-night', { active: rangeFilterCategory === 'NOCHE' }]"
+              @click="rangeFilterCategory = 'NOCHE'"
+            >
+              🌙 En Turno Noche
+            </button>
+            <button 
+              :class="['range-filter-btn', 'btn-cat-v', { active: rangeFilterCategory === 'V' }]"
+              @click="rangeFilterCategory = 'V'"
+            >
+              🌴 Vacaciones
+            </button>
+            <button 
+              :class="['range-filter-btn', 'btn-cat-dm', { active: rangeFilterCategory === 'DM' }]"
+              @click="rangeFilterCategory = 'DM'"
+            >
+              🩺 Descanso Médico
+            </button>
+          </div>
+
+          <div class="range-search-box">
+            <span class="search-icon">🔍</span>
+            <input 
+              v-model="rangeSearchQuery" 
+              type="text" 
+              placeholder="Buscar operador por código, nombre o guardia..." 
+              class="search-input"
+            />
+          </div>
+        </div>
+
+        <!-- Cargando Rango -->
+        <div v-if="rangeLoading" class="loading-state">
+          <div class="spinner"></div>
+          <p>Consultando asignación de turnos del <b>{{ rangeStartDate }}</b> al <b>{{ rangeEndDate }}</b>...</p>
+        </div>
+
+        <!-- Resultados Rango -->
+        <div v-else-if="rangeReady" class="range-results-card">
+          <div class="range-results-header">
+            <h4>Se encontraron <b>{{ filteredRangeOperators.length }}</b> operadores en el período seleccionado</h4>
+          </div>
+
+          <div v-if="filteredRangeOperators.length === 0" class="empty-state">
+            <p>No hay personal que coincida con los filtros seleccionados.</p>
+          </div>
+
+          <div v-else class="range-table-responsive">
+            <table class="range-table">
+              <thead>
+                <tr>
+                  <th style="width: 40px;">#</th>
+                  <th style="width: 220px;">OPERADOR / GUARDIA</th>
+                  <th style="width: 170px;">RESUMEN PERÍODO</th>
+                  <th>DETALLE DÍA A DÍA EN RANGO DE FECHAS</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="(op, idx) in filteredRangeOperators" :key="op.operatorId">
+                  <td class="col-idx">{{ idx + 1 }}</td>
+                  <td class="col-op-info">
+                    <div class="op-cell-info">
+                      <span v-if="op.code" class="op-code-tag">{{ op.code }}</span>
+                      <span class="op-name-bold">{{ op.name }}</span>
+                      <span class="op-guardia-tag" :style="{ backgroundColor: op.groupColor || '#94a3b8' }">
+                        {{ op.groupName }}
+                      </span>
+                    </div>
+                    <span class="op-role-sub">🏷️ {{ op.role || 'OPERADOR' }}</span>
+                  </td>
+                  <td class="col-stats">
+                    <div class="stats-pills">
+                      <span v-if="getOperatorRangeStats(op).diaDays > 0" class="stat-badge dia-bg">
+                        ☀️ {{ getOperatorRangeStats(op).diaDays }}d Día
+                      </span>
+                      <span v-if="getOperatorRangeStats(op).nocheDays > 0" class="stat-badge noche-bg">
+                        🌙 {{ getOperatorRangeStats(op).nocheDays }}d Noche
+                      </span>
+                      <span v-if="getOperatorRangeStats(op).vacDays > 0" class="stat-badge vac-bg">
+                        🌴 {{ getOperatorRangeStats(op).vacDays }}d Vac.
+                      </span>
+                      <span v-if="getOperatorRangeStats(op).dmDays > 0" class="stat-badge dm-bg">
+                        🩺 {{ getOperatorRangeStats(op).dmDays }}d DM
+                      </span>
+                    </div>
+                  </td>
+                  <td class="col-timeline">
+                    <div class="timeline-scroll">
+                      <div 
+                        v-for="(detail, dateStr) in op.dailyShifts" 
+                        :key="dateStr" 
+                        class="timeline-item"
+                      >
+                        <span class="timeline-date">{{ dateStr.split('-').slice(1).join('/') }}</span>
+                        <span 
+                          :class="['timeline-badge', getRangeShiftBadgeClass(detail)]"
+                          :title="detail.comment ? `${dateStr}: ${detail.comment}` : `${dateStr}: ${getRangeShiftLabel(detail)}`"
+                        >
+                          {{ getRangeShiftLabel(detail) }}
+                        </span>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </template>
 
     <!-- Cargando -->
     <div v-if="loading" class="loading-state">
@@ -318,14 +481,132 @@ const loading = ref(false);
 const matrixOperators = ref([]);
 const rosterReady = ref(false);
 
+// Estados para Consulta por Rango de Fechas
+const searchMode = ref('single'); // 'single' | 'range'
+const rangeStartDate = ref('');
+const rangeEndDate = ref('');
+const rangeLoading = ref(false);
+const rangeOperators = ref([]);
+const rangeReady = ref(false);
+const rangeFilterCategory = ref('ALL'); // 'ALL', 'DIA', 'NOCHE', 'V', 'DM', 'ST'
+const rangeSearchQuery = ref('');
+
 onMounted(() => {
   const today = new Date();
   const yyyy = today.getFullYear();
   const mm = String(today.getMonth() + 1).padStart(2, '0');
   const dd = String(today.getDate()).padStart(2, '0');
   selectedDate.value = `${yyyy}-${mm}-${dd}`;
+
+  rangeStartDate.value = `${yyyy}-${mm}-01`;
+  rangeEndDate.value = `${yyyy}-${mm}-${dd}`;
+
   fetchRoster();
 });
+
+const fetchRangeRoster = async () => {
+  if (!rangeStartDate.value || !rangeEndDate.value) {
+    alert("Por favor ingrese tanto la Fecha de Inicio como la Fecha de Fin.");
+    return;
+  }
+  if (rangeStartDate.value > rangeEndDate.value) {
+    alert("La Fecha de Inicio no puede ser posterior a la Fecha de Fin.");
+    return;
+  }
+
+  rangeLoading.value = true;
+  rangeReady.value = false;
+  try {
+    const res = await api.get(`/api/v1/shifts/range?startDate=${rangeStartDate.value}&endDate=${rangeEndDate.value}`);
+    rangeOperators.value = res.data.operators || [];
+    rangeReady.value = true;
+  } catch (err) {
+    console.error("Error al consultar rango de fechas:", err);
+    alert("Hubo un error al consultar los turnos por rango de fechas.");
+  } finally {
+    rangeLoading.value = false;
+  }
+};
+
+const filteredRangeOperators = computed(() => {
+  if (!rangeReady.value) return [];
+
+  let list = rangeOperators.value;
+
+  if (rangeSearchQuery.value.trim()) {
+    const q = rangeSearchQuery.value.toLowerCase().trim();
+    list = list.filter(op =>
+      (op.name && op.name.toLowerCase().includes(q)) ||
+      (op.code && op.code.toLowerCase().includes(q)) ||
+      (op.groupName && op.groupName.toLowerCase().includes(q)) ||
+      (op.role && op.role.toLowerCase().includes(q))
+    );
+  }
+
+  if (rangeFilterCategory.value === 'DIA') {
+    list = list.filter(op =>
+      Object.values(op.dailyShifts || {}).some(d => d.turnCategory === 'DIA')
+    );
+  } else if (rangeFilterCategory.value === 'NOCHE') {
+    list = list.filter(op =>
+      Object.values(op.dailyShifts || {}).some(d => d.turnCategory === 'NOCHE')
+    );
+  } else if (rangeFilterCategory.value === 'V') {
+    list = list.filter(op =>
+      Object.values(op.dailyShifts || {}).some(d => d.finalShift === 'V')
+    );
+  } else if (rangeFilterCategory.value === 'DM') {
+    list = list.filter(op =>
+      Object.values(op.dailyShifts || {}).some(d => d.finalShift === 'DM')
+    );
+  } else if (rangeFilterCategory.value === 'ST') {
+    list = list.filter(op =>
+      Object.values(op.dailyShifts || {}).some(d => d.finalShift && d.finalShift.startsWith('ST'))
+    );
+  }
+
+  return list;
+});
+
+const getRangeShiftBadgeClass = (detail) => {
+  if (!detail) return 'shift-l';
+  const { finalShift, turnCategory } = detail;
+
+  if (finalShift === 'D') return 'shift-d';
+  if (finalShift === 'N') return 'shift-n';
+  if (finalShift === 'ST-D') return 'shift-st-d';
+  if (finalShift === 'ST-N') return 'shift-st-n';
+  if (finalShift === 'V') {
+    return turnCategory === 'NOCHE' ? 'range-badge-v-n' : 'range-badge-v-d';
+  }
+  if (finalShift === 'DM') {
+    return turnCategory === 'NOCHE' ? 'range-badge-dm-n' : 'range-badge-dm-d';
+  }
+  return 'shift-l';
+};
+
+const getRangeShiftLabel = (detail) => {
+  if (!detail) return 'L';
+  const { finalShift, turnCategory } = detail;
+  if (finalShift === 'V') {
+    return turnCategory === 'NOCHE' ? 'V (Noche)' : 'V (Día)';
+  }
+  if (finalShift === 'DM') {
+    return turnCategory === 'NOCHE' ? 'DM (Noche)' : 'DM (Día)';
+  }
+  return finalShift || 'L';
+};
+
+const getOperatorRangeStats = (op) => {
+  const shifts = Object.values(op.dailyShifts || {});
+  const diaDays = shifts.filter(d => d.turnCategory === 'DIA').length;
+  const nocheDays = shifts.filter(d => d.turnCategory === 'NOCHE').length;
+  const vacDays = shifts.filter(d => d.finalShift === 'V').length;
+  const dmDays = shifts.filter(d => d.finalShift === 'DM').length;
+  const stDays = shifts.filter(d => d.finalShift && d.finalShift.startsWith('ST')).length;
+
+  return { diaDays, nocheDays, vacDays, dmDays, stDays };
+};
 
 // Estados para Cambio de Rol desde Guardia del Día
 const showRoleModal = ref(false);
@@ -1055,6 +1336,212 @@ const absentNightOperators = computed(() => {
 
 .empty-col { padding: 1rem 1.25rem; color: #94a3b8; font-size: 0.85rem; font-style: italic; }
 .empty-col-compact { padding: 0.6rem 0.9rem; color: #94a3b8; font-size: 0.78rem; font-style: italic; }
+
+/* === Modo de Consulta === */
+.mode-switch-bar {
+  display: flex;
+  background: white;
+  padding: 0.35rem;
+  border-radius: 12px;
+  border: 1px solid #cbd5e1;
+  gap: 0.35rem;
+  margin-bottom: 1.25rem;
+}
+
+.mode-tab-btn {
+  background: none;
+  border: none;
+  padding: 0.65rem 1.2rem;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.88rem;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.mode-tab-btn.active {
+  background: #4f46e5;
+  color: white;
+  box-shadow: 0 4px 10px rgba(79, 70, 229, 0.25);
+}
+
+.range-inputs-group {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.btn-fetch-range {
+  background: #4f46e5;
+  color: white;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 10px rgba(79, 70, 229, 0.2);
+}
+
+.btn-fetch-range:hover {
+  background: #4338ca;
+  transform: translateY(-1px);
+}
+
+.range-filter-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  flex-wrap: wrap;
+}
+
+.range-filter-btn {
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  color: #475569;
+  padding: 0.4rem 0.85rem;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.range-filter-btn.active {
+  background: #0f172a;
+  color: white;
+  border-color: #0f172a;
+}
+
+.btn-cat-day.active { background: #ffe600; color: #0f172a; border-color: #ca8a04; }
+.btn-cat-night.active { background: #6366f1; color: white; border-color: #4338ca; }
+.btn-cat-v.active { background: #2ecc71; color: white; border-color: #27ae60; }
+.btn-cat-dm.active { background: #e11d48; color: white; border-color: #be123c; }
+
+.range-search-box {
+  position: relative;
+  margin-top: 1rem;
+}
+
+.range-results-card {
+  background: white;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.range-results-header {
+  padding: 1rem 1.25rem;
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.range-results-header h4 {
+  margin: 0;
+  color: #1e293b;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.range-table-responsive {
+  overflow-x: auto;
+}
+
+.range-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+
+.range-table th {
+  background: #f1f5f9;
+  color: #475569;
+  font-weight: 700;
+  padding: 0.6rem 0.8rem;
+  border-bottom: 2px solid #e2e8f0;
+  text-align: left;
+}
+
+.range-table td {
+  padding: 0.5rem 0.8rem;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: middle;
+}
+
+.op-cell-info {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  white-space: nowrap;
+}
+
+.op-name-bold {
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.op-role-sub {
+  font-size: 0.68rem;
+  color: #64748b;
+  display: block;
+  margin-top: 0.15rem;
+}
+
+.stats-pills {
+  display: flex;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+}
+
+.stat-badge {
+  font-size: 0.68rem;
+  font-weight: 800;
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+}
+
+.dia-bg { background: #fffde7; color: #827717; border: 1px solid #fef08a; }
+.noche-bg { background: #e0e7ff; color: #3730a3; border: 1px solid #c7d2fe; }
+.vac-bg { background: #dcfce7; color: #15803d; border: 1px solid #86efac; }
+.dm-bg { background: #ffe4e6; color: #be123c; border: 1px solid #fecdd3; }
+
+.timeline-scroll {
+  display: flex;
+  gap: 0.35rem;
+  overflow-x: auto;
+  padding: 0.2rem 0;
+}
+
+.timeline-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+  min-width: 48px;
+}
+
+.timeline-date {
+  font-size: 0.6rem;
+  color: #64748b;
+  font-weight: 700;
+}
+
+.timeline-badge {
+  padding: 0.2rem 0.35rem;
+  border-radius: 4px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.range-badge-v-d { background: #2ecc71; color: white; border: 1px solid #27ae60; }
+.range-badge-v-n { background: #15803d; color: white; border: 1px solid #166534; }
+.range-badge-dm-d { background: #ffe4e6; color: #be123c; border: 1px solid #fecdd3; }
+.range-badge-dm-n { background: #fae8ff; color: #86198f; border: 1px solid #f0abfc; }
 
 @media (max-width: 1024px) {
   .roster-grid {
