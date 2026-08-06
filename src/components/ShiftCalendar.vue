@@ -2,8 +2,24 @@
   <div class="shift-calendar-container">
     <!-- Header de Control de Turnos -->
     <div class="calendar-controls">
-      <!-- Selector de Meses (Julio - Diciembre 2026) -->
-      <div class="month-selector">
+      <!-- Selector de Modo de Consulta -->
+      <div class="mode-switch-bar">
+        <button 
+          :class="['mode-tab-btn', { active: dateSelectionMode === 'month' }]"
+          @click="dateSelectionMode = 'month'"
+        >
+          📅 Consulta por Mes
+        </button>
+        <button 
+          :class="['mode-tab-btn', { active: dateSelectionMode === 'range' }]"
+          @click="dateSelectionMode = 'range'"
+        >
+          🗓️ Rango de Fechas
+        </button>
+      </div>
+
+      <!-- Selector de Meses -->
+      <div v-if="dateSelectionMode === 'month'" class="month-selector">
         <button 
           v-for="m in monthOptions" 
           :key="m.value"
@@ -11,6 +27,21 @@
           @click="currentMonth = m.value"
         >
           {{ m.label }}
+        </button>
+      </div>
+
+      <!-- Selector de Rango Personalizado -->
+      <div v-else class="range-inputs-group">
+        <div class="input-date-item">
+          <label>Desde:</label>
+          <input type="date" v-model="rangeStartDate" class="control-date-input" />
+        </div>
+        <div class="input-date-item">
+          <label>Hasta:</label>
+          <input type="date" v-model="rangeEndDate" class="control-date-input" />
+        </div>
+        <button @click="fetchMatrix" class="btn-fetch-range">
+          🔍 Consultar
         </button>
       </div>
 
@@ -59,8 +90,13 @@
           <button v-if="searchQuery" @click="searchQuery = ''" class="clear-search">✕</button>
         </div>
 
+        <!-- Botón Exportar PDF -->
+        <button @click="exportToPDF" class="btn-export-pdf" :disabled="loading || filteredOperators.length === 0">
+          📄 Exportar PDF
+        </button>
+
         <button @click="$emit('openGroupManager')" class="btn-config-groups">
-          ⚙️ Configurar Guardias
+          ⚙️ Guardias
         </button>
       </div>
     </div>
@@ -79,7 +115,7 @@
     <!-- Estado de Carga -->
     <div v-if="loading" class="calendar-loading">
       <div class="spinner"></div>
-      <p>Calculando matriz de turnos para {{ currentMonthName }} 2026...</p>
+      <p>Calculando programación de turnos...</p>
     </div>
 
     <!-- Matriz Cuadrícula de Turnos -->
@@ -91,12 +127,12 @@
             <th class="sticky-col col-name-hdr">NOMBRES Y APELLIDOS</th>
             <th class="sticky-col col-guardia-hdr">GUARDIA</th>
             <th 
-              v-for="d in daysInMonth" 
-              :key="d" 
-              :class="['col-day', { 'weekend-header': isWeekend(d) }]"
+              v-for="d in calendarDays" 
+              :key="d.key" 
+              :class="['col-day', { 'weekend-header': d.isWeekend }]"
             >
-              <div class="day-num">{{ d }}</div>
-              <div class="day-name">{{ getDayOfWeekName(d) }}</div>
+              <div class="day-num">{{ d.dayNum }}</div>
+              <div class="day-name">{{ d.dayName }}</div>
             </th>
           </tr>
         </thead>
@@ -123,20 +159,20 @@
 
             <!-- Celdas de Turnos para cada día -->
             <td 
-              v-for="d in daysInMonth" 
-              :key="d" 
+              v-for="d in calendarDays" 
+              :key="d.key" 
               class="col-shift-cell"
-              @click="openOverrideModal(op, d)"
+              @click="openOverrideModal(op, d.dayNum)"
             >
               <div 
                 :class="[
                   'shift-cell-badge',
-                  getShiftClass(op.shifts[d]),
-                  { 'is-override': op.isOverride && op.isOverride[d] }
+                  getShiftClass(op.shifts ? op.shifts[d.key] : null),
+                  { 'is-override': op.isOverride && op.isOverride[d.key] }
                 ]"
-                :title="op.comments && op.comments[d] ? op.comments[d] : `Día ${d}: ${getShiftLabel(op.shifts[d])}`"
+                :title="op.comments && op.comments[d.key] ? op.comments[d.key] : `Día ${d.dayNum}: ${getShiftLabel(op.shifts ? op.shifts[d.key] : null)}`"
               >
-                {{ op.shifts[d] || 'L' }}
+                {{ op.shifts ? op.shifts[d.key] || 'L' : 'L' }}
               </div>
             </td>
           </tr>
@@ -147,56 +183,56 @@
             <td colspan="3" class="sticky-col col-operator summary-label">
               <b>TOTAL DÍA (☀️)</b>
             </td>
-            <td v-for="d in daysInMonth" :key="d" class="col-summary count-d">
-              {{ dailySummary[d]?.D || 0 }}
+            <td v-for="d in calendarDays" :key="d.key" class="col-summary count-d">
+              {{ dailySummary[d.key]?.D || 0 }}
             </td>
           </tr>
           <tr class="summary-row">
             <td colspan="3" class="sticky-col col-operator summary-label">
               <b>TOTAL NOCHE (🌙)</b>
             </td>
-            <td v-for="d in daysInMonth" :key="d" class="col-summary count-n">
-              {{ dailySummary[d]?.N || 0 }}
+            <td v-for="d in calendarDays" :key="d.key" class="col-summary count-n">
+              {{ dailySummary[d.key]?.N || 0 }}
             </td>
           </tr>
           <tr class="summary-row">
             <td colspan="3" class="sticky-col col-operator summary-label">
               <b>TOTAL LIBRES (🏖️)</b>
             </td>
-            <td v-for="d in daysInMonth" :key="d" class="col-summary count-l">
-              {{ dailySummary[d]?.L || 0 }}
+            <td v-for="d in calendarDays" :key="d.key" class="col-summary count-l">
+              {{ dailySummary[d.key]?.L || 0 }}
             </td>
           </tr>
           <tr class="summary-row">
             <td colspan="3" class="sticky-col col-operator summary-label">
               <b>VACACIONES (🌴)</b>
             </td>
-            <td v-for="d in daysInMonth" :key="d" class="col-summary count-v">
-              {{ dailySummary[d]?.V || 0 }}
+            <td v-for="d in calendarDays" :key="d.key" class="col-summary count-v">
+              {{ dailySummary[d.key]?.V || 0 }}
             </td>
           </tr>
           <tr class="summary-row">
             <td colspan="3" class="sticky-col col-operator summary-label">
               <b>SOBRETIEMPO DÍA (☀️⏰)</b>
             </td>
-            <td v-for="d in daysInMonth" :key="d" class="col-summary count-st-d">
-              {{ dailySummary[d]?.['ST-D'] || 0 }}
+            <td v-for="d in calendarDays" :key="d.key" class="col-summary count-st-d">
+              {{ dailySummary[d.key]?.['ST-D'] || 0 }}
             </td>
           </tr>
           <tr class="summary-row">
             <td colspan="3" class="sticky-col col-operator summary-label">
               <b>SOBRETIEMPO NOCHE (🌙⏰)</b>
             </td>
-            <td v-for="d in daysInMonth" :key="d" class="col-summary count-st-n">
-              {{ dailySummary[d]?.['ST-N'] || 0 }}
+            <td v-for="d in calendarDays" :key="d.key" class="col-summary count-st-n">
+              {{ dailySummary[d.key]?.['ST-N'] || 0 }}
             </td>
           </tr>
           <tr class="summary-row">
             <td colspan="3" class="sticky-col col-operator summary-label">
               <b>DESCANSO MÉDICO (🩺)</b>
             </td>
-            <td v-for="d in daysInMonth" :key="d" class="col-summary count-dm">
-              {{ dailySummary[d]?.DM || 0 }}
+            <td v-for="d in calendarDays" :key="d.key" class="col-summary count-dm">
+              {{ dailySummary[d.key]?.DM || 0 }}
             </td>
           </tr>
         </tfoot>
@@ -268,6 +304,8 @@
 
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import api from '../api';
 
 const emit = defineEmits(['openGroupManager']);
@@ -275,6 +313,11 @@ const emit = defineEmits(['openGroupManager']);
 const now = new Date();
 const currentRealMonth = now.getMonth() + 1;
 const currentMonth = ref(currentRealMonth >= 1 && currentRealMonth <= 12 ? currentRealMonth : 8);
+
+// Selección de Modo de Fecha (Mes vs Rango Personalizado)
+const dateSelectionMode = ref('month'); // 'month' | 'range'
+const rangeStartDate = ref(`2026-08-01`);
+const rangeEndDate = ref(`2026-08-20`);
 
 // Filtro Multiselección de Guardias
 const selectedGroupIds = ref([]); // Lista de IDs de guardias seleccionadas (vacío = todas)
@@ -340,8 +383,47 @@ const fetchGroups = async () => {
 const fetchMatrix = async () => {
   loading.value = true;
   try {
-    const res = await api.get(`/api/v1/shifts/matrix?year=2026&month=${currentMonth.value}`);
-    matrixData.value = res.data;
+    if (dateSelectionMode.value === 'month') {
+      const res = await api.get(`/api/v1/shifts/matrix?year=2026&month=${currentMonth.value}`);
+      matrixData.value = res.data;
+    } else {
+      if (!rangeStartDate.value || !rangeEndDate.value) {
+        alert("Ingrese tanto Fecha Inicio como Fecha Fin.");
+        loading.value = false;
+        return;
+      }
+      if (rangeStartDate.value > rangeEndDate.value) {
+        alert("La fecha de inicio no puede ser posterior a la fecha de fin.");
+        loading.value = false;
+        return;
+      }
+      const res = await api.get(`/api/v1/shifts/range?startDate=${rangeStartDate.value}&endDate=${rangeEndDate.value}`);
+      const ops = (res.data.operators || []).map(op => {
+        const shifts = {};
+        const isOverride = {};
+        const comments = {};
+        if (op.dailyShifts) {
+          Object.entries(op.dailyShifts).forEach(([dateStr, detail]) => {
+            shifts[dateStr] = detail.finalShift || 'L';
+            if (detail.isOverride) isOverride[dateStr] = true;
+            if (detail.comment) comments[dateStr] = detail.comment;
+          });
+        }
+        return {
+          operatorId: op.operatorId,
+          code: op.code,
+          name: op.name,
+          role: op.role,
+          groupId: op.groupId,
+          groupName: op.groupName,
+          groupColor: op.groupColor,
+          shifts,
+          isOverride,
+          comments
+        };
+      });
+      matrixData.value = { operators: ops };
+    }
   } catch (err) {
     console.error("Error al cargar matriz de turnos:", err);
   } finally {
@@ -359,7 +441,7 @@ onUnmounted(() => {
   window.removeEventListener('click', handleOutsideClick);
 });
 
-watch(currentMonth, () => {
+watch([currentMonth, dateSelectionMode], () => {
   fetchMatrix();
 });
 
@@ -368,7 +450,45 @@ const currentMonthName = computed(() => {
   return m ? m.label : 'Mes';
 });
 
-const daysInMonth = computed(() => matrixData.value.daysInMonth || 31);
+const calendarDays = computed(() => {
+  if (dateSelectionMode.value === 'month') {
+    const days = [];
+    const count = matrixData.value.daysInMonth || 31;
+    const daysNames = ['DOM', 'LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB'];
+    for (let d = 1; d <= count; d++) {
+      const dateObj = new Date(2026, currentMonth.value - 1, d);
+      const isWknd = dateObj.getDay() === 0 || dateObj.getDay() === 6;
+      days.push({
+        key: d,
+        dayNum: d,
+        dayName: daysNames[dateObj.getDay()],
+        isWeekend: isWknd
+      });
+    }
+    return days;
+  } else {
+    if (!rangeStartDate.value || !rangeEndDate.value) return [];
+    const days = [];
+    let curr = new Date(rangeStartDate.value + 'T00:00:00');
+    const end = new Date(rangeEndDate.value + 'T00:00:00');
+    const daysNames = ['DOM', 'LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB'];
+    while (curr <= end) {
+      const yyyy = curr.getFullYear();
+      const mm = String(curr.getMonth() + 1).padStart(2, '0');
+      const dd = String(curr.getDate()).padStart(2, '0');
+      const dateStr = `${yyyy}-${mm}-${dd}`;
+      const isWknd = curr.getDay() === 0 || curr.getDay() === 6;
+      days.push({
+        key: dateStr,
+        dayNum: parseInt(dd),
+        dayName: daysNames[curr.getDay()],
+        isWeekend: isWknd
+      });
+      curr.setDate(curr.getDate() + 1);
+    }
+    return days;
+  }
+});
 
 const filteredOperators = computed(() => {
   let list = matrixData.value.operators || [];
@@ -400,21 +520,135 @@ const filteredOperators = computed(() => {
 
 const dailySummary = computed(() => {
   const summary = {};
-  for (let d = 1; d <= daysInMonth.value; d++) {
-    summary[d] = { D: 0, N: 0, L: 0, V: 0, 'ST-D': 0, 'ST-N': 0, DM: 0 };
-  }
-  (matrixData.value.operators || []).forEach(op => {
-    for (let d = 1; d <= daysInMonth.value; d++) {
-      const shift = op.shifts[d] || 'L';
+  calendarDays.value.forEach(d => {
+    summary[d.key] = { D: 0, N: 0, L: 0, V: 0, 'ST-D': 0, 'ST-N': 0, DM: 0 };
+  });
+
+  (filteredOperators.value || []).forEach(op => {
+    calendarDays.value.forEach(d => {
+      const shift = (op.shifts && op.shifts[d.key]) ? op.shifts[d.key] : 'L';
       if (shift === 'ST') {
-        summary[d]['ST-D']++;
-      } else if (summary[d][shift] !== undefined) {
-        summary[d][shift]++;
+        if (summary[d.key]) summary[d.key]['ST-D']++;
+      } else if (summary[d.key] && summary[d.key][shift] !== undefined) {
+        summary[d.key][shift]++;
       }
-    }
+    });
   });
   return summary;
 });
+
+const exportToPDF = () => {
+  if (filteredOperators.value.length === 0) {
+    alert("No hay datos de personal para exportar a PDF.");
+    return;
+  }
+
+  const doc = new jsPDF({
+    orientation: 'landscape',
+    unit: 'mm',
+    format: 'a4'
+  });
+
+  // Encabezado
+  doc.setFontSize(13);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(15, 23, 42);
+  doc.text("ROL DE TURNOS Y PROGRAMACIÓN DE PERSONAL", 14, 12);
+
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(100, 116, 139);
+
+  let periodText = "";
+  if (dateSelectionMode.value === 'month') {
+    periodText = currentMonthName.value;
+  } else {
+    periodText = `Del ${rangeStartDate.value} al ${rangeEndDate.value}`;
+  }
+
+  let groupText = "Todas las Guardias";
+  if (selectedGroupIds.value.length > 0) {
+    const selectedNames = groups.value
+      .filter(g => selectedGroupIds.value.includes(g.id))
+      .map(g => g.name);
+    groupText = selectedNames.join(", ");
+  }
+
+  doc.text(`Período: ${periodText}  |  Guardias: ${groupText}  |  Total Personal: ${filteredOperators.value.length}  |  Emisión: ${new Date().toLocaleDateString('es-PE')}`, 14, 17);
+
+  // Filas para autoTable
+  const headRow = [
+    '#',
+    'CÓDIGO',
+    'NOMBRES Y APELLIDOS',
+    'GUARDIA',
+    ...calendarDays.value.map(d => `${d.dayNum}\n${d.dayName}`)
+  ];
+
+  const bodyRows = filteredOperators.value.map((op, idx) => {
+    const dayValues = calendarDays.value.map(d => {
+      return (op.shifts && op.shifts[d.key]) ? op.shifts[d.key] : 'L';
+    });
+    return [idx + 1, op.code || '-', op.name, op.groupName || '-', ...dayValues];
+  });
+
+  autoTable(doc, {
+    head: [headRow],
+    body: bodyRows,
+    startY: 20,
+    theme: 'grid',
+    styles: {
+      fontSize: 5.5,
+      cellPadding: 1,
+      alignment: 'center',
+      valign: 'middle',
+      font: 'helvetica'
+    },
+    headStyles: {
+      fillColor: [241, 245, 249],
+      textColor: [51, 65, 85],
+      fontStyle: 'bold',
+      lineWidth: 0.1
+    },
+    columnStyles: {
+      0: { cellWidth: 6, halign: 'center' },
+      1: { cellWidth: 14, halign: 'center' },
+      2: { cellWidth: 40, halign: 'left' },
+      3: { cellWidth: 15, halign: 'center' }
+    },
+    didParseCell: (data) => {
+      if (data.section === 'body' && data.column.index >= 4) {
+        const val = data.cell.raw;
+        if (val === 'D') {
+          data.cell.styles.fillColor = [255, 230, 0];
+          data.cell.styles.textColor = [15, 23, 42];
+          data.cell.styles.fontStyle = 'bold';
+        } else if (val === 'N') {
+          data.cell.styles.fillColor = [99, 102, 241];
+          data.cell.styles.textColor = [255, 255, 255];
+          data.cell.styles.fontStyle = 'bold';
+        } else if (val === 'V') {
+          data.cell.styles.fillColor = [46, 204, 113];
+          data.cell.styles.textColor = [255, 255, 255];
+          data.cell.styles.fontStyle = 'bold';
+        } else if (val === 'DM') {
+          data.cell.styles.fillColor = [225, 29, 72];
+          data.cell.styles.textColor = [255, 255, 255];
+          data.cell.styles.fontStyle = 'bold';
+        } else if (val && val.startsWith('ST')) {
+          data.cell.styles.fillColor = [2, 132, 199];
+          data.cell.styles.textColor = [255, 255, 255];
+          data.cell.styles.fontStyle = 'bold';
+        } else if (val === 'L') {
+          data.cell.styles.fillColor = [241, 245, 249];
+          data.cell.styles.textColor = [100, 116, 139];
+        }
+      }
+    }
+  });
+
+  doc.save(`Rol_Turnos_${periodText.replace(/ /g, '_')}.pdf`);
+};
 
 const getDayOfWeekName = (day) => {
   const date = new Date(2026, currentMonth.value - 1, day);
@@ -558,9 +792,94 @@ const removeOverride = async () => {
   background: #4f46e5;
   color: white;
   box-shadow: 0 4px 10px rgba(79, 70, 229, 0.25);
+.mode-switch-bar {
+  display: flex;
+  background: #f1f5f9;
+  padding: 0.25rem;
+  border-radius: 10px;
+  gap: 0.25rem;
 }
 
-.filter-controls {
+.mode-tab-btn {
+  background: none;
+  border: none;
+  padding: 0.45rem 0.9rem;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.8rem;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.mode-tab-btn.active {
+  background: #4f46e5;
+  color: white;
+  box-shadow: 0 3px 8px rgba(79, 70, 229, 0.25);
+}
+
+.range-inputs-group {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.input-date-item {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #475569;
+}
+
+.control-date-input {
+  padding: 0.4rem 0.6rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-family: inherit;
+}
+
+.btn-fetch-range {
+  background: #4f46e5;
+  color: white;
+  border: none;
+  padding: 0.45rem 0.9rem;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-fetch-range:hover {
+  background: #4338ca;
+}
+
+.btn-export-pdf {
+  background: #10b981;
+  color: white;
+  border: none;
+  padding: 0.55rem 0.95rem;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 3px 8px rgba(16, 185, 129, 0.2);
+}
+
+.btn-export-pdf:hover:not(:disabled) {
+  background: #059669;
+  transform: translateY(-1px);
+}
+
+.btn-export-pdf:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
   display: flex;
   align-items: center;
   gap: 0.75rem;
