@@ -63,7 +63,9 @@
       <table class="shift-matrix-table">
         <thead>
           <tr>
-            <th class="sticky-col col-operator">OPERADOR / GUARDIA</th>
+            <th class="sticky-col col-code-hdr">CÓDIGO</th>
+            <th class="sticky-col col-name-hdr">NOMBRES Y APELLIDOS</th>
+            <th class="sticky-col col-guardia-hdr">GUARDIA</th>
             <th 
               v-for="d in daysInMonth" 
               :key="d" 
@@ -76,18 +78,23 @@
         </thead>
         <tbody>
           <tr v-for="op in filteredOperators" :key="op.operatorId">
-            <!-- Columna fija de Operador -->
-            <td class="sticky-col col-operator">
-              <div class="op-cell-info">
-                <span v-if="op.code" class="op-code-tag">{{ op.code }}</span>
-                <span class="op-name" :title="op.name">{{ op.name }}</span>
-                <span 
-                  class="op-guardia-tag" 
-                  :style="{ backgroundColor: op.groupColor || '#94a3b8' }"
-                >
-                  {{ op.groupName }}
-                </span>
-              </div>
+            <!-- Columna 1: CÓDIGO -->
+            <td class="sticky-col col-code-cell">
+              <span v-if="op.code" class="op-code-tag">{{ op.code }}</span>
+              <span v-else class="no-code-tag">-</span>
+            </td>
+            <!-- Columna 2: NOMBRE COMPLETO -->
+            <td class="sticky-col col-name-cell">
+              <span class="op-name" :title="op.name">{{ op.name }}</span>
+            </td>
+            <!-- Columna 3: GUARDIA -->
+            <td class="sticky-col col-guardia-cell">
+              <span 
+                class="op-guardia-tag" 
+                :style="{ backgroundColor: op.groupColor || '#94a3b8' }"
+              >
+                {{ op.groupName }}
+              </span>
             </td>
 
             <!-- Celdas de Turnos para cada día -->
@@ -113,7 +120,7 @@
         <!-- Fila de Resumen Diario de Cobertura -->
         <tfoot>
           <tr class="summary-row">
-            <td class="sticky-col col-operator summary-label">
+            <td colspan="3" class="sticky-col col-operator summary-label">
               <b>TOTAL DÍA (☀️)</b>
             </td>
             <td v-for="d in daysInMonth" :key="d" class="col-summary count-d">
@@ -121,7 +128,7 @@
             </td>
           </tr>
           <tr class="summary-row">
-            <td class="sticky-col col-operator summary-label">
+            <td colspan="3" class="sticky-col col-operator summary-label">
               <b>TOTAL NOCHE (🌙)</b>
             </td>
             <td v-for="d in daysInMonth" :key="d" class="col-summary count-n">
@@ -129,7 +136,7 @@
             </td>
           </tr>
           <tr class="summary-row">
-            <td class="sticky-col col-operator summary-label">
+            <td colspan="3" class="sticky-col col-operator summary-label">
               <b>TOTAL LIBRES (🏖️)</b>
             </td>
             <td v-for="d in daysInMonth" :key="d" class="col-summary count-l">
@@ -137,7 +144,7 @@
             </td>
           </tr>
           <tr class="summary-row">
-            <td class="sticky-col col-operator summary-label">
+            <td colspan="3" class="sticky-col col-operator summary-label">
               <b>VACACIONES (🌴)</b>
             </td>
             <td v-for="d in daysInMonth" :key="d" class="col-summary count-v">
@@ -145,7 +152,7 @@
             </td>
           </tr>
           <tr class="summary-row">
-            <td class="sticky-col col-operator summary-label">
+            <td colspan="3" class="sticky-col col-operator summary-label">
               <b>SOBRETIEMPO DÍA (☀️⏰)</b>
             </td>
             <td v-for="d in daysInMonth" :key="d" class="col-summary count-st-d">
@@ -153,7 +160,7 @@
             </td>
           </tr>
           <tr class="summary-row">
-            <td class="sticky-col col-operator summary-label">
+            <td colspan="3" class="sticky-col col-operator summary-label">
               <b>SOBRETIEMPO NOCHE (🌙⏰)</b>
             </td>
             <td v-for="d in daysInMonth" :key="d" class="col-summary count-st-n">
@@ -161,7 +168,7 @@
             </td>
           </tr>
           <tr class="summary-row">
-            <td class="sticky-col col-operator summary-label">
+            <td colspan="3" class="sticky-col col-operator summary-label">
               <b>DESCANSO MÉDICO (🩺)</b>
             </td>
             <td v-for="d in daysInMonth" :key="d" class="col-summary count-dm">
@@ -598,26 +605,46 @@ const removeOverride = async () => {
 
 .sticky-col {
   position: sticky;
-  left: 0;
   background: white;
   z-index: 10;
-  border-right: 2px solid #e2e8f0;
+}
+
+.col-code-hdr, .col-code-cell {
+  position: sticky;
+  left: 0;
+  width: 55px;
+  min-width: 55px;
+  text-align: center !important;
+}
+
+.col-name-hdr, .col-name-cell {
+  position: sticky;
+  left: 55px;
+  width: 200px;
+  min-width: 200px;
+  max-width: 230px;
+  text-align: left !important;
+  padding-left: 0.35rem !important;
+}
+
+.col-guardia-hdr, .col-guardia-cell {
+  position: sticky;
+  left: 255px;
+  width: 75px;
+  min-width: 75px;
+  text-align: center !important;
+  border-right: 2px solid #cbd5e1;
 }
 
 th.sticky-col {
   top: 0;
-  left: 0;
   z-index: 25;
   background: #f8fafc;
-  text-align: left !important;
-  padding-left: 0.5rem !important;
 }
 
-.col-operator {
-  width: max-content;
-  max-width: 250px;
-  padding: 0.08rem 0.35rem;
-  text-align: left;
+.no-code-tag {
+  color: #94a3b8;
+  font-size: 0.58rem;
 }
 
 .shift-matrix-table th {
@@ -633,8 +660,8 @@ th.sticky-col {
 }
 
 .col-day {
-  min-width: 20px;
-  width: 20px;
+  min-width: 25px;
+  width: 25px;
 }
 
 .weekend-header {
@@ -643,23 +670,14 @@ th.sticky-col {
 }
 
 .day-num {
-  font-size: 0.62rem;
+  font-size: 0.65rem;
   font-weight: 800;
 }
 
 .day-name {
-  font-size: 0.5rem;
+  font-size: 0.52rem;
   color: #64748b;
   text-transform: uppercase;
-}
-
-.op-cell-info {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  white-space: nowrap;
-  overflow: hidden;
-  max-width: 100%;
 }
 
 .op-name {
@@ -669,28 +687,25 @@ th.sticky-col {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  flex: 0 1 auto;
-  min-width: 0;
+  display: block;
 }
 
 .op-code-tag {
   background: #3b82f6;
   color: white;
-  font-size: 0.52rem;
+  font-size: 0.55rem;
   font-weight: 800;
-  padding: 0.02rem 0.2rem;
+  padding: 0.02rem 0.22rem;
   border-radius: 2px;
   font-family: monospace;
-  flex-shrink: 0;
 }
 
 .op-guardia-tag {
   color: white;
-  font-size: 0.52rem;
+  font-size: 0.55rem;
   font-weight: 800;
-  padding: 0.02rem 0.25rem;
+  padding: 0.02rem 0.3rem;
   border-radius: 2px;
-  flex-shrink: 0;
 }
 
 .col-shift-cell {
@@ -709,12 +724,12 @@ th.sticky-col {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
   margin: 0 auto;
   border-radius: 3px;
   font-weight: 900;
-  font-size: 0.56rem;
+  font-size: 0.6rem;
   user-select: none;
   transition: all 0.15s ease;
 }
