@@ -576,14 +576,22 @@ const exportToPDF = () => {
 
   doc.text(`Período: ${periodText}  |  Guardias: ${groupText}  |  Personal: ${filteredOperators.value.length}  |  Emisión: ${new Date().toLocaleDateString('es-PE')}`, 10, 15);
 
-  // Filas para autoTable
-  const headRow = [
+  // Filas de Cabecera y Totales Diarios para autoTable
+  const headDaysRow = [
     '#',
     'CÓD',
     'NOMBRES Y APELLIDOS',
     'GUA',
     ...calendarDays.value.map(d => `${d.dayNum}\n${d.dayName.substring(0, 1)}`)
   ];
+
+  const headD = ['', '', 'TOTAL DÍA (☀️)', '', ...calendarDays.value.map(d => dailySummary.value[d.key]?.D || 0)];
+  const headN = ['', '', 'TOTAL NOCHE (🌙)', '', ...calendarDays.value.map(d => dailySummary.value[d.key]?.N || 0)];
+  const headSTD = ['', '', 'ST DÍA (☀️⏰)', '', ...calendarDays.value.map(d => dailySummary.value[d.key]?.['ST-D'] || 0)];
+  const headSTN = ['', '', 'ST NOCHE (🌙⏰)', '', ...calendarDays.value.map(d => dailySummary.value[d.key]?.['ST-N'] || 0)];
+  const headV = ['', '', 'VACACIONES (🌴)', '', ...calendarDays.value.map(d => dailySummary.value[d.key]?.V || 0)];
+  const headDM = ['', '', 'DM (🩺)', '', ...calendarDays.value.map(d => dailySummary.value[d.key]?.DM || 0)];
+  const headL = ['', '', 'LIBRES (🏖️)', '', ...calendarDays.value.map(d => dailySummary.value[d.key]?.L || 0)];
 
   const bodyRows = filteredOperators.value.map((op, idx) => {
     const dayValues = calendarDays.value.map(d => {
@@ -593,14 +601,14 @@ const exportToPDF = () => {
   });
 
   autoTable(doc, {
-    head: [headRow],
+    head: [headDaysRow, headD, headN, headSTD, headSTN, headV, headDM, headL],
     body: bodyRows,
     startY: 18,
     margin: { left: 8, right: 8 },
     theme: 'grid',
     styles: {
       fontSize: 4.8,
-      cellPadding: 0.6,
+      cellPadding: 0.5,
       alignment: 'center',
       valign: 'middle',
       font: 'helvetica'
@@ -618,6 +626,36 @@ const exportToPDF = () => {
       3: { cellWidth: 11, halign: 'center' }
     },
     didParseCell: (data) => {
+      if (data.section === 'head') {
+        if (data.row.index === 1) { // TOTAL DÍA
+          data.cell.styles.fillColor = [254, 240, 138];
+          data.cell.styles.textColor = [15, 23, 42];
+          data.cell.styles.fontStyle = 'bold';
+        } else if (data.row.index === 2) { // TOTAL NOCHE
+          data.cell.styles.fillColor = [99, 102, 241];
+          data.cell.styles.textColor = [255, 255, 255];
+          data.cell.styles.fontStyle = 'bold';
+        } else if (data.row.index === 3) { // ST DÍA
+          data.cell.styles.fillColor = [2, 132, 199];
+          data.cell.styles.textColor = [255, 255, 255];
+          data.cell.styles.fontStyle = 'bold';
+        } else if (data.row.index === 4) { // ST NOCHE
+          data.cell.styles.fillColor = [3, 105, 161];
+          data.cell.styles.textColor = [255, 255, 255];
+          data.cell.styles.fontStyle = 'bold';
+        } else if (data.row.index === 5) { // VACACIONES
+          data.cell.styles.fillColor = [46, 204, 113];
+          data.cell.styles.textColor = [255, 255, 255];
+          data.cell.styles.fontStyle = 'bold';
+        } else if (data.row.index === 6) { // DM
+          data.cell.styles.fillColor = [225, 29, 72];
+          data.cell.styles.textColor = [255, 255, 255];
+          data.cell.styles.fontStyle = 'bold';
+        } else if (data.row.index === 7) { // LIBRES
+          data.cell.styles.fillColor = [241, 245, 249];
+          data.cell.styles.textColor = [100, 116, 139];
+        }
+      }
       if (data.section === 'body' && data.column.index >= 4) {
         const val = data.cell.raw;
         if (val === 'D') {
