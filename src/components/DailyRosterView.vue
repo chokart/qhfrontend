@@ -161,57 +161,44 @@
             <table class="range-table">
               <thead>
                 <tr>
-                  <th style="width: 40px;">#</th>
-                  <th style="width: 220px;">OPERADOR / GUARDIA</th>
-                  <th style="width: 170px;">RESUMEN PERÍODO</th>
-                  <th>DETALLE DÍA A DÍA EN RANGO DE FECHAS</th>
+                  <th style="width: 35px;">#</th>
+                  <th class="sticky-col col-operator">OPERADOR / GUARDIA</th>
+                  <th 
+                    v-for="d in rangeDatesList" 
+                    :key="d.fullDate" 
+                    :class="['col-range-date', { 'weekend-header': d.isWeekend }]"
+                  >
+                    <div class="day-num">{{ d.dayNum }}</div>
+                    <div class="day-name">{{ d.shortDate }}</div>
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 <tr v-for="(op, idx) in filteredRangeOperators" :key="op.operatorId">
                   <td class="col-idx">{{ idx + 1 }}</td>
-                  <td class="col-op-info">
+                  <td class="sticky-col col-operator">
                     <div class="op-cell-info">
                       <span v-if="op.code" class="op-code-tag">{{ op.code }}</span>
-                      <span class="op-name-bold">{{ op.name }}</span>
+                      <span class="op-name-bold" :title="op.name">{{ op.name }}</span>
                       <span class="op-role-tag">🏷️ {{ op.role || 'OPERADOR' }}</span>
                       <span class="op-guardia-tag" :style="{ backgroundColor: op.groupColor || '#94a3b8' }">
                         {{ op.groupName }}
                       </span>
                     </div>
                   </td>
-                  <td class="col-stats">
-                    <div class="stats-pills">
-                      <span v-if="getOperatorRangeStats(op).diaDays > 0" class="stat-badge dia-bg">
-                        ☀️ {{ getOperatorRangeStats(op).diaDays }}d Día
-                      </span>
-                      <span v-if="getOperatorRangeStats(op).nocheDays > 0" class="stat-badge noche-bg">
-                        🌙 {{ getOperatorRangeStats(op).nocheDays }}d Noche
-                      </span>
-                      <span v-if="getOperatorRangeStats(op).vacDays > 0" class="stat-badge vac-bg">
-                        🌴 {{ getOperatorRangeStats(op).vacDays }}d Vac.
-                      </span>
-                      <span v-if="getOperatorRangeStats(op).dmDays > 0" class="stat-badge dm-bg">
-                        🩺 {{ getOperatorRangeStats(op).dmDays }}d DM
-                      </span>
+                  <td 
+                    v-for="d in rangeDatesList" 
+                    :key="d.fullDate" 
+                    class="col-shift-cell"
+                  >
+                    <div 
+                      v-if="op.dailyShifts && op.dailyShifts[d.fullDate]"
+                      :class="['shift-cell-badge', getRangeShiftBadgeClass(op.dailyShifts[d.fullDate])]"
+                      :title="op.dailyShifts[d.fullDate].comment ? `${d.fullDate}: ${op.dailyShifts[d.fullDate].comment}` : `${d.fullDate}: ${getRangeShiftLabel(op.dailyShifts[d.fullDate])}`"
+                    >
+                      {{ getRangeShiftLabel(op.dailyShifts[d.fullDate]) }}
                     </div>
-                  </td>
-                  <td class="col-timeline">
-                    <div class="timeline-scroll">
-                      <div 
-                        v-for="(detail, dateStr) in op.dailyShifts" 
-                        :key="dateStr" 
-                        class="timeline-item"
-                      >
-                        <span class="timeline-date">{{ dateStr.split('-').slice(1).join('/') }}</span>
-                        <span 
-                          :class="['timeline-badge', getRangeShiftBadgeClass(detail)]"
-                          :title="detail.comment ? `${dateStr}: ${detail.comment}` : `${dateStr}: ${getRangeShiftLabel(detail)}`"
-                        >
-                          {{ getRangeShiftLabel(detail) }}
-                        </span>
-                      </div>
-                    </div>
+                    <div v-else class="shift-cell-badge shift-l">L</div>
                   </td>
                 </tr>
               </tbody>
@@ -527,6 +514,26 @@ const fetchRangeRoster = async () => {
     rangeLoading.value = false;
   }
 };
+
+const rangeDatesList = computed(() => {
+  if (!rangeStartDate.value || !rangeEndDate.value) return [];
+  const dates = [];
+  let curr = new Date(rangeStartDate.value + 'T00:00:00');
+  const end = new Date(rangeEndDate.value + 'T00:00:00');
+  while (curr <= end) {
+    const yyyy = curr.getFullYear();
+    const mm = String(curr.getMonth() + 1).padStart(2, '0');
+    const dd = String(curr.getDate()).padStart(2, '0');
+    dates.push({
+      fullDate: `${yyyy}-${mm}-${dd}`,
+      shortDate: `${dd}/${mm}`,
+      dayNum: parseInt(dd),
+      isWeekend: curr.getDay() === 0 || curr.getDay() === 6
+    });
+    curr.setDate(curr.getDate() + 1);
+  }
+  return dates;
+});
 
 const filteredRangeOperators = computed(() => {
   if (!rangeReady.value) return [];
@@ -1453,24 +1460,37 @@ const absentNightOperators = computed(() => {
 
 .range-table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
   font-size: 0.76rem;
 }
 
 .range-table th {
-  background: #f1f5f9;
+  background: #f8fafc;
   color: #475569;
   font-weight: 700;
-  padding: 0.3rem 0.5rem;
+  padding: 0.25rem 0.1rem;
   border-bottom: 2px solid #e2e8f0;
-  text-align: left;
-  font-size: 0.75rem;
+  text-align: center;
+  font-size: 0.72rem;
+}
+
+.col-range-date {
+  min-width: 27px;
+  width: 27px;
 }
 
 .range-table td {
-  padding: 0.2rem 0.4rem;
+  padding: 0.15rem 0.05rem;
   border-bottom: 1px solid #f1f5f9;
+  border-right: 1px solid #f1f5f9;
+  text-align: center;
   vertical-align: middle;
+}
+
+.col-shift-cell {
+  padding: 0.15rem 0.05rem;
+  text-align: center;
 }
 
 .op-cell-info {
@@ -1483,54 +1503,24 @@ const absentNightOperators = computed(() => {
 .op-name-bold {
   font-weight: 700;
   color: #0f172a;
-  font-size: 0.78rem;
-}
-
-.stats-pills {
-  display: flex;
-  gap: 0.25rem;
-  flex-wrap: wrap;
-}
-
-.stat-badge {
-  font-size: 0.65rem;
-  font-weight: 800;
-  padding: 0.08rem 0.3rem;
-  border-radius: 3px;
-}
-
-.dia-bg { background: #fffde7; color: #827717; border: 1px solid #fef08a; }
-.noche-bg { background: #e0e7ff; color: #3730a3; border: 1px solid #c7d2fe; }
-.vac-bg { background: #dcfce7; color: #15803d; border: 1px solid #86efac; }
-.dm-bg { background: #ffe4e6; color: #be123c; border: 1px solid #fecdd3; }
-
-.timeline-scroll {
-  display: flex;
-  gap: 0.25rem;
-  overflow-x: auto;
-  padding: 0.1rem 0;
-}
-
-.timeline-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.1rem;
-  min-width: 44px;
-}
-
-.timeline-date {
-  font-size: 0.58rem;
-  color: #64748b;
-  font-weight: 700;
-}
-
-.timeline-badge {
-  padding: 0.12rem 0.28rem;
-  border-radius: 3px;
-  font-size: 0.65rem;
-  font-weight: 900;
+  font-size: 0.76rem;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.shift-cell-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  margin: 0 auto;
+  border-radius: 4px;
+  font-weight: 900;
+  font-size: 0.7rem;
+  user-select: none;
+  transition: all 0.15s ease;
 }
 
 .range-badge-v-d { background: #2ecc71; color: white; border: 1px solid #27ae60; }
