@@ -1503,10 +1503,10 @@ const absentNightOperators = computed(() => {
 }
 
 .col-name-hdr, .col-name-cell {
-  min-width: 200px;
-  max-width: 240px;
+  min-width: 140px;
+  max-width: 210px;
   text-align: left !important;
-  padding-left: 0.5rem !important;
+  padding-left: 0.35rem !important;
 }
 
 .col-guardia-hdr, .col-guardia-cell {

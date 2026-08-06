@@ -612,8 +612,9 @@ th.sticky-col {
 }
 
 .col-operator {
-  min-width: 230px;
-  max-width: 250px;
+  min-width: 150px;
+  max-width: 260px;
+  width: auto;
   padding: 0.08rem 0.35rem;
   text-align: left;
 }
@@ -652,11 +653,12 @@ th.sticky-col {
 }
 
 .op-cell-info {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 0.25rem;
   white-space: nowrap;
   overflow: hidden;
+  max-width: 100%;
 }
 
 .op-name {
@@ -666,7 +668,7 @@ th.sticky-col {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  flex: 1;
+  flex: 0 1 auto;
   min-width: 0;
 }
 
