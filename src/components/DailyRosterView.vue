@@ -174,11 +174,11 @@
                     <div class="op-cell-info">
                       <span v-if="op.code" class="op-code-tag">{{ op.code }}</span>
                       <span class="op-name-bold">{{ op.name }}</span>
+                      <span class="op-role-tag">🏷️ {{ op.role || 'OPERADOR' }}</span>
                       <span class="op-guardia-tag" :style="{ backgroundColor: op.groupColor || '#94a3b8' }">
                         {{ op.groupName }}
                       </span>
                     </div>
-                    <span class="op-role-sub">🏷️ {{ op.role || 'OPERADOR' }}</span>
                   </td>
                   <td class="col-stats">
                     <div class="stats-pills">
@@ -1435,7 +1435,7 @@ const absentNightOperators = computed(() => {
 }
 
 .range-results-header {
-  padding: 1rem 1.25rem;
+  padding: 0.45rem 0.8rem;
   background: #f8fafc;
   border-bottom: 1px solid #e2e8f0;
 }
@@ -1443,7 +1443,7 @@ const absentNightOperators = computed(() => {
 .range-results-header h4 {
   margin: 0;
   color: #1e293b;
-  font-size: 0.95rem;
+  font-size: 0.85rem;
   font-weight: 700;
 }
 
@@ -1454,20 +1454,21 @@ const absentNightOperators = computed(() => {
 .range-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.82rem;
+  font-size: 0.76rem;
 }
 
 .range-table th {
   background: #f1f5f9;
   color: #475569;
   font-weight: 700;
-  padding: 0.6rem 0.8rem;
+  padding: 0.3rem 0.5rem;
   border-bottom: 2px solid #e2e8f0;
   text-align: left;
+  font-size: 0.75rem;
 }
 
 .range-table td {
-  padding: 0.5rem 0.8rem;
+  padding: 0.2rem 0.4rem;
   border-bottom: 1px solid #f1f5f9;
   vertical-align: middle;
 }
@@ -1482,26 +1483,20 @@ const absentNightOperators = computed(() => {
 .op-name-bold {
   font-weight: 700;
   color: #0f172a;
-}
-
-.op-role-sub {
-  font-size: 0.68rem;
-  color: #64748b;
-  display: block;
-  margin-top: 0.15rem;
+  font-size: 0.78rem;
 }
 
 .stats-pills {
   display: flex;
-  gap: 0.3rem;
+  gap: 0.25rem;
   flex-wrap: wrap;
 }
 
 .stat-badge {
-  font-size: 0.68rem;
+  font-size: 0.65rem;
   font-weight: 800;
-  padding: 0.15rem 0.4rem;
-  border-radius: 4px;
+  padding: 0.08rem 0.3rem;
+  border-radius: 3px;
 }
 
 .dia-bg { background: #fffde7; color: #827717; border: 1px solid #fef08a; }
@@ -1511,30 +1506,30 @@ const absentNightOperators = computed(() => {
 
 .timeline-scroll {
   display: flex;
-  gap: 0.35rem;
+  gap: 0.25rem;
   overflow-x: auto;
-  padding: 0.2rem 0;
+  padding: 0.1rem 0;
 }
 
 .timeline-item {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.15rem;
-  min-width: 48px;
+  gap: 0.1rem;
+  min-width: 44px;
 }
 
 .timeline-date {
-  font-size: 0.6rem;
+  font-size: 0.58rem;
   color: #64748b;
   font-weight: 700;
 }
 
 .timeline-badge {
-  padding: 0.2rem 0.35rem;
-  border-radius: 4px;
-  font-size: 0.68rem;
-  font-weight: 800;
+  padding: 0.12rem 0.28rem;
+  border-radius: 3px;
+  font-size: 0.65rem;
+  font-weight: 900;
   white-space: nowrap;
 }
 
