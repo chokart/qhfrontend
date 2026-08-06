@@ -612,9 +612,9 @@ th.sticky-col {
 }
 
 .col-operator {
-  min-width: 250px;
-  max-width: 270px;
-  padding: 0.2rem 0.5rem;
+  min-width: 230px;
+  max-width: 250px;
+  padding: 0.08rem 0.35rem;
   text-align: left;
 }
 
@@ -625,14 +625,14 @@ th.sticky-col {
   background: #f8fafc;
   color: #475569;
   font-weight: 700;
-  padding: 0.3rem 0.05rem;
+  padding: 0.15rem 0.02rem;
   border-bottom: 2px solid #e2e8f0;
   text-align: center;
 }
 
 .col-day {
-  min-width: 27px;
-  width: 27px;
+  min-width: 20px;
+  width: 20px;
 }
 
 .weekend-header {
@@ -641,12 +641,12 @@ th.sticky-col {
 }
 
 .day-num {
-  font-size: 0.76rem;
+  font-size: 0.62rem;
   font-weight: 800;
 }
 
 .day-name {
-  font-size: 0.6rem;
+  font-size: 0.5rem;
   color: #64748b;
   text-transform: uppercase;
 }
@@ -654,13 +654,13 @@ th.sticky-col {
 .op-cell-info {
   display: flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: 0.25rem;
   white-space: nowrap;
   overflow: hidden;
 }
 
 .op-name {
-  font-size: 0.76rem;
+  font-size: 0.62rem;
   font-weight: 700;
   color: #0f172a;
   white-space: nowrap;
@@ -673,25 +673,25 @@ th.sticky-col {
 .op-code-tag {
   background: #3b82f6;
   color: white;
-  font-size: 0.65rem;
+  font-size: 0.52rem;
   font-weight: 800;
-  padding: 0.05rem 0.28rem;
-  border-radius: 3px;
+  padding: 0.02rem 0.2rem;
+  border-radius: 2px;
   font-family: monospace;
   flex-shrink: 0;
 }
 
 .op-guardia-tag {
   color: white;
-  font-size: 0.65rem;
+  font-size: 0.52rem;
   font-weight: 800;
-  padding: 0.05rem 0.35rem;
-  border-radius: 3px;
+  padding: 0.02rem 0.25rem;
+  border-radius: 2px;
   flex-shrink: 0;
 }
 
 .col-shift-cell {
-  padding: 0.15rem 0.05rem;
+  padding: 0.05rem 0.02rem;
   text-align: center;
   border-bottom: 1px solid #f1f5f9;
   border-right: 1px solid #f1f5f9;
@@ -706,12 +706,12 @@ th.sticky-col {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
+  width: 18px;
+  height: 18px;
   margin: 0 auto;
-  border-radius: 4px;
+  border-radius: 3px;
   font-weight: 900;
-  font-size: 0.72rem;
+  font-size: 0.56rem;
   user-select: none;
   transition: all 0.15s ease;
 }
@@ -752,20 +752,20 @@ th.sticky-col {
 }
 
 .is-override {
-  box-shadow: 0 0 0 2px #0f172a;
+  box-shadow: 0 0 0 1.5px #0f172a;
   position: relative;
 }
 
 .summary-row td {
-  padding: 0.25rem 0.05rem;
+  padding: 0.08rem 0.02rem;
   border-top: 1px solid #e2e8f0;
   font-weight: 800;
   text-align: center;
-  font-size: 0.72rem;
+  font-size: 0.58rem;
 }
 
 .summary-label {
-  font-size: 0.72rem;
+  font-size: 0.58rem;
   color: #334155;
   text-align: left !important;
 }
