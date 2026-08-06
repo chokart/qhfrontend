@@ -544,18 +544,18 @@ const exportToPDF = () => {
   }
 
   const doc = new jsPDF({
-    orientation: 'landscape',
+    orientation: 'portrait',
     unit: 'mm',
     format: 'a4'
   });
 
   // Encabezado
-  doc.setFontSize(13);
+  doc.setFontSize(11);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(15, 23, 42);
-  doc.text("ROL DE TURNOS Y PROGRAMACIÓN DE PERSONAL", 14, 12);
+  doc.text("ROL DE TURNOS Y PROGRAMACIÓN DE PERSONAL", 10, 10);
 
-  doc.setFontSize(8);
+  doc.setFontSize(7);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(100, 116, 139);
 
@@ -574,15 +574,15 @@ const exportToPDF = () => {
     groupText = selectedNames.join(", ");
   }
 
-  doc.text(`Período: ${periodText}  |  Guardias: ${groupText}  |  Total Personal: ${filteredOperators.value.length}  |  Emisión: ${new Date().toLocaleDateString('es-PE')}`, 14, 17);
+  doc.text(`Período: ${periodText}  |  Guardias: ${groupText}  |  Personal: ${filteredOperators.value.length}  |  Emisión: ${new Date().toLocaleDateString('es-PE')}`, 10, 15);
 
   // Filas para autoTable
   const headRow = [
     '#',
-    'CÓDIGO',
+    'CÓD',
     'NOMBRES Y APELLIDOS',
-    'GUARDIA',
-    ...calendarDays.value.map(d => `${d.dayNum}\n${d.dayName}`)
+    'GUA',
+    ...calendarDays.value.map(d => `${d.dayNum}\n${d.dayName.substring(0, 1)}`)
   ];
 
   const bodyRows = filteredOperators.value.map((op, idx) => {
@@ -595,11 +595,12 @@ const exportToPDF = () => {
   autoTable(doc, {
     head: [headRow],
     body: bodyRows,
-    startY: 20,
+    startY: 18,
+    margin: { left: 8, right: 8 },
     theme: 'grid',
     styles: {
-      fontSize: 5.5,
-      cellPadding: 1,
+      fontSize: 4.8,
+      cellPadding: 0.6,
       alignment: 'center',
       valign: 'middle',
       font: 'helvetica'
@@ -608,13 +609,13 @@ const exportToPDF = () => {
       fillColor: [241, 245, 249],
       textColor: [51, 65, 85],
       fontStyle: 'bold',
-      lineWidth: 0.1
+      lineWidth: 0.05
     },
     columnStyles: {
-      0: { cellWidth: 6, halign: 'center' },
-      1: { cellWidth: 14, halign: 'center' },
-      2: { cellWidth: 40, halign: 'left' },
-      3: { cellWidth: 15, halign: 'center' }
+      0: { cellWidth: 5, halign: 'center' },
+      1: { cellWidth: 10, halign: 'center' },
+      2: { cellWidth: 32, halign: 'left' },
+      3: { cellWidth: 11, halign: 'center' }
     },
     didParseCell: (data) => {
       if (data.section === 'body' && data.column.index >= 4) {
