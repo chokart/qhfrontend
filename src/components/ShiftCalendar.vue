@@ -584,7 +584,8 @@ const removeOverride = async () => {
   background: white;
   border-radius: 14px;
   border: 1px solid #e2e8f0;
-  overflow-x: auto;
+  overflow: auto;
+  max-height: calc(100vh - 270px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
 }
 
@@ -603,6 +604,13 @@ const removeOverride = async () => {
   border-right: 2px solid #e2e8f0;
 }
 
+th.sticky-col {
+  top: 0;
+  left: 0;
+  z-index: 25;
+  background: #f8fafc;
+}
+
 .col-operator {
   min-width: 250px;
   max-width: 270px;
@@ -611,6 +619,9 @@ const removeOverride = async () => {
 }
 
 .shift-matrix-table th {
+  position: sticky;
+  top: 0;
+  z-index: 15;
   background: #f8fafc;
   color: #475569;
   font-weight: 700;
