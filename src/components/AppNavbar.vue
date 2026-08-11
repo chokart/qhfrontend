@@ -43,6 +43,11 @@
         <span class="nav-label">Personal</span>
       </router-link>
 
+      <router-link to="/reporte" class="nav-item" active-class="active">
+        <span class="nav-icon">📈</span>
+        <span class="nav-label">Reportes</span>
+      </router-link>
+
       <router-link v-if="authStore.isAdmin" to="/usuarios" class="nav-item" active-class="active">
         <span class="nav-icon">👤</span>
         <span class="nav-label">Usuarios</span>

@@ -6,6 +6,7 @@ import UserDashboard from '../views/UserDashboard.vue';
 import CanchasView from '../views/CanchasView.vue';
 import PersonalView from '../views/PersonalView.vue';
 import UserManagement from '../views/UserManagement.vue';
+import ReporteView from '../views/ReporteView.vue';
 
 const routes = [
   { 
@@ -30,6 +31,12 @@ const routes = [
     path: '/personal',
     component: PersonalView,
     name: 'Personal',
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/reporte',
+    component: ReporteView,
+    name: 'Reporte',
     meta: { requiresAuth: true }
   },
   {
