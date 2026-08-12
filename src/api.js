@@ -20,11 +20,11 @@ api.interceptors.request.use(
   }
 );
 
-// Interceptor para manejar errores globales, especialmente el 401 (Unauthorized) y 403 (Forbidden/Token Expired)
+// Interceptor para manejar errores globales, especialmente el 401 (Unauthorized)
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response && (error.response.status === 401 || error.response.status === 403)) {
+    if (error.response && error.response.status === 401) {
       const authStore = useAuthStore();
       console.warn("Sesión expirada o no autorizada. Redirigiendo a login...");
       

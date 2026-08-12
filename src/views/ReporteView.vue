@@ -419,6 +419,8 @@ const loadAvailableMonths = async () => {
     }
   } catch (err) {
     console.error("Error al cargar meses disponibles:", err);
+    uploadStatus.message = "No se pudieron cargar datos históricos del servidor. Puedes subir un reporte Excel para iniciar.";
+    uploadStatus.isSuccess = false;
   }
 };
 
