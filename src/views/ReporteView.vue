@@ -24,6 +24,11 @@
             </select>
           </div>
 
+          <!-- Botón Eliminar Mes -->
+          <button v-if="selectedMonthKey" class="btn-delete-month" @click="deleteSelectedMonthReport" title="Eliminar reporte del mes seleccionado">
+            <span>🗑️ Eliminar Mes</span>
+          </button>
+
           <!-- Botón Cargar Excel -->
           <button class="btn-upload" @click="triggerFileSelect">
             <span>📤 Subir Excel (.xlsm)</span>
@@ -442,6 +447,29 @@ const onMonthChange = () => {
   loadDashboardData(year, month);
 };
 
+const deleteSelectedMonthReport = async () => {
+  if (!selectedMonthKey.value) return;
+  const [year, month] = selectedMonthKey.value.split('-');
+  const monthName = getMonthName(parseInt(month));
+
+  if (!confirm(`¿Estás seguro de eliminar todo el reporte cargado de ${monthName} ${year}?\n\nEsta acción borrará las partes diarias y los avisos SAP registrados de dicho mes.`)) {
+    return;
+  }
+
+  try {
+    const res = await api.delete(`/api/v1/reports?year=${year}&month=${month}`);
+    uploadStatus.message = res.data.message || `Reporte de ${monthName} ${year} eliminado.`;
+    uploadStatus.isSuccess = true;
+    dashboardData.value = null;
+    selectedMonthKey.value = '';
+    await loadAvailableMonths();
+  } catch (err) {
+    console.error("Error al eliminar reporte:", err);
+    uploadStatus.message = err.response?.data?.message || 'Error al eliminar el reporte del mes.';
+    uploadStatus.isSuccess = false;
+  }
+};
+
 const triggerFileSelect = () => {
   fileInputRef.value.click();
 };
@@ -605,6 +633,23 @@ h1 {
   color: #1e293b;
   outline: none;
   font-size: 0.9rem;
+}
+
+.btn-delete-month {
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+  padding: 0.65rem 1rem;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-delete-month:hover {
+  background: #dc2626;
+  color: white;
+  border-color: #dc2626;
 }
 
 .btn-upload {
