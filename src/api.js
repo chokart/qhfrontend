@@ -11,7 +11,12 @@ api.interceptors.request.use(
   (config) => {
     const authStore = useAuthStore();
     if (authStore.token) {
-      config.headers.Authorization = `Bearer ${authStore.token}`;
+      if (config.headers && typeof config.headers.set === 'function') {
+        config.headers.set('Authorization', `Bearer ${authStore.token}`);
+      } else {
+        config.headers = config.headers || {};
+        config.headers['Authorization'] = `Bearer ${authStore.token}`;
+      }
     }
     return config;
   },

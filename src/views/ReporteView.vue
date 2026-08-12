@@ -457,9 +457,7 @@ const handleFileUpload = async (event) => {
   uploadStatus.message = '';
 
   try {
-    const res = await api.post('/api/v1/reports/upload', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    });
+    const res = await api.post('/api/v1/reports/upload', formData);
 
     uploadStatus.message = `Procesados ${res.data.daysProcessed} días y ${res.data.sapNoticesProcessed} avisos SAP exitosamente.`;
     uploadStatus.isSuccess = true;
