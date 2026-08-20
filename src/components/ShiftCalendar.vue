@@ -46,6 +46,16 @@
       </div>
 
       <div class="filter-controls">
+        <!-- Selector de Filtro de Turno / Estado -->
+        <select v-model="selectedShiftFilter" class="control-select-shift" title="Filtrar personal por turno o tipo de ausencia">
+          <option value="ALL">📋 Todos los Turnos</option>
+          <option value="DIA">☀️ En Turno Día (Día / V / DM)</option>
+          <option value="NOCHE">🌙 En Turno Noche (Noche / V / DM)</option>
+          <option value="V">🌴 Solo Vacaciones (V)</option>
+          <option value="DM">🩺 Solo Descanso Médico (DM)</option>
+          <option value="L">🏠 Solo Libres / Descanso (L)</option>
+        </select>
+
         <!-- Selector Multiselección de Guardias -->
         <div class="multi-select-container" ref="multiSelectContainerRef">
           <button class="multi-select-trigger" @click.stop="showGroupDropdown = !showGroupDropdown">
@@ -327,6 +337,9 @@ const selectedGroupIds = ref([]); // Lista de IDs de guardias seleccionadas (vac
 const showGroupDropdown = ref(false);
 const multiSelectContainerRef = ref(null);
 
+// Filtro de Turno / Modalidad (Día, Noche, Vacaciones, DM, Libre)
+const selectedShiftFilter = ref('ALL');
+
 const searchQuery = ref('');
 const loading = ref(true);
 const groups = ref([]);
@@ -499,6 +512,52 @@ const filteredOperators = computed(() => {
   // Filtro por multiselección de guardias
   if (selectedGroupIds.value.length > 0) {
     list = list.filter(op => op.groupId && selectedGroupIds.value.includes(op.groupId));
+  }
+
+  // Filtro por turno o modalidad (Día, Noche, Vacaciones, DM, Libre)
+  if (selectedShiftFilter.value !== 'ALL') {
+    const filter = selectedShiftFilter.value;
+    list = list.filter(op => {
+      // Modo Rango (op.dailyShifts existe)
+      if (op.dailyShifts) {
+        return Object.values(op.dailyShifts).some(detail => {
+          const shift = detail.finalShift;
+          const turnCat = detail.turnCategory || (detail.baseShift === 'N' ? 'NOCHE' : 'DIA');
+          if (filter === 'DIA') {
+            return shift === 'D' || shift === 'ST-D' || ( (shift === 'V' || shift === 'DM' || shift === 'ST') && turnCat === 'DIA' );
+          } else if (filter === 'NOCHE') {
+            return shift === 'N' || shift === 'ST-N' || ( (shift === 'V' || shift === 'DM' || shift === 'ST') && turnCat === 'NOCHE' );
+          } else if (filter === 'V') {
+            return shift === 'V';
+          } else if (filter === 'DM') {
+            return shift === 'DM';
+          } else if (filter === 'L') {
+            return shift === 'L';
+          }
+          return true;
+        });
+      } else if (op.shifts) {
+        // Modo Mes (op.shifts y op.baseShifts existen)
+        return Object.keys(op.shifts).some(day => {
+          const shift = op.shifts[day];
+          const baseShift = op.baseShifts ? op.baseShifts[day] : 'L';
+          const turnCat = baseShift === 'N' ? 'NOCHE' : 'DIA';
+          if (filter === 'DIA') {
+            return shift === 'D' || shift === 'ST-D' || ( (shift === 'V' || shift === 'DM' || shift === 'ST') && turnCat === 'DIA' );
+          } else if (filter === 'NOCHE') {
+            return shift === 'N' || shift === 'ST-N' || ( (shift === 'V' || shift === 'DM' || shift === 'ST') && turnCat === 'NOCHE' );
+          } else if (filter === 'V') {
+            return shift === 'V';
+          } else if (filter === 'DM') {
+            return shift === 'DM';
+          } else if (filter === 'L') {
+            return shift === 'L';
+          }
+          return true;
+        });
+      }
+      return true;
+    });
   }
 
   // Filtro por búsqueda de texto
@@ -894,6 +953,24 @@ const removeOverride = async () => {
   font-size: 0.8rem;
   cursor: pointer;
   transition: all 0.2s ease;
+}
+
+.control-select-shift {
+  background: #f8fafc;
+  color: #1e293b;
+  border: 1px solid #cbd5e1;
+  padding: 0.5rem 0.8rem;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.82rem;
+  outline: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.control-select-shift:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
 }
 
 .btn-fetch-range:hover {
