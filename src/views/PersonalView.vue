@@ -120,20 +120,36 @@
                     </span>
                   </td>
                   <td class="col-guardia">
-                    <span 
-                      v-if="op.group" 
-                      class="guardia-badge"
-                      :style="{ backgroundColor: op.group.color || '#4f46e5' }"
-                    >
-                      {{ op.group.name }}
-                    </span>
-                    <span v-else class="no-guardia">Sin Guardia</span>
+                    <div class="guardia-cell-wrapper">
+                      <span 
+                        v-if="op.group" 
+                        class="guardia-badge"
+                        :style="{ backgroundColor: op.group.color || '#4f46e5' }"
+                      >
+                        {{ op.group.name }}
+                      </span>
+                      <span v-else class="no-guardia">Sin Guardia</span>
+                      <span 
+                        v-if="op.onlyDayShift" 
+                        class="only-day-badge"
+                        title="Este operador solo trabaja turno de Día (convierte Noche 'N' a Día 'D')"
+                      >
+                        ☀️ Solo Día
+                      </span>
+                    </div>
                   </td>
                   <td class="col-status" style="text-align: center;">
                     <span class="status-pill active">Activo</span>
                   </td>
                   <td class="col-actions" style="text-align: center;">
                     <div class="actions-group">
+                      <button 
+                        :class="['action-btn-sun', { active: op.onlyDayShift }]"
+                        @click="toggleOnlyDayShift(op)"
+                        :title="op.onlyDayShift ? 'Modalidad Solo Día activa (Clic para volver a rotación normal N/D)' : 'Clic para activar modalidad Solo Día (Convierte Noche N a Día D)'"
+                      >
+                        ☀️ {{ op.onlyDayShift ? 'Solo Día' : 'Normal' }}
+                      </button>
                       <button 
                         class="action-btn-role"
                         @click="openRoleModal(op)"
@@ -508,6 +524,20 @@ onMounted(() => {
   fetchOperators();
   fetchGroups();
 });
+
+const toggleOnlyDayShift = async (op) => {
+  const newValue = !op.onlyDayShift;
+  try {
+    const res = await api.put(`/api/v1/operators/${op.id}/only-day`, {
+      onlyDayShift: newValue
+    });
+    op.onlyDayShift = res.data.onlyDayShift;
+    refreshAllData();
+  } catch (err) {
+    console.error("Error al actualizar modalidad Solo Día:", err);
+    alert("Ocurrió un error al intentar cambiar la modalidad del operador.");
+  }
+};
 
 const refreshAllData = () => {
   fetchOperators();
@@ -1082,6 +1112,48 @@ const deleteOperatorConfirmed = async () => {
 .role-pill:hover {
   background: #e2e8f0;
   color: #0f172a;
+}
+
+.guardia-cell-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
+}
+
+.only-day-badge {
+  background: #fef3c7;
+  color: #b45309;
+  border: 1px solid #fde68a;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+.action-btn-sun {
+  background: #fef9c3;
+  color: #854d0e;
+  border: 1px solid #fef08a;
+  font-size: 0.76rem;
+  font-weight: 700;
+  padding: 0.35rem 0.65rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.action-btn-sun.active {
+  background: #f59e0b;
+  color: white;
+  border-color: #d97706;
+}
+
+.action-btn-sun:hover {
+  filter: brightness(0.95);
 }
 
 .action-btn-role {

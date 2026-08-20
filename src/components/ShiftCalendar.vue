@@ -145,7 +145,10 @@
             </td>
             <!-- Columna 2: NOMBRE COMPLETO -->
             <td class="sticky-col col-name-cell">
-              <span class="op-name" :title="op.name">{{ op.name }}</span>
+              <div class="name-cell-inner">
+                <span class="op-name" :title="op.name">{{ op.name }}</span>
+                <span v-if="op.onlyDayShift" class="sun-icon-inline" title="Operador en modalidad Solo Día (convierte turnos Noche 'N' a Día 'D')">☀️</span>
+              </div>
             </td>
             <!-- Columna 3: GUARDIA -->
             <td class="sticky-col col-guardia-cell">
@@ -1134,6 +1137,18 @@ const removeOverride = async () => {
   max-width: 230px;
   text-align: left !important;
   padding-left: 0.35rem !important;
+}
+
+.name-cell-inner {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  overflow: hidden;
+}
+
+.sun-icon-inline {
+  font-size: 0.8rem;
+  flex-shrink: 0;
 }
 
 .col-guardia-hdr, .col-guardia-cell {
