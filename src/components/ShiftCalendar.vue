@@ -413,11 +413,13 @@ const fetchMatrix = async () => {
       const res = await api.get(`/api/v1/shifts/range?startDate=${rangeStartDate.value}&endDate=${rangeEndDate.value}`);
       const ops = (res.data.operators || []).map(op => {
         const shifts = {};
+        const baseShifts = {};
         const isOverride = {};
         const comments = {};
         if (op.dailyShifts) {
           Object.entries(op.dailyShifts).forEach(([dateStr, detail]) => {
             shifts[dateStr] = detail.finalShift || 'L';
+            baseShifts[dateStr] = detail.baseShift || 'L';
             if (detail.isOverride) isOverride[dateStr] = true;
             if (detail.comment) comments[dateStr] = detail.comment;
           });
@@ -430,9 +432,12 @@ const fetchMatrix = async () => {
           groupId: op.groupId,
           groupName: op.groupName,
           groupColor: op.groupColor,
+          onlyDayShift: op.onlyDayShift,
           shifts,
+          baseShifts,
           isOverride,
-          comments
+          comments,
+          dailyShifts: op.dailyShifts
         };
       });
       matrixData.value = { operators: ops };
