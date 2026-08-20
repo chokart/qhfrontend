@@ -46,14 +46,11 @@
       </div>
 
       <div class="filter-controls">
-        <!-- Selector de Filtro de Turno / Estado -->
-        <select v-model="selectedShiftFilter" class="control-select-shift" title="Filtrar personal por turno o tipo de ausencia">
+        <!-- Selector de Filtro de Turno (Día vs Noche) -->
+        <select v-model="selectedShiftFilter" class="control-select-shift" title="Filtrar personal por turno">
           <option value="ALL">📋 Todos los Turnos</option>
-          <option value="DIA">☀️ En Turno Día (Día / V / DM)</option>
-          <option value="NOCHE">🌙 En Turno Noche (Noche / V / DM)</option>
-          <option value="V">🌴 Solo Vacaciones (V)</option>
-          <option value="DM">🩺 Solo Descanso Médico (DM)</option>
-          <option value="L">🏠 Solo Libres / Descanso (L)</option>
+          <option value="DIA">☀️ Turno Día (incluye Vacaciones y DM)</option>
+          <option value="NOCHE">🌙 Turno Noche (incluye Vacaciones y DM)</option>
         </select>
 
         <!-- Selector Multiselección de Guardias -->
@@ -514,7 +511,7 @@ const filteredOperators = computed(() => {
     list = list.filter(op => op.groupId && selectedGroupIds.value.includes(op.groupId));
   }
 
-  // Filtro por turno o modalidad (Día, Noche, Vacaciones, DM, Libre)
+  // Filtro por turno (Día vs Noche)
   if (selectedShiftFilter.value !== 'ALL') {
     const filter = selectedShiftFilter.value;
     list = list.filter(op => {
@@ -522,37 +519,26 @@ const filteredOperators = computed(() => {
       if (op.dailyShifts) {
         return Object.values(op.dailyShifts).some(detail => {
           const shift = detail.finalShift;
-          const turnCat = detail.turnCategory || (detail.baseShift === 'N' ? 'NOCHE' : 'DIA');
-          if (filter === 'DIA') {
-            return shift === 'D' || shift === 'ST-D' || ( (shift === 'V' || shift === 'DM' || shift === 'ST') && turnCat === 'DIA' );
-          } else if (filter === 'NOCHE') {
-            return shift === 'N' || shift === 'ST-N' || ( (shift === 'V' || shift === 'DM' || shift === 'ST') && turnCat === 'NOCHE' );
-          } else if (filter === 'V') {
-            return shift === 'V';
-          } else if (filter === 'DM') {
-            return shift === 'DM';
-          } else if (filter === 'L') {
-            return shift === 'L';
-          }
+          const base = detail.baseShift;
+          const turnCat = detail.turnCategory || (base === 'N' ? 'NOCHE' : 'DIA');
+          const isDayTurn = shift === 'D' || shift === 'ST-D' || ((shift === 'V' || shift === 'DM' || shift === 'ST') && (base === 'D' || turnCat === 'DIA'));
+          const isNightTurn = shift === 'N' || shift === 'ST-N' || ((shift === 'V' || shift === 'DM' || shift === 'ST') && (base === 'N' || turnCat === 'NOCHE'));
+
+          if (filter === 'DIA') return isDayTurn;
+          if (filter === 'NOCHE') return isNightTurn;
           return true;
         });
       } else if (op.shifts) {
         // Modo Mes (op.shifts y op.baseShifts existen)
         return Object.keys(op.shifts).some(day => {
           const shift = op.shifts[day];
-          const baseShift = op.baseShifts ? op.baseShifts[day] : 'L';
-          const turnCat = baseShift === 'N' ? 'NOCHE' : 'DIA';
-          if (filter === 'DIA') {
-            return shift === 'D' || shift === 'ST-D' || ( (shift === 'V' || shift === 'DM' || shift === 'ST') && turnCat === 'DIA' );
-          } else if (filter === 'NOCHE') {
-            return shift === 'N' || shift === 'ST-N' || ( (shift === 'V' || shift === 'DM' || shift === 'ST') && turnCat === 'NOCHE' );
-          } else if (filter === 'V') {
-            return shift === 'V';
-          } else if (filter === 'DM') {
-            return shift === 'DM';
-          } else if (filter === 'L') {
-            return shift === 'L';
-          }
+          const base = op.baseShifts ? op.baseShifts[day] : 'L';
+          const turnCat = base === 'N' ? 'NOCHE' : 'DIA';
+          const isDayTurn = shift === 'D' || shift === 'ST-D' || ((shift === 'V' || shift === 'DM' || shift === 'ST') && (base === 'D' || turnCat === 'DIA'));
+          const isNightTurn = shift === 'N' || shift === 'ST-N' || ((shift === 'V' || shift === 'DM' || shift === 'ST') && (base === 'N' || turnCat === 'NOCHE'));
+
+          if (filter === 'DIA') return isDayTurn;
+          if (filter === 'NOCHE') return isNightTurn;
           return true;
         });
       }

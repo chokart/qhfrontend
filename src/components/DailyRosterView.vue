@@ -96,37 +96,25 @@
             </button>
           </div>
 
-          <!-- Filtros de categoría de turno / ausencia -->
+          <!-- Filtros de categoría de turno (Día vs Noche) -->
           <div class="range-filter-tabs">
-            <button 
-              :class="['range-filter-btn', { active: rangeFilterCategory === 'ALL' }]"
-              @click="rangeFilterCategory = 'ALL'"
-            >
-              🌐 Todos ({{ rangeOperators.length }})
-            </button>
             <button 
               :class="['range-filter-btn', 'btn-cat-day', { active: rangeFilterCategory === 'DIA' }]"
               @click="rangeFilterCategory = 'DIA'"
             >
-              ☀️ En Turno Día
+              ☀️ Turno Día (incluye Vacaciones y DM)
             </button>
             <button 
               :class="['range-filter-btn', 'btn-cat-night', { active: rangeFilterCategory === 'NOCHE' }]"
               @click="rangeFilterCategory = 'NOCHE'"
             >
-              🌙 En Turno Noche
+              🌙 Turno Noche (incluye Vacaciones y DM)
             </button>
             <button 
-              :class="['range-filter-btn', 'btn-cat-v', { active: rangeFilterCategory === 'V' }]"
-              @click="rangeFilterCategory = 'V'"
+              :class="['range-filter-btn', { active: rangeFilterCategory === 'ALL' }]"
+              @click="rangeFilterCategory = 'ALL'"
             >
-              🌴 Vacaciones
-            </button>
-            <button 
-              :class="['range-filter-btn', 'btn-cat-dm', { active: rangeFilterCategory === 'DM' }]"
-              @click="rangeFilterCategory = 'DM'"
-            >
-              🩺 Descanso Médico
+              📋 Todos los Turnos ({{ rangeOperators.length }})
             </button>
           </div>
 
@@ -560,23 +548,21 @@ const filteredRangeOperators = computed(() => {
 
   if (rangeFilterCategory.value === 'DIA') {
     list = list.filter(op =>
-      Object.values(op.dailyShifts || {}).some(d => d.turnCategory === 'DIA')
+      Object.values(op.dailyShifts || {}).some(d => {
+        const shift = d.finalShift;
+        const base = d.baseShift;
+        const turnCat = d.turnCategory || (base === 'N' ? 'NOCHE' : 'DIA');
+        return shift === 'D' || shift === 'ST-D' || ((shift === 'V' || shift === 'DM' || shift === 'ST') && (base === 'D' || turnCat === 'DIA'));
+      })
     );
   } else if (rangeFilterCategory.value === 'NOCHE') {
     list = list.filter(op =>
-      Object.values(op.dailyShifts || {}).some(d => d.turnCategory === 'NOCHE')
-    );
-  } else if (rangeFilterCategory.value === 'V') {
-    list = list.filter(op =>
-      Object.values(op.dailyShifts || {}).some(d => d.finalShift === 'V')
-    );
-  } else if (rangeFilterCategory.value === 'DM') {
-    list = list.filter(op =>
-      Object.values(op.dailyShifts || {}).some(d => d.finalShift === 'DM')
-    );
-  } else if (rangeFilterCategory.value === 'ST') {
-    list = list.filter(op =>
-      Object.values(op.dailyShifts || {}).some(d => d.finalShift && d.finalShift.startsWith('ST'))
+      Object.values(op.dailyShifts || {}).some(d => {
+        const shift = d.finalShift;
+        const base = d.baseShift;
+        const turnCat = d.turnCategory || (base === 'N' ? 'NOCHE' : 'DIA');
+        return shift === 'N' || shift === 'ST-N' || ((shift === 'V' || shift === 'DM' || shift === 'ST') && (base === 'N' || turnCat === 'NOCHE'));
+      })
     );
   }
 
