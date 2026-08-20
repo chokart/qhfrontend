@@ -520,9 +520,14 @@ const filteredOperators = computed(() => {
         return Object.values(op.dailyShifts).some(detail => {
           const shift = detail.finalShift;
           const base = detail.baseShift;
-          const turnCat = detail.turnCategory || (base === 'N' ? 'NOCHE' : 'DIA');
-          const isDayTurn = shift === 'D' || shift === 'ST-D' || ((shift === 'V' || shift === 'DM' || shift === 'ST') && (base === 'D' || turnCat === 'DIA'));
-          const isNightTurn = shift === 'N' || shift === 'ST-N' || ((shift === 'V' || shift === 'DM' || shift === 'ST') && (base === 'N' || turnCat === 'NOCHE'));
+
+          const isWorkingDay = (shift === 'D' || shift === 'ST-D');
+          const shouldBeDay = (base === 'D');
+          const isDayTurn = isWorkingDay || shouldBeDay;
+
+          const isWorkingNight = (shift === 'N' || shift === 'ST-N');
+          const shouldBeNight = (base === 'N');
+          const isNightTurn = isWorkingNight || shouldBeNight;
 
           if (filter === 'DIA') return isDayTurn;
           if (filter === 'NOCHE') return isNightTurn;
@@ -533,9 +538,14 @@ const filteredOperators = computed(() => {
         return Object.keys(op.shifts).some(day => {
           const shift = op.shifts[day];
           const base = op.baseShifts ? op.baseShifts[day] : 'L';
-          const turnCat = base === 'N' ? 'NOCHE' : 'DIA';
-          const isDayTurn = shift === 'D' || shift === 'ST-D' || ((shift === 'V' || shift === 'DM' || shift === 'ST') && (base === 'D' || turnCat === 'DIA'));
-          const isNightTurn = shift === 'N' || shift === 'ST-N' || ((shift === 'V' || shift === 'DM' || shift === 'ST') && (base === 'N' || turnCat === 'NOCHE'));
+
+          const isWorkingDay = (shift === 'D' || shift === 'ST-D');
+          const shouldBeDay = (base === 'D');
+          const isDayTurn = isWorkingDay || shouldBeDay;
+
+          const isWorkingNight = (shift === 'N' || shift === 'ST-N');
+          const shouldBeNight = (base === 'N');
+          const isNightTurn = isWorkingNight || shouldBeNight;
 
           if (filter === 'DIA') return isDayTurn;
           if (filter === 'NOCHE') return isNightTurn;

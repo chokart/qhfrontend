@@ -551,8 +551,9 @@ const filteredRangeOperators = computed(() => {
       Object.values(op.dailyShifts || {}).some(d => {
         const shift = d.finalShift;
         const base = d.baseShift;
-        const turnCat = d.turnCategory || (base === 'N' ? 'NOCHE' : 'DIA');
-        return shift === 'D' || shift === 'ST-D' || ((shift === 'V' || shift === 'DM' || shift === 'ST') && (base === 'D' || turnCat === 'DIA'));
+        const isWorkingDay = (shift === 'D' || shift === 'ST-D');
+        const shouldBeDay = (base === 'D');
+        return isWorkingDay || shouldBeDay;
       })
     );
   } else if (rangeFilterCategory.value === 'NOCHE') {
@@ -560,8 +561,9 @@ const filteredRangeOperators = computed(() => {
       Object.values(op.dailyShifts || {}).some(d => {
         const shift = d.finalShift;
         const base = d.baseShift;
-        const turnCat = d.turnCategory || (base === 'N' ? 'NOCHE' : 'DIA');
-        return shift === 'N' || shift === 'ST-N' || ((shift === 'V' || shift === 'DM' || shift === 'ST') && (base === 'N' || turnCat === 'NOCHE'));
+        const isWorkingNight = (shift === 'N' || shift === 'ST-N');
+        const shouldBeNight = (base === 'N');
+        return isWorkingNight || shouldBeNight;
       })
     );
   }
