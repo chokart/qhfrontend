@@ -149,7 +149,7 @@
                 <h3>📋 Tabla Mensual de Producción de Arenas</h3>
                 <p class="table-sub-desc">Desglose en TM Secas para Dique Principal (DP) y Dique Lateral (DL) en Turnos A (Día) y B (Noche)</p>
               </div>
-              <span class="badge-days-count">{{ dashboardData.dailyReports ? dashboardData.dailyReports.length : 0 }} Días Procesados</span>
+              <span class="badge-days-count">{{ dashboardData.dailyReports ? dashboardData.dailyReports.length : 0 }} Días del Mes Registrados</span>
             </div>
 
             <div class="table-wrapper-responsive">
@@ -160,6 +160,7 @@
                     <th colspan="3" class="hdr-group dp-hdr">DIQUE PRINCIPAL (DP)</th>
                     <th colspan="3" class="hdr-group dl-hdr">DIQUE LATERAL (DL)</th>
                     <th colspan="3" class="hdr-group tot-hdr">TOTAL PRODUCCIÓN ARENAS</th>
+                    <th class="hdr-group act-hdr">ACCIÓN</th>
                   </tr>
                   <tr class="header-sub-row">
                     <th class="col-num">Nº</th>
@@ -173,12 +174,16 @@
                     <th class="col-val tot-a-col">TOTAL TURNO A</th>
                     <th class="col-val tot-b-col">TOTAL TURNO B</th>
                     <th class="col-val grand-tot-col">TOTAL DÍA (TM)</th>
+                    <th class="col-act">EDITAR</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr v-for="d in dashboardData.dailyReports" :key="d.id" class="row-daily">
+                  <tr v-for="d in dashboardData.dailyReports" :key="d.id" :class="['row-daily', { 'row-empty-warning': isRowEmpty(d) }]">
                     <td class="cell-num"><b>{{ d.dayNumber < 10 ? '0' + d.dayNumber : d.dayNumber }}</b></td>
-                    <td class="cell-date">{{ d.reportDate }}</td>
+                    <td class="cell-date">
+                      {{ d.reportDate }}
+                      <span v-if="isRowEmpty(d)" class="empty-badge" title="Día sin datos en el reporte Excel">⚠️ Sin Registro</span>
+                    </td>
                     
                     <!-- DP -->
                     <td class="cell-val dp-a">{{ formatNumber(d.dpArenasGuardiaA) }}</td>
@@ -194,6 +199,13 @@
                     <td class="cell-val tot-a"><b>{{ formatNumber((d.dpArenasGuardiaA || 0) + (d.dlArenasGuardiaA || 0)) }}</b></td>
                     <td class="cell-val tot-b"><b>{{ formatNumber((d.dpArenasGuardiaB || 0) + (d.dlArenasGuardiaB || 0)) }}</b></td>
                     <td class="cell-val grand-tot"><b>{{ formatNumber(d.totalArenasDia) }}</b></td>
+                    
+                    <!-- Botón Editar -->
+                    <td class="cell-act">
+                      <button class="btn-edit-row" @click="openEditModal(d)" title="Modificar manualmente valores del día">
+                        ✏️
+                      </button>
+                    </td>
                   </tr>
                 </tbody>
                 <tfoot>
@@ -208,6 +220,7 @@
                     <td class="cell-val tot-a"><b>{{ formatNumber(dashboardData.totalArenasA) }}</b></td>
                     <td class="cell-val tot-b"><b>{{ formatNumber(dashboardData.totalArenasB) }}</b></td>
                     <td class="cell-val grand-tot"><b>{{ formatNumber(dashboardData.totalArenasMes) }}</b></td>
+                    <td></td>
                   </tr>
                   <tr class="summary-foot-row avg-row">
                     <td colspan="2" class="foot-label"><b>PROMEDIO DIARIO</b></td>
@@ -220,6 +233,7 @@
                     <td class="cell-val tot-a">{{ formatAvg(dashboardData.totalArenasA) }}</td>
                     <td class="cell-val tot-b">{{ formatAvg(dashboardData.totalArenasB) }}</td>
                     <td class="cell-val grand-tot">{{ formatAvg(dashboardData.totalArenasMes) }}</td>
+                    <td></td>
                   </tr>
                 </tfoot>
               </table>
@@ -274,7 +288,7 @@
                 <button 
                   v-for="d in dashboardData.dailyReports" 
                   :key="d.id" 
-                  :class="['day-btn', { active: selectedDayReport?.id === d.id }]"
+                  :class="['day-btn', { active: selectedDayReport?.id === d.id, 'btn-missing': isRowEmpty(d) }]"
                   @click="selectedDayReport = d"
                 >
                   {{ d.dayNumber < 10 ? '0' + d.dayNumber : d.dayNumber }}
@@ -285,8 +299,14 @@
             <!-- Detalle del día seleccionado -->
             <div v-if="selectedDayReport" class="day-detail-card card">
               <div class="detail-header">
-                <h2>Parte Diario: {{ selectedDayReport.reportDate }} (Día {{ selectedDayReport.dayNumber }})</h2>
-                <span class="badge-total">Producción Total: {{ formatNumber(selectedDayReport.totalArenasDia) }} TM</span>
+                <div>
+                  <h2>Parte Diario: {{ selectedDayReport.reportDate }} (Día {{ selectedDayReport.dayNumber }})</h2>
+                  <span v-if="isRowEmpty(selectedDayReport)" class="warning-text">⚠️ Este día no tuvo datos registrados en el libro Excel. Puedes completarlo haciendo clic en "Editar Registro".</span>
+                </div>
+                <div class="header-right-btns">
+                  <span class="badge-total">Producción Total: {{ formatNumber(selectedDayReport.totalArenasDia) }} TM</span>
+                  <button class="btn-edit-header" @click="openEditModal(selectedDayReport)">✏️ Editar Registro</button>
+                </div>
               </div>
 
               <!-- Grilla de producción del día -->
@@ -300,7 +320,6 @@
                         <th>☀️ Turno A (Guardia Día)</th>
                         <th>🌙 Turno B (Guardia Noche)</th>
                         <th>Total Día (TM)</th>
-                        <th>Plan Día (TM)</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -309,21 +328,18 @@
                         <td>{{ formatNumber(selectedDayReport.dpArenasGuardiaA) }} TM</td>
                         <td>{{ formatNumber(selectedDayReport.dpArenasGuardiaB) }} TM</td>
                         <td class="highlight-val">{{ formatNumber(selectedDayReport.dpArenasTotalDia) }} TM</td>
-                        <td>{{ formatNumber(selectedDayReport.dpArenasPlanDia) }} TM</td>
                       </tr>
                       <tr>
                         <td><b>Dique Lateral (DL)</b></td>
                         <td>{{ formatNumber(selectedDayReport.dlArenasGuardiaA) }} TM</td>
                         <td>{{ formatNumber(selectedDayReport.dlArenasGuardiaB) }} TM</td>
                         <td class="highlight-val">{{ formatNumber(selectedDayReport.dlArenasTotalDia) }} TM</td>
-                        <td>{{ formatNumber(selectedDayReport.dlArenasPlanDia) }} TM</td>
                       </tr>
                       <tr class="row-total-sub">
                         <td><b>TOTAL COMBINADO</b></td>
                         <td><b>{{ formatNumber((selectedDayReport.dpArenasGuardiaA || 0) + (selectedDayReport.dlArenasGuardiaA || 0)) }} TM</b></td>
                         <td><b>{{ formatNumber((selectedDayReport.dpArenasGuardiaB || 0) + (selectedDayReport.dlArenasGuardiaB || 0)) }} TM</b></td>
                         <td class="highlight-val grand"><b>{{ formatNumber(selectedDayReport.totalArenasDia) }} TM</b></td>
-                        <td><b>{{ formatNumber((selectedDayReport.dpArenasPlanDia || 0) + (selectedDayReport.dlArenasPlanDia || 0)) }} TM</b></td>
                       </tr>
                     </tbody>
                   </table>
@@ -344,6 +360,68 @@
       </div>
 
     </div>
+
+    <!-- MODAL EDITAR / COMPLETAR PRODUCCIÓN DEL DÍA -->
+    <div v-if="showEditModal" class="modal-backdrop" @click.self="showEditModal = false">
+      <div class="modal-dialog">
+        <div class="modal-header">
+          <h3>✏️ Editar Producción del Día: {{ editForm.reportDate }} (Día {{ editForm.dayNumber }})</h3>
+          <button class="btn-close" @click="showEditModal = false">✕</button>
+        </div>
+        <div class="modal-body">
+          <p class="modal-sub-desc">Ingresa o corrige la producción en TM Secas para cada dique y turno:</p>
+
+          <!-- Sección DP -->
+          <div class="edit-section-box blue">
+            <h4>🏗️ Dique Principal (DP)</h4>
+            <div class="form-row-2">
+              <div class="form-group">
+                <label class="form-label">☀️ Turno A (Día) - TM:</label>
+                <input type="number" v-model.number="editForm.dpArenasGuardiaA" class="form-input" min="0" step="any" placeholder="0" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">🌙 Turno B (Noche) - TM:</label>
+                <input type="number" v-model.number="editForm.dpArenasGuardiaB" class="form-input" min="0" step="any" placeholder="0" />
+              </div>
+            </div>
+            <div class="sub-total-row">
+              <span>Total DP Día: <b>{{ formatNumber((editForm.dpArenasGuardiaA || 0) + (editForm.dpArenasGuardiaB || 0)) }} TM</b></span>
+            </div>
+          </div>
+
+          <!-- Sección DL -->
+          <div class="edit-section-box green">
+            <h4>📐 Dique Lateral (DL)</h4>
+            <div class="form-row-2">
+              <div class="form-group">
+                <label class="form-label">☀️ Turno A (Día) - TM:</label>
+                <input type="number" v-model.number="editForm.dlArenasGuardiaA" class="form-input" min="0" step="any" placeholder="0" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">🌙 Turno B (Noche) - TM:</label>
+                <input type="number" v-model.number="editForm.dlArenasGuardiaB" class="form-input" min="0" step="any" placeholder="0" />
+              </div>
+            </div>
+            <div class="sub-total-row">
+              <span>Total DL Día: <b>{{ formatNumber((editForm.dlArenasGuardiaA || 0) + (editForm.dlArenasGuardiaB || 0)) }} TM</b></span>
+            </div>
+          </div>
+
+          <!-- Resumen Gran Total -->
+          <div class="grand-total-summary-card">
+            <div class="gt-title">📦 Gran Total Producción Día (DP + DL)</div>
+            <div class="gt-value">{{ formatNumber((editForm.dpArenasGuardiaA || 0) + (editForm.dpArenasGuardiaB || 0) + (editForm.dlArenasGuardiaA || 0) + (editForm.dlArenasGuardiaB || 0)) }} <small>TM Secas</small></div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-cancel" @click="showEditModal = false">Cancelar</button>
+          <button class="btn-save-edit" :disabled="savingEdit" @click="saveDailyReportEdit">
+            <span v-if="savingEdit">Guardando...</span>
+            <span v-else>💾 Guardar Producción</span>
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -358,7 +436,20 @@ const availableMonths = ref([]);
 const selectedMonthKey = ref('');
 const dashboardData = ref(null);
 const selectedDayReport = ref(null);
-const activeTab = ref('matrix'); // 'matrix' por defecto
+const activeTab = ref('matrix');
+
+// Modal de edición
+const showEditModal = ref(false);
+const savingEdit = ref(false);
+const editForm = reactive({
+  id: null,
+  reportDate: '',
+  dayNumber: 0,
+  dpArenasGuardiaA: 0,
+  dpArenasGuardiaB: 0,
+  dlArenasGuardiaA: 0,
+  dlArenasGuardiaB: 0
+});
 
 const uploadStatus = reactive({
   message: '',
@@ -379,6 +470,12 @@ const formatAvg = (totalVal) => {
   if (!dashboardData.value || !dashboardData.value.dailyReports || dashboardData.value.dailyReports.length === 0) return '0';
   const count = dashboardData.value.dailyReports.length;
   return Math.round((totalVal || 0) / count).toLocaleString('es-PE');
+};
+
+const isRowEmpty = (d) => {
+  if (!d) return true;
+  const tot = (d.dpArenasGuardiaA || 0) + (d.dpArenasGuardiaB || 0) + (d.dlArenasGuardiaA || 0) + (d.dlArenasGuardiaB || 0);
+  return tot === 0;
 };
 
 const loadAvailableMonths = async () => {
@@ -435,6 +532,45 @@ const deleteSelectedMonthReport = async () => {
     console.error("Error al eliminar reporte:", err);
     uploadStatus.message = err.response?.data?.message || 'Error al eliminar el reporte del mes.';
     uploadStatus.isSuccess = false;
+  }
+};
+
+const openEditModal = (d) => {
+  editForm.id = d.id;
+  editForm.reportDate = d.reportDate;
+  editForm.dayNumber = d.dayNumber;
+  editForm.dpArenasGuardiaA = d.dpArenasGuardiaA || 0;
+  editForm.dpArenasGuardiaB = d.dpArenasGuardiaB || 0;
+  editForm.dlArenasGuardiaA = d.dlArenasGuardiaA || 0;
+  editForm.dlArenasGuardiaB = d.dlArenasGuardiaB || 0;
+  showEditModal.value = true;
+};
+
+const saveDailyReportEdit = async () => {
+  if (!editForm.id) return;
+  savingEdit.value = true;
+  try {
+    await api.put(`/api/v1/reports/daily/${editForm.id}`, {
+      dpArenasGuardiaA: editForm.dpArenasGuardiaA || 0,
+      dpArenasGuardiaB: editForm.dpArenasGuardiaB || 0,
+      dlArenasGuardiaA: editForm.dlArenasGuardiaA || 0,
+      dlArenasGuardiaB: editForm.dlArenasGuardiaB || 0
+    });
+
+    uploadStatus.message = `Producción del día ${editForm.dayNumber} ( ${editForm.reportDate} ) actualizada correctamente.`;
+    uploadStatus.isSuccess = true;
+    showEditModal.value = false;
+
+    if (selectedMonthKey.value) {
+      const [year, month] = selectedMonthKey.value.split('-');
+      await loadDashboardData(year, month);
+    }
+  } catch (err) {
+    console.error("Error al actualizar producción del día:", err);
+    uploadStatus.message = err.response?.data?.message || 'Error al guardar cambios de producción.';
+    uploadStatus.isSuccess = false;
+  } finally {
+    savingEdit.value = false;
   }
 };
 
@@ -781,6 +917,7 @@ h1 {
 .dp-hdr { background: #eff6ff; color: #1e40af; border-bottom-color: #bfdbfe; }
 .dl-hdr { background: #f0fdf4; color: #166534; border-bottom-color: #bbf7d0; }
 .tot-hdr { background: #faf5ff; color: #6b21a8; border-bottom-color: #e9d5ff; }
+.act-hdr { background: #f8fafc; color: #475569; width: 60px; }
 
 .header-sub-row th {
   background: #f8fafc;
@@ -790,13 +927,39 @@ h1 {
   text-align: center;
 }
 
-.col-num { width: 40px; text-align: center !important; }
-.col-date { width: 95px; text-align: center !important; }
+.col-num { width: 35px; text-align: center !important; }
+.col-date { width: 110px; text-align: center !important; }
+.col-act { width: 50px; text-align: center !important; }
 
 .row-daily:hover { background: #f8fafc; }
+.row-empty-warning { background: #fffbe6; }
+
+.empty-badge {
+  display: block;
+  font-size: 0.65rem;
+  color: #d97706;
+  font-weight: 800;
+  margin-top: 0.15rem;
+}
 
 .cell-num { text-align: center !important; color: #64748b; font-size: 0.78rem; }
 .cell-date { text-align: center !important; font-weight: 600; color: #334155; }
+.cell-act { text-align: center !important; }
+
+.btn-edit-row {
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 0.25rem 0.45rem;
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: all 0.15s ease;
+}
+.btn-edit-row:hover {
+  background: #4f46e5;
+  color: white;
+  border-color: #4f46e5;
+}
 
 .dp-a, .dp-b { color: #1e3a8a; }
 .dp-tot { background: #eff6ff; color: #1e40af; }
@@ -895,16 +1058,44 @@ h1 {
   color: white;
   border-color: #4f46e5;
 }
+.day-btn.btn-missing {
+  border-color: #fcd34d;
+  background: #fffbe6;
+  color: #b45309;
+}
 
 .detail-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   border-bottom: 1px solid #e2e8f0;
   padding-bottom: 1rem;
   margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+  gap: 0.75rem;
 }
-.detail-header h2 { margin: 0; font-size: 1.15rem; color: #0f172a; }
+.detail-header h2 { margin: 0 0 0.2rem 0; font-size: 1.15rem; color: #0f172a; }
+.warning-text { font-size: 0.78rem; color: #d97706; font-weight: 700; }
+
+.header-right-btns {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.btn-edit-header {
+  background: #4f46e5;
+  color: white;
+  border: none;
+  padding: 0.45rem 0.9rem;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.btn-edit-header:hover { background: #4338ca; }
+
 .badge-total { background: #dcfce7; color: #15803d; padding: 0.35rem 0.8rem; border-radius: 20px; font-weight: 800; font-size: 0.85rem; }
 
 .detail-sections { display: flex; flex-direction: column; gap: 1.25rem; }
@@ -917,6 +1108,96 @@ h1 {
 .highlight-val.grand { color: #15803d; font-size: 0.95rem; }
 
 .row-total-sub { background: #eff6ff; }
+
+/* Modal de Edición */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2100;
+  backdrop-filter: blur(4px);
+}
+.modal-dialog {
+  background: white;
+  border-radius: 20px;
+  width: 90%;
+  max-width: 520px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+  animation: modalIn 0.2s ease-out;
+}
+@keyframes modalIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem 1.5rem;
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+}
+.modal-header h3 { margin: 0; font-size: 1.05rem; color: #0f172a; font-weight: 800; }
+.btn-close { background: none; border: none; font-size: 1.2rem; color: #64748b; cursor: pointer; }
+
+.modal-body { padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; }
+.modal-sub-desc { font-size: 0.82rem; color: #64748b; margin: 0 0 0.5rem 0; }
+
+.edit-section-box {
+  padding: 1rem;
+  border-radius: 12px;
+  border: 1px solid #cbd5e1;
+}
+.edit-section-box.blue { background: #eff6ff; border-color: #bfdbfe; }
+.edit-section-box.green { background: #f0fdf4; border-color: #bbf7d0; }
+
+.edit-section-box h4 { margin: 0 0 0.75rem 0; font-size: 0.9rem; color: #1e293b; }
+
+.form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+.form-group { display: flex; flex-direction: column; gap: 0.25rem; }
+.form-label { font-size: 0.78rem; font-weight: 700; color: #475569; }
+.form-input {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #0f172a;
+  outline: none;
+}
+.form-input:focus { border-color: #4f46e5; box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15); }
+
+.sub-total-row {
+  margin-top: 0.6rem;
+  text-align: right;
+  font-size: 0.82rem;
+  color: #334155;
+}
+
+.grand-total-summary-card {
+  background: #faf5ff;
+  border: 1px dashed #c084fc;
+  padding: 1rem;
+  border-radius: 12px;
+  text-align: center;
+}
+.gt-title { font-size: 0.8rem; font-weight: 800; color: #6b21a8; text-transform: uppercase; }
+.gt-value { font-size: 1.4rem; font-weight: 800; color: #581c87; margin-top: 0.2rem; }
+.gt-value small { font-size: 0.8rem; color: #7e22ce; }
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+}
+.btn-cancel { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; padding: 0.55rem 1rem; border-radius: 8px; font-weight: 700; cursor: pointer; }
+.btn-save-edit { background: #10b981; color: white; border: none; padding: 0.55rem 1.25rem; border-radius: 8px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25); }
+.btn-save-edit:hover { background: #059669; }
 
 .empty-state-card { text-align: center; padding: 4rem 2rem; color: #64748b; }
 .empty-icon { font-size: 3.5rem; margin-bottom: 1rem; }
