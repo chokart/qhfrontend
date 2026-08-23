@@ -8,8 +8,8 @@
         <div class="header-left">
           <div class="header-icon-wrap">📊</div>
           <div>
-            <h1>Reporte & Dashboard de Producción</h1>
-            <p class="subtitle">Desglose de Arenas por Dique Principal (DP) y Dique Lateral (DL) - Turnos A y B (Quebrada Honda)</p>
+            <h1>Reporte de Producción de Arenas</h1>
+            <p class="subtitle">Producción en Dique Principal (DP) y Dique Lateral (DL) por Turno A (Día) y Turno B (Noche)</p>
           </div>
         </div>
 
@@ -55,14 +55,14 @@
       <div v-if="isUploading" class="uploading-overlay">
         <div class="spinner-card">
           <div class="spinner-large"></div>
-          <p>Procesando archivo Excel y tabulando 31 partes diarios de producción...</p>
+          <p>Procesando archivo Excel y tabulando partes diarios de producción...</p>
         </div>
       </div>
 
-      <!-- Dashboard de Datos -->
+      <!-- Dashboard de Producción -->
       <div v-if="dashboardData" class="dashboard-content">
 
-        <!-- TARJETAS DE KPIS PRINCIPALES (DESGLOSE POR DIQUE Y TURNO) -->
+        <!-- TARJETAS DE KPIS PRINCIPALES DE PRODUCCIÓN -->
         <div class="kpi-grid">
           <!-- 1. Dique Principal -->
           <div class="kpi-card primary">
@@ -125,25 +125,19 @@
             :class="['tab-btn', { active: activeTab === 'matrix' }]" 
             @click="activeTab = 'matrix'"
           >
-            📋 Matriz Mensual (DP/DL - Turnos A y B)
+            📋 Matriz Mensual de Producción (Día 01 - 31)
           </button>
           <button 
             :class="['tab-btn', { active: activeTab === 'chart' }]" 
             @click="activeTab = 'chart'"
           >
-            📊 Comparativo Visual (A vs B)
+            📊 Comparativo Visual (Turno A vs B)
           </button>
           <button 
             :class="['tab-btn', { active: activeTab === 'inspector' }]" 
             @click="activeTab = 'inspector'"
           >
-            📑 Inspector por Día (01 - 31)
-          </button>
-          <button 
-            :class="['tab-btn', { active: activeTab === 'sap' }]" 
-            @click="activeTab = 'sap'"
-          >
-            🛠️ Avisos SAP ({{ dashboardData.sapNotices ? dashboardData.sapNotices.length : 0 }})
+            📑 Detalle Diario por Fecha
           </button>
         </div>
 
@@ -152,8 +146,8 @@
           <div class="card table-card">
             <div class="card-header-inner">
               <div>
-                <h3>📋 Tabla Mensual de Producción de Arenas (Día 01 al 31)</h3>
-                <p class="table-sub-desc">Desglose exacto en TM Secas para Dique Principal y Dique Lateral en Turnos A (Día) y B (Noche)</p>
+                <h3>📋 Tabla Mensual de Producción de Arenas</h3>
+                <p class="table-sub-desc">Desglose en TM Secas para Dique Principal (DP) y Dique Lateral (DL) en Turnos A (Día) y B (Noche)</p>
               </div>
               <span class="badge-days-count">{{ dashboardData.dailyReports ? dashboardData.dailyReports.length : 0 }} Días Procesados</span>
             </div>
@@ -270,7 +264,7 @@
           </div>
         </div>
 
-        <!-- TAB 3: INSPECTOR DE PARTE DIARIO -->
+        <!-- TAB 3: INSPECTOR DE DETALLE DIARIO -->
         <div v-if="activeTab === 'inspector'" class="tab-pane">
           <div class="inspector-layout">
             <!-- Sidebar selector de días -->
@@ -295,7 +289,7 @@
                 <span class="badge-total">Producción Total: {{ formatNumber(selectedDayReport.totalArenasDia) }} TM</span>
               </div>
 
-              <!-- Grilla de secciones del día -->
+              <!-- Grilla de producción del día -->
               <div class="detail-sections">
                 <div class="section-box full-width">
                   <h5>🏗️ Producción de Arenas por Sector y Turnos</h5>
@@ -334,86 +328,7 @@
                     </tbody>
                   </table>
                 </div>
-
-                <!-- Asistencia / Notas de Turnos -->
-                <div class="section-box full-width">
-                  <h5>👥 Novedades y Registro por Guardia</h5>
-                  <div class="notes-grid">
-                    <div class="note-box">
-                      <h6>☀️ Turno A (Día)</h6>
-                      <p>{{ selectedDayReport.asistenciaTurnoA || 'Sin novedades registradas.' }}</p>
-                    </div>
-                    <div class="note-box">
-                      <h6>🌙 Turno B (Noche)</h6>
-                      <p>{{ selectedDayReport.asistenciaTurnoB || 'Sin novedades registradas.' }}</p>
-                    </div>
-                  </div>
-                </div>
               </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- TAB 4: BITÁCORA DE AVISOS SAP -->
-        <div v-if="activeTab === 'sap'" class="tab-pane">
-          <div class="card">
-            <div class="sap-header">
-              <div class="search-box">
-                <span class="search-icon">🔍</span>
-                <input 
-                  v-model="sapSearch" 
-                  type="text" 
-                  placeholder="Buscar equipo, responsable, aviso SAP..." 
-                  class="search-input"
-                />
-              </div>
-              <div class="filter-chips">
-                <button 
-                  :class="['chip', { active: sapFilter === 'ALL' }]" 
-                  @click="sapFilter = 'ALL'"
-                >Todos</button>
-                <button 
-                  :class="['chip', { active: sapFilter === 'Reportado' }]" 
-                  @click="sapFilter = 'Reportado'"
-                >🔴 Pendientes</button>
-                <button 
-                  :class="['chip', { active: sapFilter === 'Levantado' }]" 
-                  @click="sapFilter = 'Levantado'"
-                >🟢 Levantados</button>
-              </div>
-            </div>
-
-            <div class="table-wrapper">
-              <table class="sap-table">
-                <thead>
-                  <tr>
-                    <th>Nº AVISO</th>
-                    <th>FECHA</th>
-                    <th>EQUIPO</th>
-                    <th>DESCRIPCIÓN / FALLA</th>
-                    <th>ÁREA RESPONSABLE</th>
-                    <th>RESPONSABLE REGISTRO</th>
-                    <th>ESTADO</th>
-                    <th>DEMORA</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="s in filteredSapNotices" :key="s.id">
-                    <td><b>{{ s.noticeNumber }}</b></td>
-                    <td>{{ s.noticeDate }}</td>
-                    <td class="eq-name">{{ s.equipmentName }}</td>
-                    <td class="desc-cell">{{ s.description }}</td>
-                    <td><span class="area-tag">{{ s.responsibleArea }}</span></td>
-                    <td>{{ s.reporterName }} ({{ s.guard }})</td>
-                    <td>
-                      <span :class="['status-tag', s.status === 'Reportado' ? 'status-pending' : 'status-done']">
-                        {{ s.status }}
-                      </span>
-                    </td>
-                    <td>{{ s.delayDays }} días</td>
-                  </tr>
-                </tbody>
-              </table>
             </div>
           </div>
         </div>
@@ -444,8 +359,6 @@ const selectedMonthKey = ref('');
 const dashboardData = ref(null);
 const selectedDayReport = ref(null);
 const activeTab = ref('matrix'); // 'matrix' por defecto
-const sapSearch = ref('');
-const sapFilter = ref('ALL');
 
 const uploadStatus = reactive({
   message: '',
@@ -507,7 +420,7 @@ const deleteSelectedMonthReport = async () => {
   const [year, month] = selectedMonthKey.value.split('-');
   const monthName = getMonthName(parseInt(month));
 
-  if (!confirm(`¿Estás seguro de eliminar todo el reporte cargado de ${monthName} ${year}?\n\nEsta acción borrará las partes diarias de producción y los avisos SAP registrados.`)) {
+  if (!confirm(`¿Estás seguro de eliminar todo el reporte cargado de ${monthName} ${year}?\n\nEsta acción borrará las partes diarias de producción de dicho mes.`)) {
     return;
   }
 
@@ -542,7 +455,7 @@ const handleFileUpload = async (event) => {
   try {
     const res = await api.post('/api/v1/reports/upload', formData);
 
-    uploadStatus.message = `Procesados ${res.data.daysProcessed} días de producción y ${res.data.sapNoticesProcessed} avisos SAP exitosamente.`;
+    uploadStatus.message = `Procesados ${res.data.daysProcessed} días de producción exitosamente.`;
     uploadStatus.isSuccess = true;
 
     await loadAvailableMonths();
@@ -574,27 +487,6 @@ const getBarHeight = (val) => {
   if (!val) return 0;
   return Math.min(100, (val / maxDailyProd.value) * 100);
 };
-
-const filteredSapNotices = computed(() => {
-  if (!dashboardData.value || !dashboardData.value.sapNotices) return [];
-  let list = dashboardData.value.sapNotices;
-
-  if (sapFilter.value !== 'ALL') {
-    list = list.filter(s => s.status === sapFilter.value);
-  }
-
-  if (sapSearch.value.trim()) {
-    const q = sapSearch.value.toLowerCase();
-    list = list.filter(s => 
-      (s.equipmentName && s.equipmentName.toLowerCase().includes(q)) ||
-      (s.description && s.description.toLowerCase().includes(q)) ||
-      (s.noticeNumber && s.noticeNumber.toLowerCase().includes(q)) ||
-      (s.responsibleArea && s.responsibleArea.toLowerCase().includes(q))
-    );
-  }
-
-  return list;
-});
 
 onMounted(loadAvailableMonths);
 </script>
@@ -1026,32 +918,6 @@ h1 {
 
 .row-total-sub { background: #eff6ff; }
 
-.notes-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-.note-box { background: white; padding: 0.85rem 1rem; border-radius: 8px; border: 1px solid #e2e8f0; }
-.note-box h6 { margin: 0 0 0.4rem 0; font-size: 0.82rem; color: #4f46e5; }
-.note-box p { margin: 0; font-size: 0.8rem; color: #475569; line-height: 1.4; }
-
-/* Tabla SAP */
-.sap-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; gap: 1rem; flex-wrap: wrap; }
-.search-box { position: relative; width: 300px; }
-.search-input { width: 100%; padding: 0.5rem 0.8rem 0.5rem 2.2rem; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.85rem; outline: none; }
-.search-icon { position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 0.8rem; }
-
-.filter-chips { display: flex; gap: 0.4rem; }
-.chip { background: #f1f5f9; border: none; padding: 0.4rem 0.8rem; border-radius: 8px; font-size: 0.8rem; font-weight: 700; color: #64748b; cursor: pointer; }
-.chip.active { background: #0f172a; color: white; }
-
-.sap-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
-.sap-table th, .sap-table td { padding: 0.6rem 0.8rem; border-bottom: 1px solid #e2e8f0; text-align: left; }
-.sap-table th { background: #f8fafc; color: #475569; font-weight: 700; }
-.eq-name { font-weight: 700; color: #0f172a; }
-.desc-cell { max-width: 250px; font-size: 0.8rem; color: #334155; }
-.area-tag { background: #f1f5f9; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 700; color: #475569; }
-
-.status-tag { padding: 0.2rem 0.6rem; border-radius: 12px; font-size: 0.75rem; font-weight: 800; }
-.status-pending { background: #fef2f2; color: #dc2626; }
-.status-done { background: #ecfdf5; color: #16a34a; }
-
 .empty-state-card { text-align: center; padding: 4rem 2rem; color: #64748b; }
 .empty-icon { font-size: 3.5rem; margin-bottom: 1rem; }
 .margin-top { margin-top: 1rem; }
@@ -1059,6 +925,5 @@ h1 {
 @media (max-width: 1024px) {
   .inspector-layout { grid-template-columns: 1fr; }
   .days-grid { grid-template-columns: repeat(8, 1fr); }
-  .notes-grid { grid-template-columns: 1fr; }
 }
 </style>
