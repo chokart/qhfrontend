@@ -125,7 +125,7 @@
             :class="['tab-btn', { active: activeTab === 'matrix' }]" 
             @click="activeTab = 'matrix'"
           >
-            📋 Matriz Mensual de Producción (Día 01 - 31)
+            📋 Matriz Mensual (Día 01 - 31)
           </button>
           <button 
             :class="['tab-btn', { active: activeTab === 'chart' }]" 
@@ -134,10 +134,10 @@
             📊 Comparativo Visual (Turno A vs B)
           </button>
           <button 
-            :class="['tab-btn', { active: activeTab === 'inspector' }]" 
-            @click="activeTab = 'inspector'"
+            :class="['tab-btn', { active: activeTab === 'annual' }]" 
+            @click="openAnnualTab"
           >
-            📑 Detalle Diario por Fecha
+            📅 Resumen Anual (Mes por Mes)
           </button>
         </div>
 
@@ -278,73 +278,85 @@
           </div>
         </div>
 
-        <!-- TAB 3: INSPECTOR DE DETALLE DIARIO -->
-        <div v-if="activeTab === 'inspector'" class="tab-pane">
-          <div class="inspector-layout">
-            <!-- Sidebar selector de días -->
-            <div class="days-sidebar">
-              <h4>Días del Mes</h4>
-              <div class="days-grid">
-                <button 
-                  v-for="d in dashboardData.dailyReports" 
-                  :key="d.id" 
-                  :class="['day-btn', { active: selectedDayReport?.id === d.id, 'btn-missing': isRowEmpty(d) }]"
-                  @click="selectedDayReport = d"
-                >
-                  {{ d.dayNumber < 10 ? '0' + d.dayNumber : d.dayNumber }}
-                </button>
+        <!-- TAB 3: RESUMEN ANUAL MES POR MES -->
+        <div v-if="activeTab === 'annual'" class="tab-pane">
+          <div class="card table-card">
+            <div class="card-header-inner">
+              <div>
+                <h3>📅 Resumen Anual de Producción (Mes por Mes {{ selectedYear }})</h3>
+                <p class="table-sub-desc">Totales mensuales de producción en TM Secas para Dique Principal y Dique Lateral en Turnos A (Día) y B (Noche)</p>
               </div>
+              <button class="btn-refresh-annual" @click="loadAnnualSummary(selectedYear)">🔄 Actualizar Anual</button>
             </div>
 
-            <!-- Detalle del día seleccionado -->
-            <div v-if="selectedDayReport" class="day-detail-card card">
-              <div class="detail-header">
-                <div>
-                  <h2>Parte Diario: {{ selectedDayReport.reportDate }} (Día {{ selectedDayReport.dayNumber }})</h2>
-                  <span v-if="isRowEmpty(selectedDayReport)" class="warning-text">⚠️ Este día no tuvo datos registrados en el libro Excel. Puedes completarlo haciendo clic en "Editar Registro".</span>
-                </div>
-                <div class="header-right-btns">
-                  <span class="badge-total">Producción Total: {{ formatNumber(selectedDayReport.totalArenasDia) }} TM</span>
-                  <button class="btn-edit-header" @click="openEditModal(selectedDayReport)">✏️ Editar Registro</button>
-                </div>
-              </div>
+            <div v-if="loadingAnnual" class="loading-annual-box">
+              <div class="spinner-small"></div>
+              <span>Cargando consolidado anual...</span>
+            </div>
 
-              <!-- Grilla de producción del día -->
-              <div class="detail-sections">
-                <div class="section-box full-width">
-                  <h5>🏗️ Producción de Arenas por Sector y Turnos</h5>
-                  <table class="sub-table">
-                    <thead>
-                      <tr>
-                        <th>Sector / Dique</th>
-                        <th>☀️ Turno A (Guardia Día)</th>
-                        <th>🌙 Turno B (Guardia Noche)</th>
-                        <th>Total Día (TM)</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr>
-                        <td><b>Dique Principal (DP)</b></td>
-                        <td>{{ formatNumber(selectedDayReport.dpArenasGuardiaA) }} TM</td>
-                        <td>{{ formatNumber(selectedDayReport.dpArenasGuardiaB) }} TM</td>
-                        <td class="highlight-val">{{ formatNumber(selectedDayReport.dpArenasTotalDia) }} TM</td>
-                      </tr>
-                      <tr>
-                        <td><b>Dique Lateral (DL)</b></td>
-                        <td>{{ formatNumber(selectedDayReport.dlArenasGuardiaA) }} TM</td>
-                        <td>{{ formatNumber(selectedDayReport.dlArenasGuardiaB) }} TM</td>
-                        <td class="highlight-val">{{ formatNumber(selectedDayReport.dlArenasTotalDia) }} TM</td>
-                      </tr>
-                      <tr class="row-total-sub">
-                        <td><b>TOTAL COMBINADO</b></td>
-                        <td><b>{{ formatNumber((selectedDayReport.dpArenasGuardiaA || 0) + (selectedDayReport.dlArenasGuardiaA || 0)) }} TM</b></td>
-                        <td><b>{{ formatNumber((selectedDayReport.dpArenasGuardiaB || 0) + (selectedDayReport.dlArenasGuardiaB || 0)) }} TM</b></td>
-                        <td class="highlight-val grand"><b>{{ formatNumber(selectedDayReport.totalArenasDia) }} TM</b></td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+            <div v-else-if="annualData" class="table-wrapper-responsive">
+              <table class="prod-matrix-table annual-table">
+                <thead>
+                  <tr class="header-group-row">
+                    <th colspan="2" class="hdr-group date-hdr">PERÍODO / MES</th>
+                    <th colspan="3" class="hdr-group dp-hdr">DIQUE PRINCIPAL (DP)</th>
+                    <th colspan="3" class="hdr-group dl-hdr">DIQUE LATERAL (DL)</th>
+                    <th colspan="3" class="hdr-group tot-hdr">TOTAL PRODUCCIÓN ARENAS</th>
+                  </tr>
+                  <tr class="header-sub-row">
+                    <th class="col-num">Nº</th>
+                    <th class="col-date">MES</th>
+                    <th class="col-val dp-col">TURNO A (TM)</th>
+                    <th class="col-val dp-col">TURNO B (TM)</th>
+                    <th class="col-val dp-tot-col">TOTAL DP (TM)</th>
+                    <th class="col-val dl-col">TURNO A (TM)</th>
+                    <th class="col-val dl-col">TURNO B (TM)</th>
+                    <th class="col-val dl-tot-col">TOTAL DL (TM)</th>
+                    <th class="col-val tot-a-col">TOTAL TURNO A</th>
+                    <th class="col-val tot-b-col">TOTAL TURNO B</th>
+                    <th class="col-val grand-tot-col">TOTAL MES (TM)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="m in annualData.months" :key="m.monthNumber" :class="['row-daily', { 'row-no-data': !m.hasData }]">
+                    <td class="cell-num"><b>{{ m.monthNumber < 10 ? '0' + m.monthNumber : m.monthNumber }}</b></td>
+                    <td class="cell-date">
+                      <b>{{ getMonthName(m.monthNumber) }}</b>
+                      <span v-if="!m.hasData" class="no-data-badge">Sin Registro</span>
+                      <span v-else class="days-badge">{{ m.daysCount }} días</span>
+                    </td>
+                    
+                    <!-- DP -->
+                    <td class="cell-val dp-a">{{ formatNumber(m.dpArenasA) }}</td>
+                    <td class="cell-val dp-b">{{ formatNumber(m.dpArenasB) }}</td>
+                    <td class="cell-val dp-tot"><b>{{ formatNumber(m.dpArenasTotal) }}</b></td>
+                    
+                    <!-- DL -->
+                    <td class="cell-val dl-a">{{ formatNumber(m.dlArenasA) }}</td>
+                    <td class="cell-val dl-b">{{ formatNumber(m.dlArenasB) }}</td>
+                    <td class="cell-val dl-tot"><b>{{ formatNumber(m.dlArenasTotal) }}</b></td>
+                    
+                    <!-- Totales Combinados -->
+                    <td class="cell-val tot-a"><b>{{ formatNumber(m.totalArenasA) }}</b></td>
+                    <td class="cell-val tot-b"><b>{{ formatNumber(m.totalArenasB) }}</b></td>
+                    <td class="cell-val grand-tot"><b>{{ formatNumber(m.totalArenasMes) }}</b></td>
+                  </tr>
+                </tbody>
+                <tfoot>
+                  <tr class="summary-foot-row total-row">
+                    <td colspan="2" class="foot-label"><b>GRAN TOTAL ANUAL {{ selectedYear }}</b></td>
+                    <td class="cell-val dp-a"><b>{{ formatNumber(annualData.grandDpA) }}</b></td>
+                    <td class="cell-val dp-b"><b>{{ formatNumber(annualData.grandDpB) }}</b></td>
+                    <td class="cell-val dp-tot"><b>{{ formatNumber(annualData.grandDpTotal) }}</b></td>
+                    <td class="cell-val dl-a"><b>{{ formatNumber(annualData.grandDlA) }}</b></td>
+                    <td class="cell-val dl-b"><b>{{ formatNumber(annualData.grandDlB) }}</b></td>
+                    <td class="cell-val dl-tot"><b>{{ formatNumber(annualData.grandDlTotal) }}</b></td>
+                    <td class="cell-val tot-a"><b>{{ formatNumber(annualData.grandTotalA) }}</b></td>
+                    <td class="cell-val tot-b"><b>{{ formatNumber(annualData.grandTotalB) }}</b></td>
+                    <td class="cell-val grand-tot"><b>{{ formatNumber(annualData.grandTotalYear) }}</b></td>
+                  </tr>
+                </tfoot>
+              </table>
             </div>
           </div>
         </div>
@@ -435,8 +447,17 @@ const isUploading = ref(false);
 const availableMonths = ref([]);
 const selectedMonthKey = ref('');
 const dashboardData = ref(null);
-const selectedDayReport = ref(null);
 const activeTab = ref('matrix');
+
+// Resumen Anual
+const annualData = ref(null);
+const loadingAnnual = ref(false);
+const selectedYear = computed(() => {
+  if (selectedMonthKey.value) {
+    return parseInt(selectedMonthKey.value.split('-')[0]);
+  }
+  return new Date().getFullYear();
+});
 
 // Modal de edición
 const showEditModal = ref(false);
@@ -498,11 +519,25 @@ const loadDashboardData = async (year, month) => {
   try {
     const res = await api.get(`/api/v1/reports/dashboard?year=${year}&month=${month}`);
     dashboardData.value = res.data;
-    if (dashboardData.value.dailyReports && dashboardData.value.dailyReports.length > 0) {
-      selectedDayReport.value = dashboardData.value.dailyReports[0];
-    }
   } catch (err) {
     console.error("Error al cargar dashboard data:", err);
+  }
+};
+
+const openAnnualTab = () => {
+  activeTab.value = 'annual';
+  loadAnnualSummary(selectedYear.value);
+};
+
+const loadAnnualSummary = async (year) => {
+  loadingAnnual.value = true;
+  try {
+    const res = await api.get(`/api/v1/reports/annual?year=${year}`);
+    annualData.value = res.data;
+  } catch (err) {
+    console.error("Error al cargar resumen anual:", err);
+  } finally {
+    loadingAnnual.value = false;
   }
 };
 
@@ -510,6 +545,9 @@ const onMonthChange = () => {
   if (!selectedMonthKey.value) return;
   const [year, month] = selectedMonthKey.value.split('-');
   loadDashboardData(year, month);
+  if (activeTab.value === 'annual') {
+    loadAnnualSummary(year);
+  }
 };
 
 const deleteSelectedMonthReport = async () => {
@@ -557,7 +595,7 @@ const saveDailyReportEdit = async () => {
       dlArenasGuardiaB: editForm.dlArenasGuardiaB || 0
     });
 
-    uploadStatus.message = `Producción del día ${editForm.dayNumber} ( ${editForm.reportDate} ) actualizada correctamente.`;
+    uploadStatus.message = `Producción del día ${editForm.dayNumber} (${editForm.reportDate}) actualizada correctamente.`;
     uploadStatus.isSuccess = true;
     showEditModal.value = false;
 
@@ -887,6 +925,36 @@ h1 {
   font-weight: 800;
 }
 
+.btn-refresh-annual {
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  padding: 0.45rem 0.9rem;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.8rem;
+  color: #475569;
+  cursor: pointer;
+}
+.btn-refresh-annual:hover { background: #e2e8f0; }
+
+.loading-annual-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 3rem;
+  color: #64748b;
+  font-weight: 600;
+}
+.spinner-small {
+  width: 24px;
+  height: 24px;
+  border: 3px solid #cbd5e1;
+  border-top-color: #4f46e5;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
 /* Matriz de Producción */
 .table-wrapper-responsive {
   overflow-x: auto;
@@ -933,6 +1001,7 @@ h1 {
 
 .row-daily:hover { background: #f8fafc; }
 .row-empty-warning { background: #fffbe6; }
+.row-no-data { background: #f8fafc; opacity: 0.7; }
 
 .empty-badge {
   display: block;
@@ -940,6 +1009,18 @@ h1 {
   color: #d97706;
   font-weight: 800;
   margin-top: 0.15rem;
+}
+.no-data-badge {
+  display: block;
+  font-size: 0.65rem;
+  color: #94a3b8;
+  font-weight: 700;
+}
+.days-badge {
+  display: block;
+  font-size: 0.65rem;
+  color: #10b981;
+  font-weight: 700;
 }
 
 .cell-num { text-align: center !important; color: #64748b; font-size: 0.78rem; }
@@ -1020,94 +1101,6 @@ h1 {
 .bar-segment.ta { background: #eab308; }
 .bar-segment.tb { background: #6366f1; }
 .bar-label { font-size: 0.65rem; color: #64748b; font-weight: 700; margin-top: 0.35rem; }
-
-/* Inspector por dia */
-.inspector-layout {
-  display: grid;
-  grid-template-columns: 200px 1fr;
-  gap: 1.5rem;
-}
-
-.days-sidebar {
-  background: white;
-  border-radius: 16px;
-  border: 1px solid #e2e8f0;
-  padding: 1.25rem;
-}
-.days-sidebar h4 { margin: 0 0 1rem 0; font-size: 0.9rem; color: #0f172a; }
-
-.days-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 0.4rem;
-}
-
-.day-btn {
-  padding: 0.45rem 0.2rem;
-  border: 1px solid #e2e8f0;
-  background: #f8fafc;
-  border-radius: 8px;
-  font-weight: 700;
-  font-size: 0.78rem;
-  color: #475569;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-.day-btn.active {
-  background: #4f46e5;
-  color: white;
-  border-color: #4f46e5;
-}
-.day-btn.btn-missing {
-  border-color: #fcd34d;
-  background: #fffbe6;
-  color: #b45309;
-}
-
-.detail-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  border-bottom: 1px solid #e2e8f0;
-  padding-bottom: 1rem;
-  margin-bottom: 1.25rem;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-}
-.detail-header h2 { margin: 0 0 0.2rem 0; font-size: 1.15rem; color: #0f172a; }
-.warning-text { font-size: 0.78rem; color: #d97706; font-weight: 700; }
-
-.header-right-btns {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.btn-edit-header {
-  background: #4f46e5;
-  color: white;
-  border: none;
-  padding: 0.45rem 0.9rem;
-  border-radius: 8px;
-  font-weight: 700;
-  font-size: 0.82rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-.btn-edit-header:hover { background: #4338ca; }
-
-.badge-total { background: #dcfce7; color: #15803d; padding: 0.35rem 0.8rem; border-radius: 20px; font-weight: 800; font-size: 0.85rem; }
-
-.detail-sections { display: flex; flex-direction: column; gap: 1.25rem; }
-.section-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.25rem; }
-.section-box h5 { margin: 0 0 0.85rem 0; font-size: 0.95rem; color: #1e293b; }
-
-.sub-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
-.sub-table th, .sub-table td { padding: 0.6rem 0.8rem; border-bottom: 1px solid #e2e8f0; text-align: left; }
-.highlight-val { color: #4338ca; font-weight: 800; }
-.highlight-val.grand { color: #15803d; font-size: 0.95rem; }
-
-.row-total-sub { background: #eff6ff; }
 
 /* Modal de Edición */
 .modal-backdrop {
@@ -1202,9 +1195,4 @@ h1 {
 .empty-state-card { text-align: center; padding: 4rem 2rem; color: #64748b; }
 .empty-icon { font-size: 3.5rem; margin-bottom: 1rem; }
 .margin-top { margin-top: 1rem; }
-
-@media (max-width: 1024px) {
-  .inspector-layout { grid-template-columns: 1fr; }
-  .days-grid { grid-template-columns: repeat(8, 1fr); }
-}
 </style>
