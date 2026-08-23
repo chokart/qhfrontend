@@ -24,12 +24,6 @@
           >
             📅 Calendario de Turnos (2026)
           </button>
-          <button 
-            :class="['tab-btn', { active: activeTab === 'daily' }]"
-            @click="activeTab = 'daily'"
-          >
-            🔎 Guardia del Día
-          </button>
         </div>
       </div>
 
@@ -194,17 +188,12 @@
         </div>
       </div>
 
-      <!-- VISTA 2: Calendario de Turnos (Julio - Dic 2026) -->
+      <!-- VISTA 2: Calendario de Turnos (Matriz) -->
       <div v-else-if="activeTab === 'calendar'" class="tab-content">
         <ShiftCalendar 
           ref="shiftCalendarRef"
           @openGroupManager="showGroupManagerModal = true"
         />
-      </div>
-
-      <!-- VISTA 3: Guardia del Día -->
-      <div v-else-if="activeTab === 'daily'" class="tab-content">
-        <DailyRosterView />
       </div>
     </div>
 
@@ -450,7 +439,6 @@ import { ref, reactive, computed, onMounted } from 'vue';
 import AppNavbar from '../components/AppNavbar.vue';
 import ShiftCalendar from '../components/ShiftCalendar.vue';
 import GroupManagerModal from '../components/GroupManagerModal.vue';
-import DailyRosterView from '../components/DailyRosterView.vue';
 import api from '../api';
 
 const activeTab = ref('calendar'); // Pestaña predeterminada al entrar
