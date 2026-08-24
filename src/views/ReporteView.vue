@@ -29,17 +29,10 @@
             <span>🗑️ Eliminar Mes</span>
           </button>
 
-          <!-- Botón Cargar Excel -->
-          <button class="btn-upload" @click="triggerFileSelect">
-            <span>📤 Subir Excel (.xlsm)</span>
+          <!-- Botón Pegar Producción -->
+          <button class="btn-paste-header" @click="activeTab = 'paste'">
+            <span>📋 Pegar Producción</span>
           </button>
-          <input 
-            type="file" 
-            ref="fileInputRef" 
-            @change="handleFileUpload" 
-            accept=".xlsm,.xlsx,.xls" 
-            style="display: none;" 
-          />
         </div>
       </div>
 
@@ -51,19 +44,19 @@
         </div>
       </transition>
 
-      <!-- Overlay Spinner durante la subida -->
+      <!-- Overlay Spinner durante el procesamiento -->
       <div v-if="isUploading" class="uploading-overlay">
         <div class="spinner-card">
           <div class="spinner-large"></div>
-          <p>Procesando archivo Excel y tabulando partes diarios de producción...</p>
+          <p>Procesando datos de producción y actualizando la base de datos...</p>
         </div>
       </div>
 
       <!-- Dashboard de Producción -->
-      <div v-if="dashboardData" class="dashboard-content">
+      <div class="dashboard-content">
 
-        <!-- TARJETAS DE KPIS PRINCIPALES DE PRODUCCIÓN -->
-        <div class="kpi-grid">
+        <!-- TARJETAS DE KPIS PRINCIPALES DE PRODUCCIÓN (si existen datos) -->
+        <div v-if="dashboardData" class="kpi-grid">
           <!-- 1. Dique Principal -->
           <div class="kpi-card primary">
             <div class="kpi-icon">🏗️</div>
@@ -122,16 +115,24 @@
         <!-- NAVEGACIÓN ENTRE VISTAS DEL DASHBOARD -->
         <div class="view-tabs">
           <button 
+            :class="['tab-btn', { active: activeTab === 'paste' }]" 
+            @click="activeTab = 'paste'"
+          >
+            📋 Pegar Producción (Copiar de Excel)
+          </button>
+          <button 
+            v-if="dashboardData"
             :class="['tab-btn', { active: activeTab === 'matrix' }]" 
             @click="activeTab = 'matrix'"
           >
-            📋 Matriz Mensual (Día 01 - 31)
+            📊 Matriz Mensual (Día 01 - 31)
           </button>
           <button 
+            v-if="dashboardData"
             :class="['tab-btn', { active: activeTab === 'chart' }]" 
             @click="activeTab = 'chart'"
           >
-            📊 Comparativo Visual (Turno A vs B)
+            📈 Comparativo Visual (Turno A vs B)
           </button>
           <button 
             :class="['tab-btn', { active: activeTab === 'annual' }]" 
@@ -141,8 +142,88 @@
           </button>
         </div>
 
+        <!-- TAB PASTE: PEGAR DATOS DIRECTAMENTE DESDE EXCEL -->
+        <div v-if="activeTab === 'paste'" class="tab-pane">
+          <div class="card paste-card">
+            <div class="card-header-inner">
+              <div>
+                <h3>📋 Ingresar Producción Pegando de Excel / Google Sheets</h3>
+                <p class="table-sub-desc">Copia la tabla directamente desde tu hoja de cálculo e ingrésala en el recuadro de abajo.</p>
+              </div>
+            </div>
+
+            <div class="paste-body">
+              <!-- Formato Guía de Columnas -->
+              <div class="paste-instruction-box">
+                <div class="instruction-header">
+                  <span>💡 <b>Formato de Columnas (Separadas por tabuladores desde Excel):</b></span>
+                </div>
+                <div class="instruction-format">
+                  <code><b>DIA</b> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>TURNO</b> &nbsp;&nbsp;&nbsp; <b>DP</b> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>DL</b></code><br>
+                  <code>1-Jan-26 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; A &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 20,962 &nbsp;&nbsp;&nbsp;&nbsp; 3,550</code><br>
+                  <code>1-Jan-26 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; B &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 22,198 &nbsp;&nbsp;&nbsp;&nbsp; 2,989</code><br>
+                  <code>2-Jan-26 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; A &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 20,961 &nbsp;&nbsp;&nbsp;&nbsp; 1,495</code>
+                </div>
+              </div>
+
+              <!-- Textarea para Pegar -->
+              <div class="textarea-wrap">
+                <label class="textarea-label">Pega aquí los datos copiados desde Excel (Ctrl + V):</label>
+                <textarea
+                  v-model="rawPastedText"
+                  @input="parsePastedTextPreview"
+                  placeholder="DIA	TURNO	DP	DL&#10;1-Jan-26	A	20,962	3,550&#10;1-Jan-26	B	22,198	2,989..."
+                  rows="9"
+                  class="paste-textarea"
+                ></textarea>
+              </div>
+
+              <!-- Sección Vista Previa en Tiempo Real -->
+              <div v-if="parsedPreviewRows.length > 0" class="preview-section">
+                <div class="preview-header">
+                  <div>
+                    <h4>🔍 Vista Previa en Tiempo Real</h4>
+                    <span class="badge-preview">{{ parsedPreviewRows.length }} registros detectados correctamente</span>
+                  </div>
+                  <button class="btn-save-paste" @click="submitPastedReport" :disabled="isUploading">
+                    <span v-if="!isUploading">🚀 Guardar Producción en el Sistema</span>
+                    <span v-else>⏳ Guardando...</span>
+                  </button>
+                </div>
+
+                <div class="table-wrapper-responsive preview-table-wrap">
+                  <table class="preview-table">
+                    <thead>
+                      <tr>
+                        <th>FECHA DETECTADA</th>
+                        <th>TURNO</th>
+                        <th>DIQUE PRINCIPAL (DP)</th>
+                        <th>DIQUE LATERAL (DL)</th>
+                        <th>TOTAL DÍA (TM)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr v-for="(r, idx) in parsedPreviewRows" :key="idx" :class="idx % 2 === 0 ? 'even-row' : ''">
+                        <td class="cell-date"><b>{{ r.dateStr }}</b></td>
+                        <td>
+                          <span :class="['turno-badge', r.turno === 'A' ? 'day-badge' : 'night-badge']">
+                            {{ r.turno === 'A' ? '☀️ Turno A' : '🌙 Turno B' }}
+                          </span>
+                        </td>
+                        <td class="cell-dp">{{ formatNumber(r.dp) }} TM</td>
+                        <td class="cell-dl">{{ formatNumber(r.dl) }} TM</td>
+                        <td class="cell-tot"><b>{{ formatNumber(r.dp + r.dl) }} TM</b></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- TAB 1: MATRIZ MENSUAL COMPLETA DE PRODUCCIÓN -->
-        <div v-if="activeTab === 'matrix'" class="tab-pane">
+        <div v-if="activeTab === 'matrix' && dashboardData" class="tab-pane">
           <div class="card table-card">
             <div class="card-header-inner">
               <div>
@@ -182,7 +263,7 @@
                     <td class="cell-num"><b>{{ d.dayNumber < 10 ? '0' + d.dayNumber : d.dayNumber }}</b></td>
                     <td class="cell-date">
                       {{ d.reportDate }}
-                      <span v-if="isRowEmpty(d)" class="empty-badge" title="Día sin datos en el reporte Excel">⚠️ Sin Registro</span>
+                      <span v-if="isRowEmpty(d)" class="empty-badge" title="Día sin datos de producción">⚠️ Sin Registro</span>
                     </td>
                     
                     <!-- DP -->
@@ -242,63 +323,68 @@
         </div>
 
         <!-- TAB 2: COMPARATIVO VISUAL (BARRAS A VS B) -->
-        <div v-if="activeTab === 'chart'" class="tab-pane">
+        <div v-if="activeTab === 'chart' && dashboardData" class="tab-pane">
           <div class="card chart-card">
             <div class="card-header-inner">
               <div>
-                <h3>📊 Comparativo Diario: Turno A vs Turno B</h3>
+                <h3>📈 Comparativo Diario: Turno A vs Turno B</h3>
                 <p class="table-sub-desc">Contribución de producción (TM Secas) por guardia en Dique Principal y Dique Lateral</p>
-              </div>
-              <div class="legend-box">
-                <span class="legend-item ta"><span class="dot"></span> Turno A (Día)</span>
-                <span class="legend-item tb"><span class="dot"></span> Turno B (Noche)</span>
               </div>
             </div>
 
-            <div class="bar-chart-container">
-              <div 
-                v-for="d in dashboardData.dailyReports" 
-                :key="d.id" 
-                class="chart-bar-group"
-                :title="`Día ${d.dayNumber}: Turno A=${formatNumber((d.dpArenasGuardiaA || 0) + (d.dlArenasGuardiaA || 0))}, Turno B=${formatNumber((d.dpArenasGuardiaB || 0) + (d.dlArenasGuardiaB || 0))} TM`"
-              >
-                <div class="bar-stack">
+            <div class="chart-bars-wrap">
+              <div v-for="d in dashboardData.dailyReports" :key="d.id" class="day-bar-column">
+                <div class="bar-pair">
+                  <!-- Barra Turno A -->
                   <div 
-                    class="bar-segment tb" 
-                    :style="{ height: getBarHeight((d.dpArenasGuardiaB || 0) + (d.dlArenasGuardiaB || 0)) + '%' }"
-                  ></div>
+                    class="bar bar-a" 
+                    :style="{ height: getBarHeight((d.dpArenasGuardiaA || 0) + (d.dlArenasGuardiaA || 0)) }"
+                    :title="`Día ${d.dayNumber} Turno A: ${formatNumber((d.dpArenasGuardiaA || 0) + (d.dlArenasGuardiaA || 0))} TM`"
+                  >
+                    <span v-if="((d.dpArenasGuardiaA || 0) + (d.dlArenasGuardiaA || 0)) > 0" class="bar-val">
+                      {{ formatK((d.dpArenasGuardiaA || 0) + (d.dlArenasGuardiaA || 0)) }}
+                    </span>
+                  </div>
+
+                  <!-- Barra Turno B -->
                   <div 
-                    class="bar-segment ta" 
-                    :style="{ height: getBarHeight((d.dpArenasGuardiaA || 0) + (d.dlArenasGuardiaA || 0)) + '%' }"
-                  ></div>
+                    class="bar bar-b" 
+                    :style="{ height: getBarHeight((d.dpArenasGuardiaB || 0) + (d.dlArenasGuardiaB || 0)) }"
+                    :title="`Día ${d.dayNumber} Turno B: ${formatNumber((d.dpArenasGuardiaB || 0) + (d.dlArenasGuardiaB || 0))} TM`"
+                  >
+                    <span v-if="((d.dpArenasGuardiaB || 0) + (d.dlArenasGuardiaB || 0)) > 0" class="bar-val">
+                      {{ formatK((d.dpArenasGuardiaB || 0) + (d.dlArenasGuardiaB || 0)) }}
+                    </span>
+                  </div>
                 </div>
-                <span class="bar-label">{{ d.dayNumber }}</span>
+
+                <div class="day-label">{{ d.dayNumber }}</div>
               </div>
+            </div>
+
+            <div class="chart-legend">
+              <div class="legend-item"><span class="legend-box turn-a"></span> ☀️ Turno A (Día)</div>
+              <div class="legend-item"><span class="legend-box turn-b"></span> 🌙 Turno B (Noche)</div>
             </div>
           </div>
         </div>
 
-        <!-- TAB 3: RESUMEN ANUAL MES POR MES -->
+        <!-- TAB 3: RESUMEN ANUAL (MES POR MES) -->
         <div v-if="activeTab === 'annual'" class="tab-pane">
           <div class="card table-card">
             <div class="card-header-inner">
               <div>
-                <h3>📅 Resumen Anual de Producción (Mes por Mes {{ selectedYear }})</h3>
-                <p class="table-sub-desc">Totales mensuales de producción en TM Secas para Dique Principal y Dique Lateral en Turnos A (Día) y B (Noche)</p>
+                <h3>📅 Resumen Anual de Producción (Mes por Mes) - Año {{ selectedYear }}</h3>
+                <p class="table-sub-desc">Consolidado mensual de producción en TM Secas para Dique Principal (DP) y Dique Lateral (DL)</p>
               </div>
-              <button class="btn-refresh-annual" @click="loadAnnualSummary(selectedYear)">🔄 Actualizar Anual</button>
+              <span v-if="loadingAnnual" class="badge-days-count">⏳ Cargando Resumen Anual...</span>
             </div>
 
-            <div v-if="loadingAnnual" class="loading-annual-box">
-              <div class="spinner-small"></div>
-              <span>Cargando consolidado anual...</span>
-            </div>
-
-            <div v-else-if="annualData" class="table-wrapper-responsive">
+            <div v-if="annualData" class="table-wrapper-responsive">
               <table class="prod-matrix-table annual-table">
                 <thead>
                   <tr class="header-group-row">
-                    <th colspan="2" class="hdr-group date-hdr">PERÍODO / MES</th>
+                    <th colspan="2" class="hdr-group date-hdr">PERÍODO</th>
                     <th colspan="3" class="hdr-group dp-hdr">DIQUE PRINCIPAL (DP)</th>
                     <th colspan="3" class="hdr-group dl-hdr">DIQUE LATERAL (DL)</th>
                     <th colspan="3" class="hdr-group tot-hdr">TOTAL PRODUCCIÓN ARENAS</th>
@@ -318,42 +404,32 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr v-for="m in annualData.months" :key="m.monthNumber" :class="['row-daily', { 'row-no-data': !m.hasData }]">
+                  <tr v-for="m in annualData.months" :key="m.monthNumber" class="row-daily">
                     <td class="cell-num"><b>{{ m.monthNumber < 10 ? '0' + m.monthNumber : m.monthNumber }}</b></td>
-                    <td class="cell-date">
-                      <b>{{ getMonthName(m.monthNumber) }}</b>
-                      <span v-if="!m.hasData" class="no-data-badge">Sin Registro</span>
-                      <span v-else class="days-badge">{{ m.daysCount }} días</span>
-                    </td>
-                    
-                    <!-- DP -->
-                    <td class="cell-val dp-a">{{ formatNumber(m.dpArenasA) }}</td>
-                    <td class="cell-val dp-b">{{ formatNumber(m.dpArenasB) }}</td>
-                    <td class="cell-val dp-tot"><b>{{ formatNumber(m.dpArenasTotal) }}</b></td>
-                    
-                    <!-- DL -->
-                    <td class="cell-val dl-a">{{ formatNumber(m.dlArenasA) }}</td>
-                    <td class="cell-val dl-b">{{ formatNumber(m.dlArenasB) }}</td>
-                    <td class="cell-val dl-tot"><b>{{ formatNumber(m.dlArenasTotal) }}</b></td>
-                    
-                    <!-- Totales Combinados -->
-                    <td class="cell-val tot-a"><b>{{ formatNumber(m.totalArenasA) }}</b></td>
-                    <td class="cell-val tot-b"><b>{{ formatNumber(m.totalArenasB) }}</b></td>
-                    <td class="cell-val grand-tot"><b>{{ formatNumber(m.totalArenasMes) }}</b></td>
+                    <td class="cell-date"><b>{{ m.monthName }}</b></td>
+                    <td class="cell-val dp-a">{{ formatNumber(m.dpA) }}</td>
+                    <td class="cell-val dp-b">{{ formatNumber(m.dpB) }}</td>
+                    <td class="cell-val dp-tot"><b>{{ formatNumber(m.dpTotal) }}</b></td>
+                    <td class="cell-val dl-a">{{ formatNumber(m.dlA) }}</td>
+                    <td class="cell-val dl-b">{{ formatNumber(m.dlB) }}</td>
+                    <td class="cell-val dl-tot"><b>{{ formatNumber(m.dlTotal) }}</b></td>
+                    <td class="cell-val tot-a"><b>{{ formatNumber(m.totalA) }}</b></td>
+                    <td class="cell-val tot-b"><b>{{ formatNumber(m.totalB) }}</b></td>
+                    <td class="cell-val grand-tot"><b>{{ formatNumber(m.grandTotal) }}</b></td>
                   </tr>
                 </tbody>
                 <tfoot>
                   <tr class="summary-foot-row total-row">
-                    <td colspan="2" class="foot-label"><b>GRAN TOTAL ANUAL {{ selectedYear }}</b></td>
-                    <td class="cell-val dp-a"><b>{{ formatNumber(annualData.grandDpA) }}</b></td>
-                    <td class="cell-val dp-b"><b>{{ formatNumber(annualData.grandDpB) }}</b></td>
-                    <td class="cell-val dp-tot"><b>{{ formatNumber(annualData.grandDpTotal) }}</b></td>
-                    <td class="cell-val dl-a"><b>{{ formatNumber(annualData.grandDlA) }}</b></td>
-                    <td class="cell-val dl-b"><b>{{ formatNumber(annualData.grandDlB) }}</b></td>
-                    <td class="cell-val dl-tot"><b>{{ formatNumber(annualData.grandDlTotal) }}</b></td>
-                    <td class="cell-val tot-a"><b>{{ formatNumber(annualData.grandTotalA) }}</b></td>
-                    <td class="cell-val tot-b"><b>{{ formatNumber(annualData.grandTotalB) }}</b></td>
-                    <td class="cell-val grand-tot"><b>{{ formatNumber(annualData.grandTotalYear) }}</b></td>
+                    <td colspan="2" class="foot-label"><b>TOTAL ANUAL ACUMULADO</b></td>
+                    <td class="cell-val dp-a"><b>{{ formatNumber(annualData.annualDpA) }}</b></td>
+                    <td class="cell-val dp-b"><b>{{ formatNumber(annualData.annualDpB) }}</b></td>
+                    <td class="cell-val dp-tot"><b>{{ formatNumber(annualData.annualDpTotal) }}</b></td>
+                    <td class="cell-val dl-a"><b>{{ formatNumber(annualData.annualDlA) }}</b></td>
+                    <td class="cell-val dl-b"><b>{{ formatNumber(annualData.annualDlB) }}</b></td>
+                    <td class="cell-val dl-tot"><b>{{ formatNumber(annualData.annualDlTotal) }}</b></td>
+                    <td class="cell-val tot-a"><b>{{ formatNumber(annualData.annualTotalA) }}</b></td>
+                    <td class="cell-val tot-b"><b>{{ formatNumber(annualData.annualTotalB) }}</b></td>
+                    <td class="cell-val grand-tot"><b>{{ formatNumber(annualData.annualGrandTotal) }}</b></td>
                   </tr>
                 </tfoot>
               </table>
@@ -362,26 +438,17 @@
         </div>
 
       </div>
-
-      <!-- Estado sin reportes -->
-      <div v-else-if="!isUploading" class="empty-state-card card">
-        <div class="empty-icon">📁</div>
-        <h3>No hay reportes de producción cargados aún</h3>
-        <p>Haz clic en <b>"Subir Excel (.xlsm)"</b> para procesar el Reporte de Operaciones Quebrada Honda.</p>
-        <button class="btn-upload margin-top" @click="triggerFileSelect">📤 Subir Reporte Excel</button>
-      </div>
-
     </div>
 
-    <!-- MODAL EDITAR / COMPLETAR PRODUCCIÓN DEL DÍA -->
+    <!-- MODAL PARA EDITAR PARTE DIARIO MANULAMENTE -->
     <div v-if="showEditModal" class="modal-backdrop" @click.self="showEditModal = false">
-      <div class="modal-dialog">
+      <div class="modal-card">
         <div class="modal-header">
-          <h3>✏️ Editar Producción del Día: {{ editForm.reportDate }} (Día {{ editForm.dayNumber }})</h3>
-          <button class="btn-close" @click="showEditModal = false">✕</button>
+          <h3>✏️ Modificar Producción del Día {{ editForm.dayNumber }} ({{ editForm.reportDate }})</h3>
+          <button class="btn-close-modal" @click="showEditModal = false">✕</button>
         </div>
         <div class="modal-body">
-          <p class="modal-sub-desc">Ingresa o corrige la producción en TM Secas para cada dique y turno:</p>
+          <p class="modal-desc">Ingresa o corrige los valores de producción en TM Secas para cada guardia:</p>
 
           <!-- Sección DP -->
           <div class="edit-section-box blue">
@@ -442,12 +509,15 @@ import { ref, reactive, computed, onMounted } from 'vue';
 import api from '../api';
 import AppNavbar from '../components/AppNavbar.vue';
 
-const fileInputRef = ref(null);
 const isUploading = ref(false);
 const availableMonths = ref([]);
 const selectedMonthKey = ref('');
 const dashboardData = ref(null);
-const activeTab = ref('matrix');
+const activeTab = ref('paste');
+
+// Variables para datos pegados desde Excel
+const rawPastedText = ref('');
+const parsedPreviewRows = ref([]);
 
 // Resumen Anual
 const annualData = ref(null);
@@ -507,11 +577,10 @@ const loadAvailableMonths = async () => {
       const first = availableMonths.value[0];
       selectedMonthKey.value = `${first.year}-${first.month}`;
       await loadDashboardData(first.year, first.month);
+      activeTab.value = 'matrix';
     }
   } catch (err) {
     console.error("Error al cargar meses disponibles:", err);
-    uploadStatus.message = "No se pudieron cargar datos históricos del servidor. Puedes subir un reporte Excel para iniciar.";
-    uploadStatus.isSuccess = false;
   }
 };
 
@@ -612,105 +681,185 @@ const saveDailyReportEdit = async () => {
   }
 };
 
-const triggerFileSelect = () => {
-  fileInputRef.value.click();
+// --- LOGICA DE PROCESAMIENTO DE TEXTO PEGADO DESDE EXCEL ---
+const parsePastedTextPreview = () => {
+  if (!rawPastedText.value || !rawPastedText.value.trim()) {
+    parsedPreviewRows.value = [];
+    return;
+  }
+
+  const lines = rawPastedText.value.split(/\r?\n/);
+  const list = [];
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed || isHeaderLine(trimmed)) continue;
+
+    const tokens = splitLineTokens(trimmed);
+    if (tokens.length < 4) continue;
+
+    const dateStr = tokens[0].trim();
+    const turno = tokens[1].trim().toUpperCase();
+    const dpVal = parsePastedNumber(tokens[2]);
+    const dlVal = parsePastedNumber(tokens[3]);
+
+    if (turno === 'A' || turno === 'B') {
+      list.push({
+        dateStr,
+        turno,
+        dp: dpVal,
+        dl: dlVal
+      });
+    }
+  }
+
+  parsedPreviewRows.value = list;
 };
 
-const handleFileUpload = async (event) => {
-  const file = event.target.files[0];
-  if (!file) return;
+const isHeaderLine = (line) => {
+  const upper = line.toUpperCase();
+  return upper.includes('DIA') || upper.includes('FECHA') || upper.includes('TURNO') || upper.includes('DP') || upper.includes('DL');
+};
 
-  const formData = new FormData();
-  formData.append('file', file);
+const splitLineTokens = (line) => {
+  if (line.includes('\t')) return line.split('\t');
+  if (line.includes(';')) return line.split(';');
+  return line.split(/\s{2,}/);
+};
+
+const parsePastedNumber = (raw) => {
+  if (!raw) return 0;
+  try {
+    let cleaned = String(raw).trim().replace(/\s+/g, '');
+    if (cleaned.includes('.') && cleaned.includes(',')) {
+      cleaned = cleaned.replace(/\./g, '').replace(',', '.');
+    } else if (cleaned.includes(',')) {
+      cleaned = cleaned.replace(/,/g, '');
+    }
+    return parseFloat(cleaned) || 0;
+  } catch (e) {
+    return 0;
+  }
+};
+
+const submitPastedReport = async () => {
+  if (!rawPastedText.value || !rawPastedText.value.trim()) {
+    uploadStatus.message = "Por favor pega primero los datos de producción en el recuadro.";
+    uploadStatus.isSuccess = false;
+    return;
+  }
 
   isUploading.value = true;
-  uploadStatus.message = '';
+  uploadStatus.message = "";
 
   try {
-    const res = await api.post('/api/v1/reports/upload', formData);
+    const res = await api.post('/api/v1/reports/import-pasted', {
+      rawText: rawPastedText.value
+    });
 
-    uploadStatus.message = `Procesados ${res.data.daysProcessed} días de producción exitosamente.`;
+    uploadStatus.message = res.data.message || "Datos pegados procesados exitosamente.";
     uploadStatus.isSuccess = true;
+
+    rawPastedText.value = '';
+    parsedPreviewRows.value = [];
 
     await loadAvailableMonths();
     if (res.data.year && res.data.month) {
       selectedMonthKey.value = `${res.data.year}-${res.data.month}`;
       await loadDashboardData(res.data.year, res.data.month);
     }
+    activeTab.value = 'matrix';
   } catch (err) {
-    console.error("Error al subir archivo Excel:", err);
-    uploadStatus.message = err.response?.data?.message || 'Error al procesar el archivo Excel.';
+    console.error("Error al procesar datos pegados:", err);
+    uploadStatus.message = err.response?.data?.message || "Error al procesar y guardar los datos pegados.";
     uploadStatus.isSuccess = false;
   } finally {
     isUploading.value = false;
-    event.target.value = '';
   }
 };
 
 const maxDailyProd = computed(() => {
-  if (!dashboardData.value || !dashboardData.value.dailyReports) return 50000;
-  let max = 10000;
+  if (!dashboardData.value || !dashboardData.value.dailyReports) return 1;
+  let max = 0;
   dashboardData.value.dailyReports.forEach(d => {
-    const tot = (d.totalArenasDia || 0);
-    if (tot > max) max = tot;
+    const totA = (d.dpArenasGuardiaA || 0) + (d.dlArenasGuardiaA || 0);
+    const totB = (d.dpArenasGuardiaB || 0) + (d.dlArenasGuardiaB || 0);
+    if (totA > max) max = totA;
+    if (totB > max) max = totB;
   });
-  return max;
+  return max > 0 ? max : 1;
 });
 
 const getBarHeight = (val) => {
-  if (!val) return 0;
-  return Math.min(100, (val / maxDailyProd.value) * 100);
+  if (!val || val <= 0) return '0%';
+  const pct = Math.round((val / maxDailyProd.value) * 100);
+  return `${Math.max(pct, 6)}%`;
 };
 
-onMounted(loadAvailableMonths);
+const formatK = (val) => {
+  if (!val || val <= 0) return '';
+  return Math.round(val / 1000) + 'k';
+};
+
+onMounted(() => {
+  loadAvailableMonths();
+});
 </script>
 
 <style scoped>
 .reporte-view {
   min-height: 100vh;
-  background: #f8fafc;
-  padding-bottom: 4rem;
+  background-color: #0b1120;
+  color: #f1f5f9;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  padding-bottom: 3rem;
 }
 
 .page-container {
-  max-width: 1440px;
+  max-width: 1400px;
   margin: 0 auto;
-  padding: 0 1.5rem;
+  padding: 2rem 1.5rem;
 }
 
+/* Header */
 .page-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.5rem;
+  margin-bottom: 2rem;
   flex-wrap: wrap;
-  gap: 1rem;
+  gap: 1.5rem;
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.9));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 1.5rem 2rem;
+  backdrop-filter: blur(12px);
 }
 
 .header-left {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 1.25rem;
 }
 
 .header-icon-wrap {
-  font-size: 2rem;
-  background: #e0e7ff;
-  padding: 0.6rem 0.75rem;
+  font-size: 2.2rem;
+  background: rgba(59, 130, 246, 0.15);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  padding: 0.75rem;
   border-radius: 14px;
 }
 
-h1 {
+.page-header h1 {
   font-size: 1.65rem;
-  font-weight: 800;
-  color: #0f172a;
-  margin: 0 0 0.2rem 0;
-  letter-spacing: -0.02em;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0 0 0.3rem 0;
 }
 
 .subtitle {
-  color: #64748b;
-  font-size: 0.88rem;
+  color: #94a3b8;
+  font-size: 0.9rem;
   margin: 0;
 }
 
@@ -718,244 +867,416 @@ h1 {
   display: flex;
   align-items: center;
   gap: 1rem;
+  flex-wrap: wrap;
 }
 
 .month-selector-wrap {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  background: white;
-  border: 1px solid #cbd5e1;
-  padding: 0.4rem 0.8rem;
+  background: #1e293b;
+  border: 1px solid #334155;
   border-radius: 10px;
+  padding: 0.4rem 0.8rem;
 }
 
 .month-select {
-  border: none;
   background: transparent;
-  font-weight: 700;
-  color: #1e293b;
+  border: none;
+  color: #38bdf8;
+  font-weight: 600;
+  font-size: 0.95rem;
   outline: none;
-  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.btn-paste-header {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: #ffffff;
+  font-weight: 600;
+  padding: 0.65rem 1.25rem;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4);
+  transition: all 0.2s ease;
+}
+
+.btn-paste-header:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(37, 99, 235, 0.6);
 }
 
 .btn-delete-month {
-  background: #fef2f2;
-  color: #dc2626;
-  border: 1px solid #fecaca;
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #f87171;
+  font-weight: 600;
   padding: 0.65rem 1rem;
   border-radius: 10px;
-  font-weight: 700;
-  font-size: 0.85rem;
   cursor: pointer;
   transition: all 0.2s;
 }
+
 .btn-delete-month:hover {
-  background: #dc2626;
-  color: white;
-  border-color: #dc2626;
+  background: rgba(239, 68, 68, 0.25);
 }
 
-.btn-upload {
-  background: #4f46e5;
-  color: white;
-  border: none;
-  padding: 0.65rem 1.25rem;
-  border-radius: 10px;
-  font-weight: 700;
-  font-size: 0.88rem;
-  cursor: pointer;
-  transition: all 0.2s;
-  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
-}
-.btn-upload:hover { background: #4338ca; transform: translateY(-1px); }
-
+/* Status Banner */
 .status-banner {
-  padding: 0.85rem 1.25rem;
-  border-radius: 10px;
-  font-weight: 600;
-  font-size: 0.9rem;
-  margin-bottom: 1.5rem;
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  border-radius: 12px;
+  margin-bottom: 1.5rem;
+  font-size: 0.95rem;
+  font-weight: 500;
 }
-.status-banner.success { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
-.status-banner.error   { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
 
+.status-banner.success {
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: #34d399;
+}
+
+.status-banner.error {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #f87171;
+}
+
+/* Loading Overlay */
 .uploading-overlay {
   position: fixed;
-  inset: 0;
-  background: rgba(15, 23, 42, 0.6);
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(11, 17, 32, 0.85);
+  backdrop-filter: blur(8px);
+  z-index: 999;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 2000;
 }
+
 .spinner-card {
-  background: white;
-  padding: 2.5rem;
+  background: #1e293b;
+  border: 1px solid #334155;
+  padding: 2.5rem 3rem;
   border-radius: 20px;
   text-align: center;
-  box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
 }
-.spinner-large {
-  width: 48px;
-  height: 48px;
-  border: 4px solid #cbd5e1;
-  border-top-color: #4f46e5;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-  margin: 0 auto 1.25rem auto;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
 
-/* Grid de KPIs */
+.spinner-large {
+  width: 50px;
+  height: 50px;
+  border: 4px solid rgba(56, 189, 248, 0.2);
+  border-top-color: #38bdf8;
+  border-radius: 50%;
+  animation: spin 1s infinite linear;
+  margin: 0 auto 1.5rem auto;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* KPIs Grid */
 .kpi-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 1.25rem;
-  margin-bottom: 1.5rem;
+  margin-bottom: 2rem;
 }
 
 .kpi-card {
-  background: white;
+  background: rgba(30, 41, 59, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 16px;
-  padding: 1.25rem;
+  padding: 1.25rem 1.5rem;
   display: flex;
   align-items: center;
   gap: 1rem;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
-  transition: transform 0.2s ease;
+
 }
-.kpi-card:hover { transform: translateY(-2px); }
+
+.kpi-card.primary { border-left: 4px solid #3b82f6; }
+.kpi-card.info { border-left: 4px solid #10b981; }
+.kpi-card.warning { border-left: 4px solid #f59e0b; }
+.kpi-card.night { border-left: 4px solid #8b5cf6; }
+.kpi-card.success-card { border-left: 4px solid #06b6d4; background: linear-gradient(135deg, rgba(6, 182, 212, 0.15), rgba(30, 41, 59, 0.8)); }
 
 .kpi-icon {
-  width: 50px;
-  height: 50px;
-  border-radius: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.5rem;
-  flex-shrink: 0;
+  font-size: 2rem;
 }
-.kpi-card.primary .kpi-icon { background: #e0e7ff; color: #4338ca; }
-.kpi-card.info .kpi-icon { background: #dcfce7; color: #15803d; }
-.kpi-card.warning .kpi-icon { background: #fef08a; color: #854d0e; }
-.kpi-card.night .kpi-icon { background: #ede9fe; color: #6d28d9; }
-.kpi-card.success-card .kpi-icon { background: #d1fae5; color: #047857; }
 
 .kpi-info {
   display: flex;
   flex-direction: column;
-  gap: 0.15rem;
 }
-.kpi-label { font-size: 0.78rem; font-weight: 700; color: #64748b; text-transform: uppercase; }
-.kpi-value { font-size: 1.35rem; font-weight: 800; color: #0f172a; line-height: 1.2; }
-.kpi-value small { font-size: 0.75rem; font-weight: 700; color: #64748b; }
-.kpi-sub { font-size: 0.72rem; color: #475569; font-weight: 600; }
 
-/* Tabs de navegación */
+.kpi-label {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+
+.kpi-value {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.kpi-value small {
+  font-size: 0.85rem;
+  color: #cbd5e1;
+}
+
+.kpi-sub {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  margin-top: 0.2rem;
+}
+
+/* Tabs Navigation */
 .view-tabs {
   display: flex;
-  gap: 0.5rem;
-  background: white;
-  padding: 0.4rem;
-  border-radius: 14px;
-  border: 1px solid #cbd5e1;
+  gap: 0.75rem;
   margin-bottom: 1.5rem;
-  flex-wrap: wrap;
+  border-bottom: 1px solid #334155;
+  padding-bottom: 0.5rem;
+  overflow-x: auto;
 }
 
 .tab-btn {
-  background: none;
+  background: transparent;
   border: none;
-  padding: 0.65rem 1.25rem;
+  color: #94a3b8;
+  font-weight: 600;
+  font-size: 0.95rem;
+  padding: 0.75rem 1.25rem;
   border-radius: 10px;
-  font-weight: 700;
-  font-size: 0.88rem;
-  color: #64748b;
   cursor: pointer;
-  transition: all 0.2s ease;
-}
-.tab-btn.active {
-  background: #4f46e5;
-  color: white;
-  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
+  transition: all 0.2s;
+  white-space: nowrap;
 }
 
+.tab-btn:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.tab-btn.active {
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.12);
+  border-bottom: 2px solid #38bdf8;
+}
+
+/* Card General */
 .card {
-  background: white;
+  background: #1e293b;
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 16px;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
   padding: 1.5rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
 }
 
 .card-header-inner {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 1.25rem;
+  margin-bottom: 1.5rem;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: 1rem;
 }
 
 .card-header-inner h3 {
-  margin: 0 0 0.2rem 0;
-  font-size: 1.1rem;
-  color: #0f172a;
-  font-weight: 800;
+  font-size: 1.25rem;
+  margin: 0 0 0.3rem 0;
+  color: #ffffff;
 }
 
 .table-sub-desc {
+  font-size: 0.85rem;
+  color: #94a3b8;
   margin: 0;
-  font-size: 0.8rem;
-  color: #64748b;
 }
 
 .badge-days-count {
-  background: #e0e7ff;
-  color: #4338ca;
-  padding: 0.3rem 0.75rem;
+  background: rgba(59, 130, 246, 0.15);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  padding: 0.4rem 0.8rem;
   border-radius: 20px;
-  font-size: 0.78rem;
-  font-weight: 800;
-}
-
-.btn-refresh-annual {
-  background: #f1f5f9;
-  border: 1px solid #cbd5e1;
-  padding: 0.45rem 0.9rem;
-  border-radius: 8px;
-  font-weight: 700;
   font-size: 0.8rem;
-  color: #475569;
-  cursor: pointer;
-}
-.btn-refresh-annual:hover { background: #e2e8f0; }
-
-.loading-annual-box {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.75rem;
-  padding: 3rem;
-  color: #64748b;
   font-weight: 600;
 }
-.spinner-small {
-  width: 24px;
-  height: 24px;
-  border: 3px solid #cbd5e1;
-  border-top-color: #4f46e5;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
+
+/* ESTILOS DE LA PESTAÑA PASTE */
+.paste-card {
+  background: #1e293b;
+  border: 1px solid rgba(56, 189, 248, 0.3);
 }
 
-/* Matriz de Producción */
+.paste-instruction-box {
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px dashed rgba(56, 189, 248, 0.4);
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+.instruction-header {
+  color: #38bdf8;
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+}
+
+.instruction-format {
+  font-family: 'Fira Code', 'Courier New', monospace;
+  font-size: 0.85rem;
+  color: #cbd5e1;
+  background: #0f172a;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  line-height: 1.5;
+}
+
+.textarea-wrap {
+  margin-bottom: 1.5rem;
+}
+
+.textarea-label {
+  display: block;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #f1f5f9;
+  margin-bottom: 0.5rem;
+}
+
+.paste-textarea {
+  width: 100%;
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 12px;
+  color: #38bdf8;
+  font-family: 'Fira Code', 'Courier New', monospace;
+  font-size: 0.9rem;
+  padding: 1rem;
+  outline: none;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.paste-textarea:focus {
+  border-color: #38bdf8;
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
+}
+
+.preview-section {
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 14px;
+  padding: 1.25rem;
+}
+
+.preview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.preview-header h4 {
+  margin: 0 0 0.2rem 0;
+  color: #ffffff;
+  font-size: 1.1rem;
+}
+
+.badge-preview {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  padding: 0.25rem 0.6rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.btn-save-paste {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 0.95rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4);
+  transition: all 0.2s ease;
+}
+
+.btn-save-paste:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(16, 185, 129, 0.6);
+}
+
+.preview-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.preview-table th {
+  background: #1e293b;
+  color: #94a3b8;
+  font-weight: 700;
+  text-align: left;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #334155;
+}
+
+.preview-table td {
+  padding: 0.65rem 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.even-row {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.turno-badge {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 10px;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.day-badge {
+  background: rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
+}
+
+.night-badge {
+  background: rgba(139, 92, 246, 0.2);
+  color: #c084fc;
+}
+
+.cell-dp { color: #60a5fa; font-weight: 600; }
+.cell-dl { color: #34d399; font-weight: 600; }
+.cell-tot { color: #f59e0b; font-weight: 700; }
+
+/* Tabla Matriz */
 .table-wrapper-responsive {
   overflow-x: auto;
 }
@@ -963,236 +1284,251 @@ h1 {
 .prod-matrix-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.82rem;
-}
-
-.prod-matrix-table th, .prod-matrix-table td {
-  padding: 0.55rem 0.65rem;
-  border: 1px solid #cbd5e1;
-  text-align: right;
-  vertical-align: middle;
+  font-size: 0.85rem;
 }
 
 .header-group-row th {
-  font-size: 0.78rem;
+  padding: 0.6rem;
   font-weight: 800;
   text-align: center;
-  letter-spacing: 0.03em;
-  padding: 0.6rem 0.5rem;
+  font-size: 0.78rem;
+  letter-spacing: 0.5px;
 }
 
-.date-hdr { background: #f1f5f9; color: #334155; }
-.dp-hdr { background: #eff6ff; color: #1e40af; border-bottom-color: #bfdbfe; }
-.dl-hdr { background: #f0fdf4; color: #166534; border-bottom-color: #bbf7d0; }
-.tot-hdr { background: #faf5ff; color: #6b21a8; border-bottom-color: #e9d5ff; }
-.act-hdr { background: #f8fafc; color: #475569; width: 60px; }
+.date-hdr { background: #334155; color: #f1f5f9; }
+.dp-hdr { background: #1e3a8a; color: #93c5fd; }
+.dl-hdr { background: #064e3b; color: #6ee7b7; }
+.tot-hdr { background: #78350f; color: #fde68a; }
+.act-hdr { background: #1e293b; color: #94a3b8; }
 
 .header-sub-row th {
-  background: #f8fafc;
-  color: #475569;
-  font-size: 0.72rem;
-  font-weight: 800;
-  text-align: center;
-}
-
-.col-num { width: 35px; text-align: center !important; }
-.col-date { width: 110px; text-align: center !important; }
-.col-act { width: 50px; text-align: center !important; }
-
-.row-daily:hover { background: #f8fafc; }
-.row-empty-warning { background: #fffbe6; }
-.row-no-data { background: #f8fafc; opacity: 0.7; }
-
-.empty-badge {
-  display: block;
-  font-size: 0.65rem;
-  color: #d97706;
-  font-weight: 800;
-  margin-top: 0.15rem;
-}
-.no-data-badge {
-  display: block;
-  font-size: 0.65rem;
+  background: #0f172a;
   color: #94a3b8;
-  font-weight: 700;
-}
-.days-badge {
-  display: block;
-  font-size: 0.65rem;
-  color: #10b981;
+  padding: 0.75rem 0.5rem;
+  border-bottom: 2px solid #334155;
+  font-size: 0.75rem;
   font-weight: 700;
 }
 
-.cell-num { text-align: center !important; color: #64748b; font-size: 0.78rem; }
-.cell-date { text-align: center !important; font-weight: 600; color: #334155; }
-.cell-act { text-align: center !important; }
+.row-daily {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  transition: background 0.15s;
+}
 
-.btn-edit-row {
-  background: #f1f5f9;
-  border: 1px solid #cbd5e1;
+.row-daily:hover {
+  background: rgba(59, 130, 246, 0.05);
+}
+
+.row-empty-warning {
+  background: rgba(239, 68, 68, 0.05);
+}
+
+.cell-num { text-align: center; color: #94a3b8; }
+.cell-date { white-space: nowrap; font-weight: 500; }
+.empty-badge {
+  font-size: 0.7rem;
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+  padding: 0.15rem 0.4rem;
   border-radius: 6px;
-  padding: 0.25rem 0.45rem;
+  margin-left: 0.4rem;
+}
+
+.cell-val { text-align: right; padding: 0.6rem 0.75rem; }
+.dp-a, .dp-b { color: #93c5fd; }
+.dp-tot { color: #3b82f6; background: rgba(59, 130, 246, 0.08); }
+.dl-a, .dl-b { color: #6ee7b7; }
+.dl-tot { color: #10b981; background: rgba(16, 185, 129, 0.08); }
+.tot-a { color: #fbbf24; }
+.tot-b { color: #c084fc; }
+.grand-tot { color: #f59e0b; background: rgba(245, 158, 11, 0.12); font-size: 0.9rem; }
+
+.cell-act { text-align: center; }
+.btn-edit-row {
+  background: rgba(59, 130, 246, 0.15);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  color: #60a5fa;
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
   cursor: pointer;
-  font-size: 0.8rem;
-  transition: all 0.15s ease;
+  transition: all 0.2s;
 }
+
 .btn-edit-row:hover {
-  background: #4f46e5;
-  color: white;
-  border-color: #4f46e5;
+  background: rgba(59, 130, 246, 0.3);
+  transform: scale(1.1);
 }
 
-.dp-a, .dp-b { color: #1e3a8a; }
-.dp-tot { background: #eff6ff; color: #1e40af; }
-
-.dl-a, .dl-b { color: #14532d; }
-.dl-tot { background: #f0fdf4; color: #166534; }
-
-.tot-a, .tot-b { color: #581c87; }
-.grand-tot { background: #faf5ff; color: #6b21a8; font-size: 0.86rem; }
-
-.summary-foot-row td {
-  border-top: 2px solid #94a3b8;
-  font-size: 0.83rem;
+.summary-foot-row {
+  background: #0f172a;
+  border-top: 2px solid #334155;
 }
-.total-row { background: #f1f5f9; }
-.avg-row { background: #ffffff; }
 
-.foot-label { text-align: left !important; color: #0f172a; padding-left: 0.8rem !important; }
+.foot-label { text-align: left; padding: 0.75rem 1rem; color: #f1f5f9; }
 
-/* Charts Visuales */
-.legend-box { display: flex; gap: 1rem; }
-.legend-item { font-size: 0.78rem; font-weight: 700; color: #475569; display: flex; align-items: center; gap: 0.35rem; }
-.legend-item .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
-.legend-item.ta .dot { background: #eab308; }
-.legend-item.tb .dot { background: #6366f1; }
-
-.bar-chart-container {
+/* Gráfico Comparativo Bars */
+.chart-bars-wrap {
   display: flex;
   align-items: flex-end;
   gap: 0.4rem;
-  height: 220px;
-  padding-top: 1rem;
+  height: 280px;
+  padding: 1.5rem 0 1rem 0;
+  border-bottom: 1px solid #334155;
   overflow-x: auto;
-  border-bottom: 2px solid #e2e8f0;
 }
 
-.chart-bar-group {
+.day-bar-column {
   flex: 1;
-  min-width: 24px;
+  min-width: 28px;
   display: flex;
   flex-direction: column;
   align-items: center;
   height: 100%;
-  justify-content: flex-end;
 }
 
-.bar-stack {
-  width: 100%;
-  max-width: 22px;
-  height: 100%;
+.bar-pair {
   display: flex;
-  flex-direction: column-reverse;
-  border-radius: 4px 4px 0 0;
-  overflow: hidden;
-  background: #f1f5f9;
+  align-items: flex-end;
+  gap: 2px;
+  width: 100%;
+  height: 90%;
 }
 
-.bar-segment.ta { background: #eab308; }
-.bar-segment.tb { background: #6366f1; }
-.bar-label { font-size: 0.65rem; color: #64748b; font-weight: 700; margin-top: 0.35rem; }
+.bar {
+  flex: 1;
+  border-radius: 4px 4px 0 0;
+  position: relative;
+  transition: height 0.3s ease;
+}
 
-/* Modal de Edición */
+.bar-a { background: linear-gradient(180deg, #f59e0b, #d97706); }
+.bar-b { background: linear-gradient(180deg, #8b5cf6, #6d28d9); }
+
+.bar-val {
+  position: absolute;
+  top: -18px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #cbd5e1;
+}
+
+.day-label {
+  font-size: 0.7rem;
+  color: #94a3b8;
+  margin-top: 0.4rem;
+  font-weight: 600;
+}
+
+.chart-legend {
+  display: flex;
+  gap: 1.5rem;
+  margin-top: 1rem;
+  justify-content: center;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: #cbd5e1;
+}
+
+.legend-box {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+}
+
+.legend-box.turn-a { background: #f59e0b; }
+.legend-box.turn-b { background: #8b5cf6; }
+
+/* Modal Edit */
 .modal-backdrop {
   position: fixed;
-  inset: 0;
-  background: rgba(15, 23, 42, 0.6);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 2100;
-  backdrop-filter: blur(4px);
+  top: 0; left: 0; width: 100vw; height: 100vh;
+  background: rgba(11, 17, 32, 0.8);
+  backdrop-filter: blur(6px);
+  z-index: 1000;
+  display: flex; align-items: center; justify-content: center;
+  padding: 1rem;
 }
-.modal-dialog {
-  background: white;
+
+.modal-card {
+  background: #1e293b;
+  border: 1px solid #334155;
   border-radius: 20px;
-  width: 90%;
+  width: 100%;
   max-width: 520px;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
   overflow: hidden;
-  animation: modalIn 0.2s ease-out;
 }
-@keyframes modalIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
 
 .modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  display: flex; justify-content: space-between; align-items: center;
   padding: 1.25rem 1.5rem;
-  background: #f8fafc;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid #334155;
 }
-.modal-header h3 { margin: 0; font-size: 1.05rem; color: #0f172a; font-weight: 800; }
-.btn-close { background: none; border: none; font-size: 1.2rem; color: #64748b; cursor: pointer; }
 
-.modal-body { padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; }
-.modal-sub-desc { font-size: 0.82rem; color: #64748b; margin: 0 0 0.5rem 0; }
+.modal-header h3 { margin: 0; font-size: 1.1rem; color: #ffffff; }
+.btn-close-modal { background: none; border: none; color: #94a3b8; font-size: 1.2rem; cursor: pointer; }
+
+.modal-body { padding: 1.5rem; }
+.modal-desc { font-size: 0.85rem; color: #94a3b8; margin: 0 0 1.25rem 0; }
 
 .edit-section-box {
-  padding: 1rem;
   border-radius: 12px;
-  border: 1px solid #cbd5e1;
+  padding: 1rem;
+  margin-bottom: 1rem;
 }
-.edit-section-box.blue { background: #eff6ff; border-color: #bfdbfe; }
-.edit-section-box.green { background: #f0fdf4; border-color: #bbf7d0; }
 
-.edit-section-box h4 { margin: 0 0 0.75rem 0; font-size: 0.9rem; color: #1e293b; }
+.edit-section-box.blue { background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.2); }
+.edit-section-box.green { background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2); }
 
-.form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
-.form-group { display: flex; flex-direction: column; gap: 0.25rem; }
-.form-label { font-size: 0.78rem; font-weight: 700; color: #475569; }
+.edit-section-box h4 { margin: 0 0 0.75rem 0; font-size: 0.95rem; color: #ffffff; }
+.form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.form-group { display: flex; flex-direction: column; gap: 0.3rem; }
+.form-label { font-size: 0.78rem; color: #cbd5e1; font-weight: 600; }
 .form-input {
-  padding: 0.5rem 0.75rem;
-  border: 1px solid #cbd5e1;
+  background: #0f172a;
+  border: 1px solid #334155;
   border-radius: 8px;
-  font-size: 0.9rem;
-  font-weight: 700;
-  color: #0f172a;
+  color: #38bdf8;
+  padding: 0.5rem 0.75rem;
+  font-weight: 600;
   outline: none;
 }
-.form-input:focus { border-color: #4f46e5; box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15); }
+.form-input:focus { border-color: #38bdf8; }
 
 .sub-total-row {
   margin-top: 0.6rem;
   text-align: right;
-  font-size: 0.82rem;
-  color: #334155;
+  font-size: 0.8rem;
+  color: #94a3b8;
 }
 
 .grand-total-summary-card {
-  background: #faf5ff;
-  border: 1px dashed #c084fc;
-  padding: 1rem;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(30, 41, 59, 0.9));
+  border: 1px solid rgba(245, 158, 11, 0.3);
   border-radius: 12px;
+  padding: 1rem;
   text-align: center;
 }
-.gt-title { font-size: 0.8rem; font-weight: 800; color: #6b21a8; text-transform: uppercase; }
-.gt-value { font-size: 1.4rem; font-weight: 800; color: #581c87; margin-top: 0.2rem; }
-.gt-value small { font-size: 0.8rem; color: #7e22ce; }
+
+.gt-title { font-size: 0.8rem; color: #fbbf24; font-weight: 700; text-transform: uppercase; }
+.gt-value { font-size: 1.4rem; font-weight: 800; color: #ffffff; }
+.gt-value small { font-size: 0.8rem; color: #cbd5e1; }
 
 .modal-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.75rem;
+  display: flex; justify-content: flex-end; gap: 0.75rem;
   padding: 1rem 1.5rem;
-  background: #f8fafc;
-  border-top: 1px solid #e2e8f0;
+  border-top: 1px solid #334155;
+  background: #0f172a;
 }
-.btn-cancel { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; padding: 0.55rem 1rem; border-radius: 8px; font-weight: 700; cursor: pointer; }
-.btn-save-edit { background: #10b981; color: white; border: none; padding: 0.55rem 1.25rem; border-radius: 8px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25); }
-.btn-save-edit:hover { background: #059669; }
 
-.empty-state-card { text-align: center; padding: 4rem 2rem; color: #64748b; }
-.empty-icon { font-size: 3.5rem; margin-bottom: 1rem; }
-.margin-top { margin-top: 1rem; }
+.btn-cancel { background: transparent; border: 1px solid #334155; color: #94a3b8; padding: 0.6rem 1.25rem; border-radius: 8px; cursor: pointer; }
+.btn-save-edit { background: #3b82f6; border: none; color: #ffffff; font-weight: 600; padding: 0.6rem 1.25rem; border-radius: 8px; cursor: pointer; }
+.btn-save-edit:hover { background: #2563eb; }
 </style>
