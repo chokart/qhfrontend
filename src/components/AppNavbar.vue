@@ -45,7 +45,7 @@
 
       <router-link to="/reporte" class="nav-item" active-class="active">
         <span class="nav-icon">📈</span>
-        <span class="nav-label">Reportes</span>
+        <span class="nav-label">Producción</span>
       </router-link>
 
       <router-link v-if="authStore.isAdmin" to="/usuarios" class="nav-item" active-class="active">

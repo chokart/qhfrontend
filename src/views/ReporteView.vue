@@ -6,9 +6,9 @@
       <!-- Encabezado de la página -->
       <div class="page-header">
         <div class="header-left">
-          <div class="header-icon-wrap">📊</div>
+          <div class="header-icon-wrap">⚙️</div>
           <div>
-            <h1>Reporte de Producción de Arenas</h1>
+            <h1>Módulo de Producción de Arenas</h1>
             <p class="subtitle">Programado por Guardia: <b>DP: 17,579 TM</b> (35,158 TM/día) | <b>DL: 4,548 TM</b> (9,096 TM/día) | <b>Total: 44,254 TM/día</b></p>
           </div>
         </div>
@@ -54,6 +54,79 @@
 
       <!-- Dashboard de Producción -->
       <div class="dashboard-content">
+
+        <!-- RESUMEN DE BALANCE MENSUAL A LA FECHA (HASTA HOY) -->
+        <div v-if="dashboardData" class="month-balance-card card">
+          <div class="card-header-inner border-bottom-subtle">
+            <div>
+              <h3>⚖️ Balance del Mes a la Fecha ({{ currentMonthLabel }})</h3>
+              <p class="table-sub-desc">Estado acumulado real vs programado con toneladas de más o menos según {{ monthDaysRecorded }} días operativos</p>
+            </div>
+            <span class="badge-balance-days">📅 {{ monthDaysRecorded }} de {{ totalDaysInMonth }} Días Registrados</span>
+          </div>
+
+          <div class="month-balance-grid">
+            <!-- 1. DP Mes -->
+            <div class="balance-mini-box dp-mini">
+              <div class="b-mini-top">
+                <span class="b-mini-title">🏗️ Dique Principal (DP)</span>
+                <span :class="['b-status-pill', monthDpDiffToDate >= 0 ? 'pill-surplus' : 'pill-deficit']">
+                  {{ monthDpDiffToDate >= 0 ? '🟢 SUPERÁVIT' : '🔴 DÉFICIT' }}
+                </span>
+              </div>
+              <div class="b-mini-vals">
+                <div><small>Real:</small> <b>{{ formatNumber(dashboardData.totalDpArenas) }} TM</b></div>
+                <div><small>Prog Target:</small> <b>{{ formatNumber(monthProgDpToDate) }} TM</b></div>
+              </div>
+              <div class="b-mini-diff">
+                <span>Variación:</span>
+                <b :class="monthDpDiffToDate >= 0 ? 'text-green' : 'text-red'">
+                  {{ monthDpDiffToDate >= 0 ? '+' : '' }}{{ formatNumber(monthDpDiffToDate) }} TM
+                </b>
+              </div>
+            </div>
+
+            <!-- 2. DL Mes -->
+            <div class="balance-mini-box dl-mini">
+              <div class="b-mini-top">
+                <span class="b-mini-title">📐 Dique Lateral (DL)</span>
+                <span :class="['b-status-pill', monthDlDiffToDate >= 0 ? 'pill-surplus' : 'pill-deficit']">
+                  {{ monthDlDiffToDate >= 0 ? '🟢 SUPERÁVIT' : '🔴 DÉFICIT' }}
+                </span>
+              </div>
+              <div class="b-mini-vals">
+                <div><small>Real:</small> <b>{{ formatNumber(dashboardData.totalDlArenas) }} TM</b></div>
+                <div><small>Prog Target:</small> <b>{{ formatNumber(monthProgDlToDate) }} TM</b></div>
+              </div>
+              <div class="b-mini-diff">
+                <span>Variación:</span>
+                <b :class="monthDlDiffToDate >= 0 ? 'text-green' : 'text-red'">
+                  {{ monthDlDiffToDate >= 0 ? '+' : '' }}{{ formatNumber(monthDlDiffToDate) }} TM
+                </b>
+              </div>
+            </div>
+
+            <!-- 3. Global Mes -->
+            <div class="balance-mini-box global-mini">
+              <div class="b-mini-top">
+                <span class="b-mini-title">📦 BALANCE GLOBAL MES</span>
+                <span :class="['b-status-pill', monthGlobalDiffToDate >= 0 ? 'pill-surplus' : 'pill-deficit']">
+                  {{ monthGlobalDiffToDate >= 0 ? '🟢 SUPERÁVIT' : '🔴 DÉFICIT' }}
+                </span>
+              </div>
+              <div class="b-mini-vals">
+                <div><small>Real Total:</small> <b>{{ formatNumber(dashboardData.totalArenasMes) }} TM</b></div>
+                <div><small>Prog Target:</small> <b>{{ formatNumber(monthProgGlobalToDate) }} TM</b></div>
+              </div>
+              <div class="b-mini-diff big">
+                <span>VARIACIÓN TOTAL MES:</span>
+                <b :class="[monthGlobalDiffToDate >= 0 ? 'text-green' : 'text-red', 'diff-bold']">
+                  {{ monthGlobalDiffToDate >= 0 ? '+' : '' }}{{ formatNumber(monthGlobalDiffToDate) }} TM
+                </b>
+              </div>
+            </div>
+          </div>
+        </div>
 
         <!-- TARJETAS DE KPIS CON PROGRAMADO Y % CUMPLIMIENTO -->
         <div v-if="dashboardData" class="kpi-grid">
@@ -442,7 +515,7 @@
           </div>
         </div>
 
-        <!-- TAB 3: RESUMEN ANUAL CON CUADRO AL COSTADO DE VARIACIÓN (TONELADAS DE MÁS O MENOS) -->
+        <!-- TAB 3: RESUMEN ANUAL CON CUADRO AL COSTADO DE VARIACIÓN (TONELADAS DE MÁS O MENOS HASTA HOY) -->
         <div v-if="activeTab === 'annual'" class="tab-pane">
           <div class="annual-layout-grid">
             
@@ -767,12 +840,36 @@ const uploadStatus = reactive({
   isSuccess: false
 });
 
-// --- COMPUTADOS PARA PROGRAMADO Y % CUMPLIMIENTO ---
+// --- COMPUTADOS PARA BALANCE DEL MES A LA FECHA ---
+const currentMonthLabel = computed(() => {
+  if (!selectedMonthKey.value) return '';
+  const [y, m] = selectedMonthKey.value.split('-').map(Number);
+  return `${getMonthName(m)} ${y}`;
+});
+
 const totalDaysInMonth = computed(() => {
   if (!dashboardData.value || !dashboardData.value.dailyReports) return 31;
   return dashboardData.value.dailyReports.length;
 });
 
+const monthDaysRecorded = computed(() => {
+  if (!dashboardData.value || !dashboardData.value.dailyReports) return 0;
+  // Contar días registrados con producción > 0
+  const recorded = dashboardData.value.dailyReports.filter(d => 
+    (d.dpArenasGuardiaA || 0) + (d.dpArenasGuardiaB || 0) + (d.dlArenasGuardiaA || 0) + (d.dlArenasGuardiaB || 0) > 0
+  );
+  return recorded.length > 0 ? recorded.length : dashboardData.value.dailyReports.length;
+});
+
+const monthProgDpToDate = computed(() => monthDaysRecorded.value * PROGRAMMED_DP_DAILY);
+const monthProgDlToDate = computed(() => monthDaysRecorded.value * PROGRAMMED_DL_DAILY);
+const monthProgGlobalToDate = computed(() => monthDaysRecorded.value * PROGRAMMED_TOTAL_DAILY);
+
+const monthDpDiffToDate = computed(() => (dashboardData.value?.totalDpArenas || 0) - monthProgDpToDate.value);
+const monthDlDiffToDate = computed(() => (dashboardData.value?.totalDlArenas || 0) - monthProgDlToDate.value);
+const monthGlobalDiffToDate = computed(() => (dashboardData.value?.totalArenasMes || 0) - monthProgGlobalToDate.value);
+
+// --- COMPUTADOS PARA PROGRAMADO MENSUAL COMPLETO Y % CUMPLIMIENTO ---
 const programmedDpMonth = computed(() => totalDaysInMonth.value * PROGRAMMED_DP_DAILY);
 const programmedDlMonth = computed(() => totalDaysInMonth.value * PROGRAMMED_DL_DAILY);
 const programmedTotalMonth = computed(() => totalDaysInMonth.value * PROGRAMMED_TOTAL_DAILY);
@@ -835,7 +932,7 @@ const annualProgrammedTotalYear = computed(() => {
   return days * PROGRAMMED_TOTAL_DAILY;
 });
 
-// --- COMPUTADOS PARA CUADRO RESUMEN BALANCE (TONELADAS DE MÁS O MENOS HASTA HOY) ---
+// --- COMPUTADOS PARA CUADRO RESUMEN BALANCE ANUAL (TONELADAS DE MÁS O MENOS HASTA HOY) ---
 const annualDaysProcessed = computed(() => {
   if (!annualData.value || !annualData.value.months) return 0;
   let days = 0;
@@ -1232,6 +1329,73 @@ onMounted(() => {
 
 .btn-delete-month:hover {
   background: #fee2e2;
+}
+
+/* ESTILOS RESUMEN BALANCE MENSUAL A LA FECHA */
+.month-balance-card {
+  margin-bottom: 2rem;
+  background: linear-gradient(180deg, #ffffff, #f8fafc);
+  border: 1px solid #cbd5e1;
+}
+
+.month-balance-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.25rem;
+}
+
+.balance-mini-box {
+  border-radius: 14px;
+  padding: 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.dp-mini { background: #eff6ff; border: 1px solid #bfdbfe; }
+.dl-mini { background: #ecfdf5; border: 1px solid #a7f3d0; }
+.global-mini { background: #fffbeb; border: 2px solid #fde68a; }
+
+.b-mini-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.b-mini-title {
+  font-weight: 800;
+  font-size: 0.9rem;
+  color: #0f172a;
+}
+
+.b-mini-vals {
+  display: flex;
+  justify-content: space-between;
+  background: #ffffff;
+  padding: 0.6rem 0.85rem;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  border: 1px solid rgba(0,0,0,0.05);
+}
+
+.b-mini-diff {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #334155;
+  padding-top: 0.2rem;
+}
+
+.b-mini-diff.big {
+  border-top: 1px dashed #fcd34d;
+  padding-top: 0.4rem;
+}
+
+.diff-bold {
+  font-size: 1.15rem;
+  font-weight: 900;
 }
 
 /* Status Banner */
