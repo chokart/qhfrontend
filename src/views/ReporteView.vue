@@ -9,7 +9,7 @@
           <div class="header-icon-wrap">📊</div>
           <div>
             <h1>Reporte de Producción de Arenas</h1>
-            <p class="subtitle">Producción en Dique Principal (DP) y Dique Lateral (DL) por Turno A (Día) y Turno B (Noche)</p>
+            <p class="subtitle">Programado por Guardia: <b>DP: 17,579 TM</b> (35,158 TM/día) | <b>DL: 4,548 TM</b> (9,096 TM/día) | <b>Total: 44,254 TM/día</b></p>
           </div>
         </div>
 
@@ -55,59 +55,95 @@
       <!-- Dashboard de Producción -->
       <div class="dashboard-content">
 
-        <!-- TARJETAS DE KPIS PRINCIPALES DE PRODUCCIÓN (si existen datos) -->
+        <!-- TARJETAS DE KPIS CON PROGRAMADO Y % CUMPLIMIENTO -->
         <div v-if="dashboardData" class="kpi-grid">
-          <!-- 1. Dique Principal -->
+          <!-- 1. Dique Principal (DP) -->
           <div class="kpi-card primary">
             <div class="kpi-icon">🏗️</div>
             <div class="kpi-info">
-              <span class="kpi-label">Dique Principal (DP)</span>
-              <span class="kpi-value">{{ formatNumber(dashboardData.totalDpArenas) }} <small>TM</small></span>
+              <div class="kpi-top">
+                <span class="kpi-label">Dique Principal (DP)</span>
+                <span :class="['badge-pct', getPctClass(percentDpMonth)]">{{ percentDpMonth }}% Cumplido</span>
+              </div>
+              <span class="kpi-value">{{ formatNumber(dashboardData.totalDpArenas) }} <small>TM Real</small></span>
               <span class="kpi-sub">
-                ☀️ <b>A:</b> {{ formatNumber(dashboardData.totalDpArenasA) }} | 🌙 <b>B:</b> {{ formatNumber(dashboardData.totalDpArenasB) }} TM
+                Prog: <b>{{ formatNumber(programmedDpMonth) }}</b> TM | ☀️ A: {{ formatNumber(dashboardData.totalDpArenasA) }} | 🌙 B: {{ formatNumber(dashboardData.totalDpArenasB) }}
               </span>
+              <div class="progress-track">
+                <div class="progress-fill dp-fill" :style="{ width: Math.min(percentDpMonth, 100) + '%' }"></div>
+              </div>
             </div>
           </div>
 
-          <!-- 2. Dique Lateral -->
+          <!-- 2. Dique Lateral (DL) -->
           <div class="kpi-card info">
             <div class="kpi-icon">📐</div>
             <div class="kpi-info">
-              <span class="kpi-label">Dique Lateral (DL)</span>
-              <span class="kpi-value">{{ formatNumber(dashboardData.totalDlArenas) }} <small>TM</small></span>
+              <div class="kpi-top">
+                <span class="kpi-label">Dique Lateral (DL)</span>
+                <span :class="['badge-pct', getPctClass(percentDlMonth)]">{{ percentDlMonth }}% Cumplido</span>
+              </div>
+              <span class="kpi-value">{{ formatNumber(dashboardData.totalDlArenas) }} <small>TM Real</small></span>
               <span class="kpi-sub">
-                ☀️ <b>A:</b> {{ formatNumber(dashboardData.totalDlArenasA) }} | 🌙 <b>B:</b> {{ formatNumber(dashboardData.totalDlArenasB) }} TM
+                Prog: <b>{{ formatNumber(programmedDlMonth) }}</b> TM | ☀️ A: {{ formatNumber(dashboardData.totalDlArenasA) }} | 🌙 B: {{ formatNumber(dashboardData.totalDlArenasB) }}
               </span>
+              <div class="progress-track">
+                <div class="progress-fill dl-fill" :style="{ width: Math.min(percentDlMonth, 100) + '%' }"></div>
+              </div>
             </div>
           </div>
 
-          <!-- 3. Total Turno A -->
+          <!-- 3. Total Turno A (Día) -->
           <div class="kpi-card warning">
             <div class="kpi-icon">☀️</div>
             <div class="kpi-info">
-              <span class="kpi-label">Total Turno A (Día)</span>
-              <span class="kpi-value">{{ formatNumber(dashboardData.totalArenasA) }} <small>TM</small></span>
-              <span class="kpi-sub">DP: {{ formatNumber(dashboardData.totalDpArenasA) }} | DL: {{ formatNumber(dashboardData.totalDlArenasA) }}</span>
+              <div class="kpi-top">
+                <span class="kpi-label">Turno A (Guardia Día)</span>
+                <span :class="['badge-pct', getPctClass(percentShiftAMonth)]">{{ percentShiftAMonth }}% Cumplido</span>
+              </div>
+              <span class="kpi-value">{{ formatNumber(dashboardData.totalArenasA) }} <small>TM Real</small></span>
+              <span class="kpi-sub">
+                Prog: <b>{{ formatNumber(programmedShiftAMonth) }}</b> TM (DP: 17,579 + DL: 4,548)
+              </span>
+              <div class="progress-track">
+                <div class="progress-fill shift-a-fill" :style="{ width: Math.min(percentShiftAMonth, 100) + '%' }"></div>
+              </div>
             </div>
           </div>
 
-          <!-- 4. Total Turno B -->
+          <!-- 4. Total Turno B (Noche) -->
           <div class="kpi-card night">
             <div class="kpi-icon">🌙</div>
             <div class="kpi-info">
-              <span class="kpi-label">Total Turno B (Noche)</span>
-              <span class="kpi-value">{{ formatNumber(dashboardData.totalArenasB) }} <small>TM</small></span>
-              <span class="kpi-sub">DP: {{ formatNumber(dashboardData.totalDpArenasB) }} | DL: {{ formatNumber(dashboardData.totalDlArenasB) }}</span>
+              <div class="kpi-top">
+                <span class="kpi-label">Turno B (Guardia Noche)</span>
+                <span :class="['badge-pct', getPctClass(percentShiftBMonth)]">{{ percentShiftBMonth }}% Cumplido</span>
+              </div>
+              <span class="kpi-value">{{ formatNumber(dashboardData.totalArenasB) }} <small>TM Real</small></span>
+              <span class="kpi-sub">
+                Prog: <b>{{ formatNumber(programmedShiftBMonth) }}</b> TM (DP: 17,579 + DL: 4,548)
+              </span>
+              <div class="progress-track">
+                <div class="progress-fill shift-b-fill" :style="{ width: Math.min(percentShiftBMonth, 100) + '%' }"></div>
+              </div>
             </div>
           </div>
 
-          <!-- 5. Producción Total Mes -->
+          <!-- 5. Producción Total Mes (DP + DL) -->
           <div class="kpi-card success-card">
             <div class="kpi-icon">📦</div>
             <div class="kpi-info">
-              <span class="kpi-label">Producción Total Mes</span>
+              <div class="kpi-top">
+                <span class="kpi-label">Producción Total Mes</span>
+                <span :class="['badge-pct', getPctClass(percentTotalMonth)]">{{ percentTotalMonth }}% Cumplido</span>
+              </div>
               <span class="kpi-value">{{ formatNumber(dashboardData.totalArenasMes) }} <small>TM Secas</small></span>
-              <span class="kpi-sub">Acumulado combinado DP + DL</span>
+              <span class="kpi-sub">
+                Programado Mes: <b>{{ formatNumber(programmedTotalMonth) }}</b> TM
+              </span>
+              <div class="progress-track">
+                <div class="progress-fill tot-fill" :style="{ width: Math.min(percentTotalMonth, 100) + '%' }"></div>
+              </div>
             </div>
           </div>
         </div>
@@ -193,6 +229,7 @@
                         <th>DIQUE PRINCIPAL (DP)</th>
                         <th>DIQUE LATERAL (DL)</th>
                         <th>TOTAL DÍA (TM)</th>
+                        <th>% CUMP. TARGET DÍA</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -206,6 +243,11 @@
                         <td class="cell-dp">{{ formatNumber(r.dp) }} TM</td>
                         <td class="cell-dl">{{ formatNumber(r.dl) }} TM</td>
                         <td class="cell-tot"><b>{{ formatNumber(r.dp + r.dl) }} TM</b></td>
+                        <td>
+                          <span :class="['badge-pct', getPctClass(getDailyShiftPct(r.dp + r.dl))]">
+                            {{ getDailyShiftPct(r.dp + r.dl) }}% (Prog: 22,127 TM)
+                          </span>
+                        </td>
                       </tr>
                     </tbody>
                   </table>
@@ -220,8 +262,8 @@
           <div class="card table-card">
             <div class="card-header-inner">
               <div>
-                <h3>📋 Tabla Mensual de Producción de Arenas</h3>
-                <p class="table-sub-desc">Desglose en TM Secas para Dique Principal (DP) y Dique Lateral (DL) en Turnos A (Día) y B (Noche)</p>
+                <h3>📋 Tabla Mensual de Producción vs Programado</h3>
+                <p class="table-sub-desc">Metas por Guardia: DP (17,579 TM) | DL (4,548 TM) | Total Día Programado (44,254 TM)</p>
               </div>
               <span class="badge-days-count">{{ dashboardData.dailyReports ? dashboardData.dailyReports.length : 0 }} Días del Mes Registrados</span>
             </div>
@@ -233,7 +275,7 @@
                     <th colspan="2" class="hdr-group date-hdr">FECHA DE OPERACIÓN</th>
                     <th colspan="3" class="hdr-group dp-hdr">DIQUE PRINCIPAL (DP)</th>
                     <th colspan="3" class="hdr-group dl-hdr">DIQUE LATERAL (DL)</th>
-                    <th colspan="3" class="hdr-group tot-hdr">TOTAL PRODUCCIÓN ARENAS</th>
+                    <th colspan="4" class="hdr-group tot-hdr">TOTAL PRODUCCIÓN ARENAS Y % CUMPLIMIENTO</th>
                     <th class="hdr-group act-hdr">ACCIÓN</th>
                   </tr>
                   <tr class="header-sub-row">
@@ -248,6 +290,7 @@
                     <th class="col-val tot-a-col">TOTAL TURNO A</th>
                     <th class="col-val tot-b-col">TOTAL TURNO B</th>
                     <th class="col-val grand-tot-col">TOTAL DÍA (TM)</th>
+                    <th class="col-val pct-col">% CUMP. DÍA</th>
                     <th class="col-act">EDITAR</th>
                   </tr>
                 </thead>
@@ -274,6 +317,13 @@
                     <td class="cell-val tot-b"><b>{{ formatNumber((d.dpArenasGuardiaB || 0) + (d.dlArenasGuardiaB || 0)) }}</b></td>
                     <td class="cell-val grand-tot"><b>{{ formatNumber(d.totalArenasDia) }}</b></td>
                     
+                    <!-- % Cumplimiento del Día vs 44,254 TM -->
+                    <td class="cell-val cell-pct">
+                      <span :class="['badge-pct', getPctClass(getDailyPct(d.totalArenasDia, PROGRAMMED_TOTAL_DAILY))]">
+                        {{ getDailyPct(d.totalArenasDia, PROGRAMMED_TOTAL_DAILY) }}%
+                      </span>
+                    </td>
+
                     <!-- Botón Editar -->
                     <td class="cell-act">
                       <button class="btn-edit-row" @click="openEditModal(d)" title="Modificar manualmente valores del día">
@@ -283,8 +333,9 @@
                   </tr>
                 </tbody>
                 <tfoot>
+                  <!-- 1. Real Acumulado -->
                   <tr class="summary-foot-row total-row">
-                    <td colspan="2" class="foot-label"><b>TOTAL ACUMULADO MES</b></td>
+                    <td colspan="2" class="foot-label"><b>TOTAL REAL ACUMULADO MES</b></td>
                     <td class="cell-val dp-a"><b>{{ formatNumber(dashboardData.totalDpArenasA) }}</b></td>
                     <td class="cell-val dp-b"><b>{{ formatNumber(dashboardData.totalDpArenasB) }}</b></td>
                     <td class="cell-val dp-tot"><b>{{ formatNumber(dashboardData.totalDpArenas) }}</b></td>
@@ -294,10 +345,85 @@
                     <td class="cell-val tot-a"><b>{{ formatNumber(dashboardData.totalArenasA) }}</b></td>
                     <td class="cell-val tot-b"><b>{{ formatNumber(dashboardData.totalArenasB) }}</b></td>
                     <td class="cell-val grand-tot"><b>{{ formatNumber(dashboardData.totalArenasMes) }}</b></td>
+                    <td class="cell-val cell-pct">
+                      <span :class="['badge-pct', getPctClass(percentTotalMonth)]">
+                        <b>{{ percentTotalMonth }}%</b>
+                      </span>
+                    </td>
                     <td></td>
                   </tr>
+
+                  <!-- 2. Programado Mes -->
+                  <tr class="summary-foot-row prog-row">
+                    <td colspan="2" class="foot-label"><b>TOTAL PROGRAMADO MES (META)</b></td>
+                    <td class="cell-val dp-a">{{ formatNumber(programmedShiftAMonthDp) }}</td>
+                    <td class="cell-val dp-b">{{ formatNumber(programmedShiftBMonthDp) }}</td>
+                    <td class="cell-val dp-tot"><b>{{ formatNumber(programmedDpMonth) }}</b></td>
+                    <td class="cell-val dl-a">{{ formatNumber(programmedShiftAMonthDl) }}</td>
+                    <td class="cell-val dl-b">{{ formatNumber(programmedShiftBMonthDl) }}</td>
+                    <td class="cell-val dl-tot"><b>{{ formatNumber(programmedDlMonth) }}</b></td>
+                    <td class="cell-val tot-a"><b>{{ formatNumber(programmedShiftAMonth) }}</b></td>
+                    <td class="cell-val tot-b"><b>{{ formatNumber(programmedShiftBMonth) }}</b></td>
+                    <td class="cell-val grand-tot"><b>{{ formatNumber(programmedTotalMonth) }}</b></td>
+                    <td class="cell-val cell-pct">100%</td>
+                    <td></td>
+                  </tr>
+
+                  <!-- 3. % Cumplimiento Mes -->
+                  <tr class="summary-foot-row pct-summary-row">
+                    <td colspan="2" class="foot-label"><b>% CUMPLIMIENTO METAS MES</b></td>
+                    <td class="cell-val dp-a">
+                      <span :class="['badge-pct', getPctClass(getDailyPct(dashboardData.totalDpArenasA, programmedShiftAMonthDp))]">
+                        {{ getDailyPct(dashboardData.totalDpArenasA, programmedShiftAMonthDp) }}%
+                      </span>
+                    </td>
+                    <td class="cell-val dp-b">
+                      <span :class="['badge-pct', getPctClass(getDailyPct(dashboardData.totalDpArenasB, programmedShiftBMonthDp))]">
+                        {{ getDailyPct(dashboardData.totalDpArenasB, programmedShiftBMonthDp) }}%
+                      </span>
+                    </td>
+                    <td class="cell-val dp-tot">
+                      <span :class="['badge-pct', getPctClass(percentDpMonth)]">
+                        <b>{{ percentDpMonth }}%</b>
+                      </span>
+                    </td>
+                    <td class="cell-val dl-a">
+                      <span :class="['badge-pct', getPctClass(getDailyPct(dashboardData.totalDlArenasA, programmedShiftAMonthDl))]">
+                        {{ getDailyPct(dashboardData.totalDlArenasA, programmedShiftAMonthDl) }}%
+                      </span>
+                    </td>
+                    <td class="cell-val dl-b">
+                      <span :class="['badge-pct', getPctClass(getDailyPct(dashboardData.totalDlArenasB, programmedShiftBMonthDl))]">
+                        {{ getDailyPct(dashboardData.totalDlArenasB, programmedShiftBMonthDl) }}%
+                      </span>
+                    </td>
+                    <td class="cell-val dl-tot">
+                      <span :class="['badge-pct', getPctClass(percentDlMonth)]">
+                        <b>{{ percentDlMonth }}%</b>
+                      </span>
+                    </td>
+                    <td class="cell-val tot-a">
+                      <span :class="['badge-pct', getPctClass(percentShiftAMonth)]">
+                        <b>{{ percentShiftAMonth }}%</b>
+                      </span>
+                    </td>
+                    <td class="cell-val tot-b">
+                      <span :class="['badge-pct', getPctClass(percentShiftBMonth)]">
+                        <b>{{ percentShiftBMonth }}%</b>
+                      </span>
+                    </td>
+                    <td class="cell-val grand-tot">
+                      <span :class="['badge-pct', getPctClass(percentTotalMonth)]">
+                        <b>{{ percentTotalMonth }}%</b>
+                      </span>
+                    </td>
+                    <td></td>
+                    <td></td>
+                  </tr>
+
+                  <!-- 4. Promedio Diario -->
                   <tr class="summary-foot-row avg-row">
-                    <td colspan="2" class="foot-label"><b>PROMEDIO DIARIO</b></td>
+                    <td colspan="2" class="foot-label"><b>PROMEDIO DIARIO REAL</b></td>
                     <td class="cell-val dp-a">{{ formatAvg(dashboardData.totalDpArenasA) }}</td>
                     <td class="cell-val dp-b">{{ formatAvg(dashboardData.totalDpArenasB) }}</td>
                     <td class="cell-val dp-tot">{{ formatAvg(dashboardData.totalDpArenas) }}</td>
@@ -308,6 +434,7 @@
                     <td class="cell-val tot-b">{{ formatAvg(dashboardData.totalArenasB) }}</td>
                     <td class="cell-val grand-tot">{{ formatAvg(dashboardData.totalArenasMes) }}</td>
                     <td></td>
+                    <td></td>
                   </tr>
                 </tfoot>
               </table>
@@ -315,13 +442,13 @@
           </div>
         </div>
 
-        <!-- TAB 3: RESUMEN ANUAL (MES POR MES) -->
+        <!-- TAB 3: RESUMEN ANUAL (MES POR MES) CON PROGRAMADO Y % -->
         <div v-if="activeTab === 'annual'" class="tab-pane">
           <div class="card table-card">
             <div class="card-header-inner">
               <div>
-                <h3>📅 Resumen Anual de Producción (Mes por Mes) - Año {{ selectedYear }}</h3>
-                <p class="table-sub-desc">Consolidado mensual de producción en TM Secas para Dique Principal (DP) y Dique Lateral (DL)</p>
+                <h3>📅 Resumen Anual de Producción (Mes por Mes) vs Meta - Año {{ selectedYear }}</h3>
+                <p class="table-sub-desc">Metas Anuales: DP (35,158 TM/día) | DL (9,096 TM/día) | Total Combinado (44,254 TM/día)</p>
               </div>
               <span v-if="loadingAnnual" class="badge-days-count">⏳ Cargando Resumen Anual...</span>
             </div>
@@ -333,20 +460,21 @@
                     <th colspan="2" class="hdr-group date-hdr">PERÍODO</th>
                     <th colspan="3" class="hdr-group dp-hdr">DIQUE PRINCIPAL (DP)</th>
                     <th colspan="3" class="hdr-group dl-hdr">DIQUE LATERAL (DL)</th>
-                    <th colspan="3" class="hdr-group tot-hdr">TOTAL PRODUCCIÓN ARENAS</th>
+                    <th colspan="4" class="hdr-group tot-hdr">TOTAL PRODUCCIÓN ARENAS Y % CUMPLIMIENTO</th>
                   </tr>
                   <tr class="header-sub-row">
                     <th class="col-num">Nº</th>
                     <th class="col-date">MES</th>
-                    <th class="col-val dp-col">TURNO A (TM)</th>
-                    <th class="col-val dp-col">TURNO B (TM)</th>
-                    <th class="col-val dp-tot-col">TOTAL DP (TM)</th>
-                    <th class="col-val dl-col">TURNO A (TM)</th>
-                    <th class="col-val dl-col">TURNO B (TM)</th>
-                    <th class="col-val dl-tot-col">TOTAL DL (TM)</th>
-                    <th class="col-val tot-a-col">TOTAL TURNO A</th>
-                    <th class="col-val tot-b-col">TOTAL TURNO B</th>
-                    <th class="col-val grand-tot-col">TOTAL MES (TM)</th>
+                    <th class="col-val dp-col">REAL (TM)</th>
+                    <th class="col-val dp-col">PROG (TM)</th>
+                    <th class="col-val dp-tot-col">% DP</th>
+                    <th class="col-val dl-col">REAL (TM)</th>
+                    <th class="col-val dl-col">PROG (TM)</th>
+                    <th class="col-val dl-tot-col">% DL</th>
+                    <th class="col-val tot-a-col">REAL TOTAL</th>
+                    <th class="col-val tot-b-col">PROG TOTAL</th>
+                    <th class="col-val grand-tot-col">DÍAS</th>
+                    <th class="col-val pct-col">% CUMP. MES</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -356,29 +484,67 @@
                       <b>{{ getMonthName(m.monthNumber) }}</b>
                       <span v-if="!m.hasData" class="empty-badge">Sin Datos</span>
                     </td>
-                    <td class="cell-val dp-a">{{ formatNumber(m.dpArenasA) }}</td>
-                    <td class="cell-val dp-b">{{ formatNumber(m.dpArenasB) }}</td>
+                    
+                    <!-- DP -->
                     <td class="cell-val dp-tot"><b>{{ formatNumber(m.dpArenasTotal) }}</b></td>
-                    <td class="cell-val dl-a">{{ formatNumber(m.dlArenasA) }}</td>
-                    <td class="cell-val dl-b">{{ formatNumber(m.dlArenasB) }}</td>
+                    <td class="cell-val">{{ formatNumber(getDaysInMonth(selectedYear, m.monthNumber) * PROGRAMMED_DP_DAILY) }}</td>
+                    <td class="cell-val cell-pct">
+                      <span :class="['badge-pct', getPctClass(getDailyPct(m.dpArenasTotal, getDaysInMonth(selectedYear, m.monthNumber) * PROGRAMMED_DP_DAILY))]">
+                        {{ getDailyPct(m.dpArenasTotal, getDaysInMonth(selectedYear, m.monthNumber) * PROGRAMMED_DP_DAILY) }}%
+                      </span>
+                    </td>
+
+                    <!-- DL -->
                     <td class="cell-val dl-tot"><b>{{ formatNumber(m.dlArenasTotal) }}</b></td>
-                    <td class="cell-val tot-a"><b>{{ formatNumber(m.totalArenasA) }}</b></td>
-                    <td class="cell-val tot-b"><b>{{ formatNumber(m.totalArenasB) }}</b></td>
+                    <td class="cell-val">{{ formatNumber(getDaysInMonth(selectedYear, m.monthNumber) * PROGRAMMED_DL_DAILY) }}</td>
+                    <td class="cell-val cell-pct">
+                      <span :class="['badge-pct', getPctClass(getDailyPct(m.dlArenasTotal, getDaysInMonth(selectedYear, m.monthNumber) * PROGRAMMED_DL_DAILY))]">
+                        {{ getDailyPct(m.dlArenasTotal, getDaysInMonth(selectedYear, m.monthNumber) * PROGRAMMED_DL_DAILY) }}%
+                      </span>
+                    </td>
+
+                    <!-- TOTALES COMBINADOS -->
                     <td class="cell-val grand-tot"><b>{{ formatNumber(m.totalArenasMes) }}</b></td>
+                    <td class="cell-val"><b>{{ formatNumber(getDaysInMonth(selectedYear, m.monthNumber) * PROGRAMMED_TOTAL_DAILY) }}</b></td>
+                    <td class="cell-num">{{ getDaysInMonth(selectedYear, m.monthNumber) }}</td>
+                    <td class="cell-val cell-pct">
+                      <span :class="['badge-pct', getPctClass(getDailyPct(m.totalArenasMes, getDaysInMonth(selectedYear, m.monthNumber) * PROGRAMMED_TOTAL_DAILY))]">
+                        <b>{{ getDailyPct(m.totalArenasMes, getDaysInMonth(selectedYear, m.monthNumber) * PROGRAMMED_TOTAL_DAILY) }}%</b>
+                      </span>
+                    </td>
                   </tr>
                 </tbody>
                 <tfoot>
                   <tr class="summary-foot-row total-row">
                     <td colspan="2" class="foot-label"><b>TOTAL ANUAL ACUMULADO</b></td>
-                    <td class="cell-val dp-a"><b>{{ formatNumber(annualData.grandDpA) }}</b></td>
-                    <td class="cell-val dp-b"><b>{{ formatNumber(annualData.grandDpB) }}</b></td>
+                    
+                    <!-- DP -->
                     <td class="cell-val dp-tot"><b>{{ formatNumber(annualData.grandDpTotal) }}</b></td>
-                    <td class="cell-val dl-a"><b>{{ formatNumber(annualData.grandDlA) }}</b></td>
-                    <td class="cell-val dl-b"><b>{{ formatNumber(annualData.grandDlB) }}</b></td>
+                    <td class="cell-val">{{ formatNumber(annualProgrammedDpYear) }}</td>
+                    <td class="cell-val cell-pct">
+                      <span :class="['badge-pct', getPctClass(getDailyPct(annualData.grandDpTotal, annualProgrammedDpYear))]">
+                        <b>{{ getDailyPct(annualData.grandDpTotal, annualProgrammedDpYear) }}%</b>
+                      </span>
+                    </td>
+
+                    <!-- DL -->
                     <td class="cell-val dl-tot"><b>{{ formatNumber(annualData.grandDlTotal) }}</b></td>
-                    <td class="cell-val tot-a"><b>{{ formatNumber(annualData.grandTotalA) }}</b></td>
-                    <td class="cell-val tot-b"><b>{{ formatNumber(annualData.grandTotalB) }}</b></td>
+                    <td class="cell-val">{{ formatNumber(annualProgrammedDlYear) }}</td>
+                    <td class="cell-val cell-pct">
+                      <span :class="['badge-pct', getPctClass(getDailyPct(annualData.grandDlTotal, annualProgrammedDlYear))]">
+                        <b>{{ getDailyPct(annualData.grandDlTotal, annualProgrammedDlYear) }}%</b>
+                      </span>
+                    </td>
+
+                    <!-- TOTAL ANUAL -->
                     <td class="cell-val grand-tot"><b>{{ formatNumber(annualData.grandTotalYear) }}</b></td>
+                    <td class="cell-val"><b>{{ formatNumber(annualProgrammedTotalYear) }}</b></td>
+                    <td class="cell-num">{{ isLeapYear(selectedYear) ? 366 : 365 }}</td>
+                    <td class="cell-val cell-pct">
+                      <span :class="['badge-pct', getPctClass(getDailyPct(annualData.grandTotalYear, annualProgrammedTotalYear))]">
+                        <b>{{ getDailyPct(annualData.grandTotalYear, annualProgrammedTotalYear) }}%</b>
+                      </span>
+                    </td>
                   </tr>
                 </tfoot>
               </table>
@@ -401,7 +567,7 @@
 
           <!-- Sección DP -->
           <div class="edit-section-box blue">
-            <h4>🏗️ Dique Principal (DP)</h4>
+            <h4>🏗️ Dique Principal (DP) - Target Guardia: 17,579 TM</h4>
             <div class="form-row-2">
               <div class="form-group">
                 <label class="form-label">☀️ Turno A (Día) - TM:</label>
@@ -413,13 +579,13 @@
               </div>
             </div>
             <div class="sub-total-row">
-              <span>Total DP Día: <b>{{ formatNumber((editForm.dpArenasGuardiaA || 0) + (editForm.dpArenasGuardiaB || 0)) }} TM</b></span>
+              <span>Total DP Día: <b>{{ formatNumber((editForm.dpArenasGuardiaA || 0) + (editForm.dpArenasGuardiaB || 0)) }} TM</b> (Prog: 35,158 TM)</span>
             </div>
           </div>
 
           <!-- Sección DL -->
           <div class="edit-section-box green">
-            <h4>📐 Dique Lateral (DL)</h4>
+            <h4>📐 Dique Lateral (DL) - Target Guardia: 4,548 TM</h4>
             <div class="form-row-2">
               <div class="form-group">
                 <label class="form-label">☀️ Turno A (Día) - TM:</label>
@@ -431,7 +597,7 @@
               </div>
             </div>
             <div class="sub-total-row">
-              <span>Total DL Día: <b>{{ formatNumber((editForm.dlArenasGuardiaA || 0) + (editForm.dlArenasGuardiaB || 0)) }} TM</b></span>
+              <span>Total DL Día: <b>{{ formatNumber((editForm.dlArenasGuardiaA || 0) + (editForm.dlArenasGuardiaB || 0)) }} TM</b> (Prog: 9,096 TM)</span>
             </div>
           </div>
 
@@ -439,6 +605,7 @@
           <div class="grand-total-summary-card">
             <div class="gt-title">📦 Gran Total Producción Día (DP + DL)</div>
             <div class="gt-value">{{ formatNumber((editForm.dpArenasGuardiaA || 0) + (editForm.dpArenasGuardiaB || 0) + (editForm.dlArenasGuardiaA || 0) + (editForm.dlArenasGuardiaB || 0)) }} <small>TM Secas</small></div>
+            <div class="gt-sub">% Cumplimiento Target Diario: <b>{{ getDailyPct((editForm.dpArenasGuardiaA || 0) + (editForm.dpArenasGuardiaB || 0) + (editForm.dlArenasGuardiaA || 0) + (editForm.dlArenasGuardiaB || 0), PROGRAMMED_TOTAL_DAILY) }}%</b> (Prog: 44,254 TM)</div>
           </div>
         </div>
         <div class="modal-footer">
@@ -457,6 +624,14 @@
 import { ref, reactive, computed, onMounted } from 'vue';
 import api from '../api';
 import AppNavbar from '../components/AppNavbar.vue';
+
+// --- METAS Y PROGRAMACIÓN POR GUARDIA (TM SECAS) ---
+const PROGRAMMED_DP_PER_SHIFT = 17579; // 17,579 TM / turno
+const PROGRAMMED_DL_PER_SHIFT = 4548;  // 4,548 TM / turno
+
+const PROGRAMMED_DP_DAILY = PROGRAMMED_DP_PER_SHIFT * 2; // 35,158 TM / día
+const PROGRAMMED_DL_DAILY = PROGRAMMED_DL_PER_SHIFT * 2; // 9,096 TM / día
+const PROGRAMMED_TOTAL_DAILY = PROGRAMMED_DP_DAILY + PROGRAMMED_DL_DAILY; // 44,254 TM / día
 
 const isUploading = ref(false);
 const availableMonths = ref([]);
@@ -495,6 +670,91 @@ const uploadStatus = reactive({
   message: '',
   isSuccess: false
 });
+
+// --- COMPUTADOS PARA PROGRAMADO Y % CUMPLIMIENTO ---
+const totalDaysInMonth = computed(() => {
+  if (!dashboardData.value || !dashboardData.value.dailyReports) return 31;
+  return dashboardData.value.dailyReports.length;
+});
+
+const programmedDpMonth = computed(() => totalDaysInMonth.value * PROGRAMMED_DP_DAILY);
+const programmedDlMonth = computed(() => totalDaysInMonth.value * PROGRAMMED_DL_DAILY);
+const programmedTotalMonth = computed(() => totalDaysInMonth.value * PROGRAMMED_TOTAL_DAILY);
+
+const programmedShiftAMonthDp = computed(() => totalDaysInMonth.value * PROGRAMMED_DP_PER_SHIFT);
+const programmedShiftBMonthDp = computed(() => totalDaysInMonth.value * PROGRAMMED_DP_PER_SHIFT);
+
+const programmedShiftAMonthDl = computed(() => totalDaysInMonth.value * PROGRAMMED_DL_PER_SHIFT);
+const programmedShiftBMonthDl = computed(() => totalDaysInMonth.value * PROGRAMMED_DL_PER_SHIFT);
+
+const programmedShiftAMonth = computed(() => totalDaysInMonth.value * (PROGRAMMED_DP_PER_SHIFT + PROGRAMMED_DL_PER_SHIFT));
+const programmedShiftBMonth = computed(() => totalDaysInMonth.value * (PROGRAMMED_DP_PER_SHIFT + PROGRAMMED_DL_PER_SHIFT));
+
+const percentDpMonth = computed(() => {
+  if (!dashboardData.value || !programmedDpMonth.value) return 0;
+  return Math.round((dashboardData.value.totalDpArenas / programmedDpMonth.value) * 100);
+});
+
+const percentDlMonth = computed(() => {
+  if (!dashboardData.value || !programmedDlMonth.value) return 0;
+  return Math.round((dashboardData.value.totalDlArenas / programmedDlMonth.value) * 100);
+});
+
+const percentShiftAMonth = computed(() => {
+  if (!dashboardData.value || !programmedShiftAMonth.value) return 0;
+  return Math.round((dashboardData.value.totalArenasA / programmedShiftAMonth.value) * 100);
+});
+
+const percentShiftBMonth = computed(() => {
+  if (!dashboardData.value || !programmedShiftBMonth.value) return 0;
+  return Math.round((dashboardData.value.totalArenasB / programmedShiftBMonth.value) * 100);
+});
+
+const percentTotalMonth = computed(() => {
+  if (!dashboardData.value || !programmedTotalMonth.value) return 0;
+  return Math.round((dashboardData.value.totalArenasMes / programmedTotalMonth.value) * 100);
+});
+
+// Computados Anuales
+const isLeapYear = (year) => {
+  return (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0);
+};
+
+const getDaysInMonth = (year, month) => {
+  return new Date(year, month, 0).getDate();
+};
+
+const annualProgrammedDpYear = computed(() => {
+  const days = isLeapYear(selectedYear.value) ? 366 : 365;
+  return days * PROGRAMMED_DP_DAILY;
+});
+
+const annualProgrammedDlYear = computed(() => {
+  const days = isLeapYear(selectedYear.value) ? 366 : 365;
+  return days * PROGRAMMED_DL_DAILY;
+});
+
+const annualProgrammedTotalYear = computed(() => {
+  const days = isLeapYear(selectedYear.value) ? 366 : 365;
+  return days * PROGRAMMED_TOTAL_DAILY;
+});
+
+// Helper de Porcentaje
+const getDailyPct = (realVal, programmedVal) => {
+  if (!programmedVal || programmedVal === 0) return 0;
+  return Math.round(((realVal || 0) / programmedVal) * 100);
+};
+
+const getDailyShiftPct = (realVal) => {
+  const progTarget = PROGRAMMED_DP_PER_SHIFT + PROGRAMMED_DL_PER_SHIFT; // 22,127 TM
+  return Math.round(((realVal || 0) / progTarget) * 100);
+};
+
+const getPctClass = (pct) => {
+  if (pct >= 90) return 'pct-success';
+  if (pct >= 75) return 'pct-warning';
+  return 'pct-danger';
+};
 
 const getMonthName = (m) => {
   const months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
@@ -730,29 +990,6 @@ const submitPastedReport = async () => {
   }
 };
 
-const maxDailyProd = computed(() => {
-  if (!dashboardData.value || !dashboardData.value.dailyReports) return 1;
-  let max = 0;
-  dashboardData.value.dailyReports.forEach(d => {
-    const totA = (d.dpArenasGuardiaA || 0) + (d.dlArenasGuardiaA || 0);
-    const totB = (d.dpArenasGuardiaB || 0) + (d.dlArenasGuardiaB || 0);
-    if (totA > max) max = totA;
-    if (totB > max) max = totB;
-  });
-  return max > 0 ? max : 1;
-});
-
-const getBarHeight = (val) => {
-  if (!val || val <= 0) return '0%';
-  const pct = Math.round((val / maxDailyProd.value) * 100);
-  return `${Math.max(pct, 6)}%`;
-};
-
-const formatK = (val) => {
-  if (!val || val <= 0) return '';
-  return Math.round(val / 1000) + 'k';
-};
-
 onMounted(() => {
   loadAvailableMonths();
 });
@@ -811,8 +1048,8 @@ onMounted(() => {
 }
 
 .subtitle {
-  color: #64748b;
-  font-size: 0.9rem;
+  color: #475569;
+  font-size: 0.88rem;
   margin: 0;
 }
 
@@ -954,7 +1191,7 @@ onMounted(() => {
   border-radius: 16px;
   padding: 1.25rem 1.5rem;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 1rem;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
 }
@@ -972,6 +1209,14 @@ onMounted(() => {
 .kpi-info {
   display: flex;
   flex-direction: column;
+  width: 100%;
+}
+
+.kpi-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .kpi-label {
@@ -986,6 +1231,7 @@ onMounted(() => {
   font-size: 1.5rem;
   font-weight: 800;
   color: #0f172a;
+  margin: 0.2rem 0;
 }
 
 .kpi-value small {
@@ -996,8 +1242,42 @@ onMounted(() => {
 .kpi-sub {
   font-size: 0.75rem;
   color: #64748b;
+  margin-bottom: 0.5rem;
+}
+
+/* Badges y Barras de Progreso */
+.badge-pct {
+  display: inline-block;
+  padding: 0.2rem 0.5rem;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.pct-success { background: #dcfce7; color: #15803d; border: 1px solid #86efac; }
+.pct-warning { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
+.pct-danger { background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; }
+
+.progress-track {
+  width: 100%;
+  height: 6px;
+  background: #e2e8f0;
+  border-radius: 4px;
+  overflow: hidden;
   margin-top: 0.2rem;
 }
+
+.progress-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.4s ease;
+}
+
+.dp-fill { background: #2563eb; }
+.dl-fill { background: #10b981; }
+.shift-a-fill { background: #f59e0b; }
+.shift-b-fill { background: #8b5cf6; }
+.tot-fill { background: #0284c7; }
 
 /* Tabs Navigation */
 .view-tabs {
@@ -1295,6 +1575,7 @@ onMounted(() => {
 }
 
 .cell-val { text-align: right; padding: 0.6rem 0.75rem; }
+.cell-pct { text-align: center; }
 .dp-a, .dp-b { color: #1e40af; }
 .dp-tot { color: #1d4ed8; background: #eff6ff; }
 .dl-a, .dl-b { color: #065f46; }
@@ -1324,87 +1605,10 @@ onMounted(() => {
   border-top: 2px solid #cbd5e1;
 }
 
+.prog-row { background: #f8fafc; }
+.pct-summary-row { background: #ffffff; }
+
 .foot-label { text-align: left; padding: 0.75rem 1rem; color: #0f172a; }
-
-/* Gráfico Comparativo Bars */
-.chart-bars-wrap {
-  display: flex;
-  align-items: flex-end;
-  gap: 0.4rem;
-  height: 280px;
-  padding: 1.5rem 0 1rem 0;
-  border-bottom: 1px solid #e2e8f0;
-  overflow-x: auto;
-}
-
-.day-bar-column {
-  flex: 1;
-  min-width: 28px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  height: 100%;
-}
-
-.bar-pair {
-  display: flex;
-  align-items: flex-end;
-  gap: 2px;
-  width: 100%;
-  height: 90%;
-}
-
-.bar {
-  flex: 1;
-  border-radius: 4px 4px 0 0;
-  position: relative;
-  transition: height 0.3s ease;
-}
-
-.bar-a { background: linear-gradient(180deg, #f59e0b, #d97706); }
-.bar-b { background: linear-gradient(180deg, #8b5cf6, #6d28d9); }
-
-.bar-val {
-  position: absolute;
-  top: -18px;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 0.65rem;
-  font-weight: 700;
-  color: #475569;
-}
-
-.day-label {
-  font-size: 0.7rem;
-  color: #64748b;
-  margin-top: 0.4rem;
-  font-weight: 700;
-}
-
-.chart-legend {
-  display: flex;
-  gap: 1.5rem;
-  margin-top: 1rem;
-  justify-content: center;
-}
-
-.legend-item {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.85rem;
-  color: #334155;
-  font-weight: 600;
-}
-
-.legend-box {
-  width: 14px;
-  height: 14px;
-  border-radius: 3px;
-}
-
-.legend-box.turn-a { background: #f59e0b; }
-.legend-box.turn-b { background: #8b5cf6; }
 
 /* Modal Edit */
 .modal-backdrop {
@@ -1482,6 +1686,7 @@ onMounted(() => {
 .gt-title { font-size: 0.8rem; color: #b45309; font-weight: 800; text-transform: uppercase; }
 .gt-value { font-size: 1.4rem; font-weight: 800; color: #78350f; }
 .gt-value small { font-size: 0.8rem; color: #92400e; }
+.gt-sub { font-size: 0.8rem; color: #78350f; margin-top: 0.3rem; }
 
 .modal-footer {
   display: flex; justify-content: flex-end; gap: 0.75rem;
