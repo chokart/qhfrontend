@@ -442,113 +442,209 @@
           </div>
         </div>
 
-        <!-- TAB 3: RESUMEN ANUAL (MES POR MES) CON PROGRAMADO Y % -->
+        <!-- TAB 3: RESUMEN ANUAL CON CUADRO AL COSTADO DE VARIACIÓN (TONELADAS DE MÁS O MENOS) -->
         <div v-if="activeTab === 'annual'" class="tab-pane">
-          <div class="card table-card">
-            <div class="card-header-inner">
-              <div>
-                <h3>📅 Resumen Anual de Producción (Mes por Mes) vs Meta - Año {{ selectedYear }}</h3>
-                <p class="table-sub-desc">Metas Anuales: DP (35,158 TM/día) | DL (9,096 TM/día) | Total Combinado (44,254 TM/día)</p>
+          <div class="annual-layout-grid">
+            
+            <!-- 1. Tabla de Resumen Anual (Mes por Mes) -->
+            <div class="card table-card annual-main-card">
+              <div class="card-header-inner">
+                <div>
+                  <h3>📅 Resumen Anual de Producción (Mes por Mes) - Año {{ selectedYear }}</h3>
+                  <p class="table-sub-desc">Metas Anuales: DP (35,158 TM/día) | DL (9,096 TM/día) | Total Combinado (44,254 TM/día)</p>
+                </div>
+                <span v-if="loadingAnnual" class="badge-days-count">⏳ Cargando...</span>
               </div>
-              <span v-if="loadingAnnual" class="badge-days-count">⏳ Cargando Resumen Anual...</span>
+
+              <div v-if="annualData" class="table-wrapper-responsive">
+                <table class="prod-matrix-table annual-table">
+                  <thead>
+                    <tr class="header-group-row">
+                      <th colspan="2" class="hdr-group date-hdr">PERÍODO</th>
+                      <th colspan="3" class="hdr-group dp-hdr">DIQUE PRINCIPAL (DP)</th>
+                      <th colspan="3" class="hdr-group dl-hdr">DIQUE LATERAL (DL)</th>
+                      <th colspan="4" class="hdr-group tot-hdr">TOTAL PRODUCCIÓN ARENAS Y % CUMPLIMIENTO</th>
+                    </tr>
+                    <tr class="header-sub-row">
+                      <th class="col-num">Nº</th>
+                      <th class="col-date">MES</th>
+                      <th class="col-val dp-col">REAL (TM)</th>
+                      <th class="col-val dp-col">PROG (TM)</th>
+                      <th class="col-val dp-tot-col">% DP</th>
+                      <th class="col-val dl-col">REAL (TM)</th>
+                      <th class="col-val dl-col">PROG (TM)</th>
+                      <th class="col-val dl-tot-col">% DL</th>
+                      <th class="col-val tot-a-col">REAL TOTAL</th>
+                      <th class="col-val tot-b-col">PROG TOTAL</th>
+                      <th class="col-val grand-tot-col">DÍAS</th>
+                      <th class="col-val pct-col">% CUMP. MES</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="m in annualData.months" :key="m.monthNumber" :class="['row-daily', { 'row-empty-warning': !m.hasData }]">
+                      <td class="cell-num"><b>{{ m.monthNumber < 10 ? '0' + m.monthNumber : m.monthNumber }}</b></td>
+                      <td class="cell-date">
+                        <b>{{ getMonthName(m.monthNumber) }}</b>
+                        <span v-if="!m.hasData" class="empty-badge">Sin Datos</span>
+                      </td>
+                      
+                      <!-- DP -->
+                      <td class="cell-val dp-tot"><b>{{ formatNumber(m.dpArenasTotal) }}</b></td>
+                      <td class="cell-val">{{ formatNumber(getDaysInMonth(selectedYear, m.monthNumber) * PROGRAMMED_DP_DAILY) }}</td>
+                      <td class="cell-val cell-pct">
+                        <span :class="['badge-pct', getPctClass(getDailyPct(m.dpArenasTotal, getDaysInMonth(selectedYear, m.monthNumber) * PROGRAMMED_DP_DAILY))]">
+                          {{ getDailyPct(m.dpArenasTotal, getDaysInMonth(selectedYear, m.monthNumber) * PROGRAMMED_DP_DAILY) }}%
+                        </span>
+                      </td>
+
+                      <!-- DL -->
+                      <td class="cell-val dl-tot"><b>{{ formatNumber(m.dlArenasTotal) }}</b></td>
+                      <td class="cell-val">{{ formatNumber(getDaysInMonth(selectedYear, m.monthNumber) * PROGRAMMED_DL_DAILY) }}</td>
+                      <td class="cell-val cell-pct">
+                        <span :class="['badge-pct', getPctClass(getDailyPct(m.dlArenasTotal, getDaysInMonth(selectedYear, m.monthNumber) * PROGRAMMED_DL_DAILY))]">
+                          {{ getDailyPct(m.dlArenasTotal, getDaysInMonth(selectedYear, m.monthNumber) * PROGRAMMED_DL_DAILY) }}%
+                        </span>
+                      </td>
+
+                      <!-- TOTALES COMBINADOS -->
+                      <td class="cell-val grand-tot"><b>{{ formatNumber(m.totalArenasMes) }}</b></td>
+                      <td class="cell-val"><b>{{ formatNumber(getDaysInMonth(selectedYear, m.monthNumber) * PROGRAMMED_TOTAL_DAILY) }}</b></td>
+                      <td class="cell-num">{{ getDaysInMonth(selectedYear, m.monthNumber) }}</td>
+                      <td class="cell-val cell-pct">
+                        <span :class="['badge-pct', getPctClass(getDailyPct(m.totalArenasMes, getDaysInMonth(selectedYear, m.monthNumber) * PROGRAMMED_TOTAL_DAILY))]">
+                          <b>{{ getDailyPct(m.totalArenasMes, getDaysInMonth(selectedYear, m.monthNumber) * PROGRAMMED_TOTAL_DAILY) }}%</b>
+                        </span>
+                      </td>
+                    </tr>
+                  </tbody>
+                  <tfoot>
+                    <tr class="summary-foot-row total-row">
+                      <td colspan="2" class="foot-label"><b>TOTAL ANUAL ACUMULADO</b></td>
+                      
+                      <!-- DP -->
+                      <td class="cell-val dp-tot"><b>{{ formatNumber(annualData.grandDpTotal) }}</b></td>
+                      <td class="cell-val">{{ formatNumber(annualProgrammedDpYear) }}</td>
+                      <td class="cell-val cell-pct">
+                        <span :class="['badge-pct', getPctClass(getDailyPct(annualData.grandDpTotal, annualProgrammedDpYear))]">
+                          <b>{{ getDailyPct(annualData.grandDpTotal, annualProgrammedDpYear) }}%</b>
+                        </span>
+                      </td>
+
+                      <!-- DL -->
+                      <td class="cell-val dl-tot"><b>{{ formatNumber(annualData.grandDlTotal) }}</b></td>
+                      <td class="cell-val">{{ formatNumber(annualProgrammedDlYear) }}</td>
+                      <td class="cell-val cell-pct">
+                        <span :class="['badge-pct', getPctClass(getDailyPct(annualData.grandDlTotal, annualProgrammedDlYear))]">
+                          <b>{{ getDailyPct(annualData.grandDlTotal, annualProgrammedDlYear) }}%</b>
+                        </span>
+                      </td>
+
+                      <!-- TOTAL ANUAL -->
+                      <td class="cell-val grand-tot"><b>{{ formatNumber(annualData.grandTotalYear) }}</b></td>
+                      <td class="cell-val"><b>{{ formatNumber(annualProgrammedTotalYear) }}</b></td>
+                      <td class="cell-num">{{ isLeapYear(selectedYear) ? 366 : 365 }}</td>
+                      <td class="cell-val cell-pct">
+                        <span :class="['badge-pct', getPctClass(getDailyPct(annualData.grandTotalYear, annualProgrammedTotalYear))]">
+                          <b>{{ getDailyPct(annualData.grandTotalYear, annualProgrammedTotalYear) }}%</b>
+                        </span>
+                      </td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
             </div>
 
-            <div v-if="annualData" class="table-wrapper-responsive">
-              <table class="prod-matrix-table annual-table">
-                <thead>
-                  <tr class="header-group-row">
-                    <th colspan="2" class="hdr-group date-hdr">PERÍODO</th>
-                    <th colspan="3" class="hdr-group dp-hdr">DIQUE PRINCIPAL (DP)</th>
-                    <th colspan="3" class="hdr-group dl-hdr">DIQUE LATERAL (DL)</th>
-                    <th colspan="4" class="hdr-group tot-hdr">TOTAL PRODUCCIÓN ARENAS Y % CUMPLIMIENTO</th>
-                  </tr>
-                  <tr class="header-sub-row">
-                    <th class="col-num">Nº</th>
-                    <th class="col-date">MES</th>
-                    <th class="col-val dp-col">REAL (TM)</th>
-                    <th class="col-val dp-col">PROG (TM)</th>
-                    <th class="col-val dp-tot-col">% DP</th>
-                    <th class="col-val dl-col">REAL (TM)</th>
-                    <th class="col-val dl-col">PROG (TM)</th>
-                    <th class="col-val dl-tot-col">% DL</th>
-                    <th class="col-val tot-a-col">REAL TOTAL</th>
-                    <th class="col-val tot-b-col">PROG TOTAL</th>
-                    <th class="col-val grand-tot-col">DÍAS</th>
-                    <th class="col-val pct-col">% CUMP. MES</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="m in annualData.months" :key="m.monthNumber" :class="['row-daily', { 'row-empty-warning': !m.hasData }]">
-                    <td class="cell-num"><b>{{ m.monthNumber < 10 ? '0' + m.monthNumber : m.monthNumber }}</b></td>
-                    <td class="cell-date">
-                      <b>{{ getMonthName(m.monthNumber) }}</b>
-                      <span v-if="!m.hasData" class="empty-badge">Sin Datos</span>
-                    </td>
-                    
-                    <!-- DP -->
-                    <td class="cell-val dp-tot"><b>{{ formatNumber(m.dpArenasTotal) }}</b></td>
-                    <td class="cell-val">{{ formatNumber(getDaysInMonth(selectedYear, m.monthNumber) * PROGRAMMED_DP_DAILY) }}</td>
-                    <td class="cell-val cell-pct">
-                      <span :class="['badge-pct', getPctClass(getDailyPct(m.dpArenasTotal, getDaysInMonth(selectedYear, m.monthNumber) * PROGRAMMED_DP_DAILY))]">
-                        {{ getDailyPct(m.dpArenasTotal, getDaysInMonth(selectedYear, m.monthNumber) * PROGRAMMED_DP_DAILY) }}%
-                      </span>
-                    </td>
+            <!-- 2. Cuadro Resumen "Balance de Producción (Toneladas de Más o Menos Hasta Hoy)" -->
+            <div class="card balance-card">
+              <div class="card-header-inner border-bottom-subtle">
+                <div>
+                  <h3>⚖️ Balance de Producción</h3>
+                  <p class="table-sub-desc">Toneladas de más o menos (Hasta Hoy)</p>
+                </div>
+                <span class="badge-balance-days">{{ annualDaysProcessed }} Días Registrados</span>
+              </div>
 
-                    <!-- DL -->
-                    <td class="cell-val dl-tot"><b>{{ formatNumber(m.dlArenasTotal) }}</b></td>
-                    <td class="cell-val">{{ formatNumber(getDaysInMonth(selectedYear, m.monthNumber) * PROGRAMMED_DL_DAILY) }}</td>
-                    <td class="cell-val cell-pct">
-                      <span :class="['badge-pct', getPctClass(getDailyPct(m.dlArenasTotal, getDaysInMonth(selectedYear, m.monthNumber) * PROGRAMMED_DL_DAILY))]">
-                        {{ getDailyPct(m.dlArenasTotal, getDaysInMonth(selectedYear, m.monthNumber) * PROGRAMMED_DL_DAILY) }}%
-                      </span>
-                    </td>
+              <div class="balance-body">
+                <!-- DP -->
+                <div class="balance-box dp-box">
+                  <div class="b-box-header">
+                    <span class="b-box-title">🏗️ Dique Principal (DP)</span>
+                    <span :class="['b-status-pill', dpDiff >= 0 ? 'pill-surplus' : 'pill-deficit']">
+                      {{ dpDiff >= 0 ? '🟢 SUPERÁVIT' : '🔴 DÉFICIT' }}
+                    </span>
+                  </div>
+                  <div class="b-box-metrics">
+                    <div class="metric-pair">
+                      <span class="m-lbl">Real Acumulado</span>
+                      <span class="m-val">{{ formatNumber(annualRealDp) }} TM</span>
+                    </div>
+                    <div class="metric-pair">
+                      <span class="m-lbl">Programado Target</span>
+                      <span class="m-val">{{ formatNumber(annualProgDp) }} TM</span>
+                    </div>
+                  </div>
+                  <div class="b-box-diff-bar">
+                    <span class="diff-title">Variación de Producción:</span>
+                    <span :class="['diff-amount', dpDiff >= 0 ? 'text-green' : 'text-red']">
+                      {{ dpDiff >= 0 ? '+' : '' }}{{ formatNumber(dpDiff) }} TM
+                    </span>
+                  </div>
+                </div>
 
-                    <!-- TOTALES COMBINADOS -->
-                    <td class="cell-val grand-tot"><b>{{ formatNumber(m.totalArenasMes) }}</b></td>
-                    <td class="cell-val"><b>{{ formatNumber(getDaysInMonth(selectedYear, m.monthNumber) * PROGRAMMED_TOTAL_DAILY) }}</b></td>
-                    <td class="cell-num">{{ getDaysInMonth(selectedYear, m.monthNumber) }}</td>
-                    <td class="cell-val cell-pct">
-                      <span :class="['badge-pct', getPctClass(getDailyPct(m.totalArenasMes, getDaysInMonth(selectedYear, m.monthNumber) * PROGRAMMED_TOTAL_DAILY))]">
-                        <b>{{ getDailyPct(m.totalArenasMes, getDaysInMonth(selectedYear, m.monthNumber) * PROGRAMMED_TOTAL_DAILY) }}%</b>
-                      </span>
-                    </td>
-                  </tr>
-                </tbody>
-                <tfoot>
-                  <tr class="summary-foot-row total-row">
-                    <td colspan="2" class="foot-label"><b>TOTAL ANUAL ACUMULADO</b></td>
-                    
-                    <!-- DP -->
-                    <td class="cell-val dp-tot"><b>{{ formatNumber(annualData.grandDpTotal) }}</b></td>
-                    <td class="cell-val">{{ formatNumber(annualProgrammedDpYear) }}</td>
-                    <td class="cell-val cell-pct">
-                      <span :class="['badge-pct', getPctClass(getDailyPct(annualData.grandDpTotal, annualProgrammedDpYear))]">
-                        <b>{{ getDailyPct(annualData.grandDpTotal, annualProgrammedDpYear) }}%</b>
-                      </span>
-                    </td>
+                <!-- DL -->
+                <div class="balance-box dl-box">
+                  <div class="b-box-header">
+                    <span class="b-box-title">📐 Dique Lateral (DL)</span>
+                    <span :class="['b-status-pill', dlDiff >= 0 ? 'pill-surplus' : 'pill-deficit']">
+                      {{ dlDiff >= 0 ? '🟢 SUPERÁVIT' : '🔴 DÉFICIT' }}
+                    </span>
+                  </div>
+                  <div class="b-box-metrics">
+                    <div class="metric-pair">
+                      <span class="m-lbl">Real Acumulado</span>
+                      <span class="m-val">{{ formatNumber(annualRealDl) }} TM</span>
+                    </div>
+                    <div class="metric-pair">
+                      <span class="m-lbl">Programado Target</span>
+                      <span class="m-val">{{ formatNumber(annualProgDl) }} TM</span>
+                    </div>
+                  </div>
+                  <div class="b-box-diff-bar">
+                    <span class="diff-title">Variación de Producción:</span>
+                    <span :class="['diff-amount', dlDiff >= 0 ? 'text-green' : 'text-red']">
+                      {{ dlDiff >= 0 ? '+' : '' }}{{ formatNumber(dlDiff) }} TM
+                    </span>
+                  </div>
+                </div>
 
-                    <!-- DL -->
-                    <td class="cell-val dl-tot"><b>{{ formatNumber(annualData.grandDlTotal) }}</b></td>
-                    <td class="cell-val">{{ formatNumber(annualProgrammedDlYear) }}</td>
-                    <td class="cell-val cell-pct">
-                      <span :class="['badge-pct', getPctClass(getDailyPct(annualData.grandDlTotal, annualProgrammedDlYear))]">
-                        <b>{{ getDailyPct(annualData.grandDlTotal, annualProgrammedDlYear) }}%</b>
-                      </span>
-                    </td>
-
-                    <!-- TOTAL ANUAL -->
-                    <td class="cell-val grand-tot"><b>{{ formatNumber(annualData.grandTotalYear) }}</b></td>
-                    <td class="cell-val"><b>{{ formatNumber(annualProgrammedTotalYear) }}</b></td>
-                    <td class="cell-num">{{ isLeapYear(selectedYear) ? 366 : 365 }}</td>
-                    <td class="cell-val cell-pct">
-                      <span :class="['badge-pct', getPctClass(getDailyPct(annualData.grandTotalYear, annualProgrammedTotalYear))]">
-                        <b>{{ getDailyPct(annualData.grandTotalYear, annualProgrammedTotalYear) }}%</b>
-                      </span>
-                    </td>
-                  </tr>
-                </tfoot>
-              </table>
+                <!-- GLOBAL (DP + DL) -->
+                <div class="balance-box global-box">
+                  <div class="b-box-header">
+                    <span class="b-box-title">📦 BALANCE GLOBAL (DP + DL)</span>
+                    <span :class="['b-status-pill', globalDiff >= 0 ? 'pill-surplus' : 'pill-deficit']">
+                      {{ globalDiff >= 0 ? '🟢 SUPERÁVIT' : '🔴 DÉFICIT' }}
+                    </span>
+                  </div>
+                  <div class="b-box-metrics">
+                    <div class="metric-pair">
+                      <span class="m-lbl">Real Total Acumulado</span>
+                      <span class="m-val bold">{{ formatNumber(annualRealGlobal) }} TM</span>
+                    </div>
+                    <div class="metric-pair">
+                      <span class="m-lbl">Programado Total</span>
+                      <span class="m-val bold">{{ formatNumber(annualProgGlobal) }} TM</span>
+                    </div>
+                  </div>
+                  <div class="b-box-diff-bar global-diff-bar">
+                    <span class="diff-title">VARIACIÓN GLOBAL AL DÍA DE HOY:</span>
+                    <span :class="['diff-amount-large', globalDiff >= 0 ? 'text-green' : 'text-red']">
+                      {{ globalDiff >= 0 ? '+' : '' }}{{ formatNumber(globalDiff) }} TM
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
+
           </div>
         </div>
 
@@ -738,6 +834,30 @@ const annualProgrammedTotalYear = computed(() => {
   const days = isLeapYear(selectedYear.value) ? 366 : 365;
   return days * PROGRAMMED_TOTAL_DAILY;
 });
+
+// --- COMPUTADOS PARA CUADRO RESUMEN BALANCE (TONELADAS DE MÁS O MENOS HASTA HOY) ---
+const annualDaysProcessed = computed(() => {
+  if (!annualData.value || !annualData.value.months) return 0;
+  let days = 0;
+  annualData.value.months.forEach(m => {
+    if (m.hasData) {
+      days += getDaysInMonth(selectedYear.value, m.monthNumber);
+    }
+  });
+  return days;
+});
+
+const annualRealDp = computed(() => annualData.value?.grandDpTotal || 0);
+const annualProgDp = computed(() => annualDaysProcessed.value * PROGRAMMED_DP_DAILY);
+const dpDiff = computed(() => annualRealDp.value - annualProgDp.value);
+
+const annualRealDl = computed(() => annualData.value?.grandDlTotal || 0);
+const annualProgDl = computed(() => annualDaysProcessed.value * PROGRAMMED_DL_DAILY);
+const dlDiff = computed(() => annualRealDl.value - annualProgDl.value);
+
+const annualRealGlobal = computed(() => annualData.value?.grandTotalYear || 0);
+const annualProgGlobal = computed(() => annualDaysProcessed.value * PROGRAMMED_TOTAL_DAILY);
+const globalDiff = computed(() => annualRealGlobal.value - annualProgGlobal.value);
 
 // Helper de Porcentaje
 const getDailyPct = (realVal, programmedVal) => {
@@ -1006,7 +1126,7 @@ onMounted(() => {
 }
 
 .page-container {
-  max-width: 1400px;
+  max-width: 1450px;
   margin: 0 auto;
   padding: 2rem 1.5rem;
 }
@@ -1353,6 +1473,174 @@ onMounted(() => {
   border-radius: 20px;
   font-size: 0.8rem;
   font-weight: 700;
+}
+
+/* ESTILOS RESUMEN ANUAL CON LAYOUT AL COSTADO DEL CUADRO DE BALANCE */
+.annual-layout-grid {
+  display: grid;
+  grid-template-columns: 2.2fr 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+@media (max-width: 1100px) {
+  .annual-layout-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.annual-main-card {
+  width: 100%;
+}
+
+.balance-card {
+  background: linear-gradient(180deg, #ffffff, #f8fafc);
+  border: 1px solid #cbd5e1;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.04);
+}
+
+.border-bottom-subtle {
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.badge-balance-days {
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #cbd5e1;
+  padding: 0.25rem 0.6rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.balance-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.balance-box {
+  border-radius: 14px;
+  padding: 1rem 1.15rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.dp-box {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+}
+
+.dl-box {
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+}
+
+.global-box {
+  background: #fffbeb;
+  border: 2px solid #fde68a;
+}
+
+.b-box-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.b-box-title {
+  font-weight: 800;
+  font-size: 0.88rem;
+  color: #0f172a;
+}
+
+.b-status-pill {
+  font-size: 0.7rem;
+  font-weight: 800;
+  padding: 0.2rem 0.55rem;
+  border-radius: 8px;
+  letter-spacing: 0.5px;
+}
+
+.pill-surplus {
+  background: #dcfce7;
+  color: #15803d;
+  border: 1px solid #86efac;
+}
+
+.pill-deficit {
+  background: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fca5a5;
+}
+
+.b-box-metrics {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  background: #ffffff;
+  padding: 0.65rem 0.85rem;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.metric-pair {
+  display: flex;
+  flex-direction: column;
+}
+
+.m-lbl {
+  font-size: 0.72rem;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.m-val {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.m-val.bold {
+  font-weight: 800;
+}
+
+.b-box-diff-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 0.2rem;
+}
+
+.global-diff-bar {
+  padding-top: 0.4rem;
+  border-top: 1px dashed #fcd34d;
+}
+
+.diff-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #334155;
+}
+
+.diff-amount {
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+
+.diff-amount-large {
+  font-size: 1.35rem;
+  font-weight: 900;
+}
+
+.text-green {
+  color: #15803d;
+}
+
+.text-red {
+  color: #dc2626;
 }
 
 /* ESTILOS DE LA PESTAÑA PASTE */
