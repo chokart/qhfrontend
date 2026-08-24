@@ -404,32 +404,35 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr v-for="m in annualData.months" :key="m.monthNumber" class="row-daily">
+                  <tr v-for="m in annualData.months" :key="m.monthNumber" :class="['row-daily', { 'row-empty-warning': !m.hasData }]">
                     <td class="cell-num"><b>{{ m.monthNumber < 10 ? '0' + m.monthNumber : m.monthNumber }}</b></td>
-                    <td class="cell-date"><b>{{ m.monthName }}</b></td>
-                    <td class="cell-val dp-a">{{ formatNumber(m.dpA) }}</td>
-                    <td class="cell-val dp-b">{{ formatNumber(m.dpB) }}</td>
-                    <td class="cell-val dp-tot"><b>{{ formatNumber(m.dpTotal) }}</b></td>
-                    <td class="cell-val dl-a">{{ formatNumber(m.dlA) }}</td>
-                    <td class="cell-val dl-b">{{ formatNumber(m.dlB) }}</td>
-                    <td class="cell-val dl-tot"><b>{{ formatNumber(m.dlTotal) }}</b></td>
-                    <td class="cell-val tot-a"><b>{{ formatNumber(m.totalA) }}</b></td>
-                    <td class="cell-val tot-b"><b>{{ formatNumber(m.totalB) }}</b></td>
-                    <td class="cell-val grand-tot"><b>{{ formatNumber(m.grandTotal) }}</b></td>
+                    <td class="cell-date">
+                      <b>{{ getMonthName(m.monthNumber) }}</b>
+                      <span v-if="!m.hasData" class="empty-badge">Sin Datos</span>
+                    </td>
+                    <td class="cell-val dp-a">{{ formatNumber(m.dpArenasA) }}</td>
+                    <td class="cell-val dp-b">{{ formatNumber(m.dpArenasB) }}</td>
+                    <td class="cell-val dp-tot"><b>{{ formatNumber(m.dpArenasTotal) }}</b></td>
+                    <td class="cell-val dl-a">{{ formatNumber(m.dlArenasA) }}</td>
+                    <td class="cell-val dl-b">{{ formatNumber(m.dlArenasB) }}</td>
+                    <td class="cell-val dl-tot"><b>{{ formatNumber(m.dlArenasTotal) }}</b></td>
+                    <td class="cell-val tot-a"><b>{{ formatNumber(m.totalArenasA) }}</b></td>
+                    <td class="cell-val tot-b"><b>{{ formatNumber(m.totalArenasB) }}</b></td>
+                    <td class="cell-val grand-tot"><b>{{ formatNumber(m.totalArenasMes) }}</b></td>
                   </tr>
                 </tbody>
                 <tfoot>
                   <tr class="summary-foot-row total-row">
                     <td colspan="2" class="foot-label"><b>TOTAL ANUAL ACUMULADO</b></td>
-                    <td class="cell-val dp-a"><b>{{ formatNumber(annualData.annualDpA) }}</b></td>
-                    <td class="cell-val dp-b"><b>{{ formatNumber(annualData.annualDpB) }}</b></td>
-                    <td class="cell-val dp-tot"><b>{{ formatNumber(annualData.annualDpTotal) }}</b></td>
-                    <td class="cell-val dl-a"><b>{{ formatNumber(annualData.annualDlA) }}</b></td>
-                    <td class="cell-val dl-b"><b>{{ formatNumber(annualData.annualDlB) }}</b></td>
-                    <td class="cell-val dl-tot"><b>{{ formatNumber(annualData.annualDlTotal) }}</b></td>
-                    <td class="cell-val tot-a"><b>{{ formatNumber(annualData.annualTotalA) }}</b></td>
-                    <td class="cell-val tot-b"><b>{{ formatNumber(annualData.annualTotalB) }}</b></td>
-                    <td class="cell-val grand-tot"><b>{{ formatNumber(annualData.annualGrandTotal) }}</b></td>
+                    <td class="cell-val dp-a"><b>{{ formatNumber(annualData.grandDpA) }}</b></td>
+                    <td class="cell-val dp-b"><b>{{ formatNumber(annualData.grandDpB) }}</b></td>
+                    <td class="cell-val dp-tot"><b>{{ formatNumber(annualData.grandDpTotal) }}</b></td>
+                    <td class="cell-val dl-a"><b>{{ formatNumber(annualData.grandDlA) }}</b></td>
+                    <td class="cell-val dl-b"><b>{{ formatNumber(annualData.grandDlB) }}</b></td>
+                    <td class="cell-val dl-tot"><b>{{ formatNumber(annualData.grandDlTotal) }}</b></td>
+                    <td class="cell-val tot-a"><b>{{ formatNumber(annualData.grandTotalA) }}</b></td>
+                    <td class="cell-val tot-b"><b>{{ formatNumber(annualData.grandTotalB) }}</b></td>
+                    <td class="cell-val grand-tot"><b>{{ formatNumber(annualData.grandTotalYear) }}</b></td>
                   </tr>
                 </tfoot>
               </table>
@@ -671,6 +674,9 @@ const saveDailyReportEdit = async () => {
     if (selectedMonthKey.value) {
       const [year, month] = selectedMonthKey.value.split('-');
       await loadDashboardData(year, month);
+      if (activeTab.value === 'annual') {
+        await loadAnnualSummary(year);
+      }
     }
   } catch (err) {
     console.error("Error al actualizar producción del día:", err);
@@ -807,10 +813,11 @@ onMounted(() => {
 </script>
 
 <style scoped>
+/* LIGHT ENTERPRISE THEME (Sin Modo Dark) */
 .reporte-view {
   min-height: 100vh;
-  background-color: #0b1120;
-  color: #f1f5f9;
+  background-color: #f8fafc;
+  color: #0f172a;
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   padding-bottom: 3rem;
 }
@@ -829,11 +836,11 @@ onMounted(() => {
   margin-bottom: 2rem;
   flex-wrap: wrap;
   gap: 1.5rem;
-  background: linear-gradient(135deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.9));
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
   border-radius: 16px;
   padding: 1.5rem 2rem;
-  backdrop-filter: blur(12px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
 }
 
 .header-left {
@@ -844,8 +851,8 @@ onMounted(() => {
 
 .header-icon-wrap {
   font-size: 2.2rem;
-  background: rgba(59, 130, 246, 0.15);
-  border: 1px solid rgba(59, 130, 246, 0.3);
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
   padding: 0.75rem;
   border-radius: 14px;
 }
@@ -853,12 +860,12 @@ onMounted(() => {
 .page-header h1 {
   font-size: 1.65rem;
   font-weight: 700;
-  color: #ffffff;
+  color: #0f172a;
   margin: 0 0 0.3rem 0;
 }
 
 .subtitle {
-  color: #94a3b8;
+  color: #64748b;
   font-size: 0.9rem;
   margin: 0;
 }
@@ -873,8 +880,8 @@ onMounted(() => {
 .month-selector-wrap {
   display: flex;
   align-items: center;
-  background: #1e293b;
-  border: 1px solid #334155;
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
   border-radius: 10px;
   padding: 0.4rem 0.8rem;
 }
@@ -882,8 +889,8 @@ onMounted(() => {
 .month-select {
   background: transparent;
   border: none;
-  color: #38bdf8;
-  font-weight: 600;
+  color: #0284c7;
+  font-weight: 700;
   font-size: 0.95rem;
   outline: none;
   cursor: pointer;
@@ -900,19 +907,19 @@ onMounted(() => {
   border-radius: 10px;
   border: none;
   cursor: pointer;
-  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
   transition: all 0.2s ease;
 }
 
 .btn-paste-header:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 18px rgba(37, 99, 235, 0.6);
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.4);
 }
 
 .btn-delete-month {
-  background: rgba(239, 68, 68, 0.15);
-  border: 1px solid rgba(239, 68, 68, 0.3);
-  color: #f87171;
+  background: #fef2f2;
+  border: 1px solid #fca5a5;
+  color: #dc2626;
   font-weight: 600;
   padding: 0.65rem 1rem;
   border-radius: 10px;
@@ -921,7 +928,7 @@ onMounted(() => {
 }
 
 .btn-delete-month:hover {
-  background: rgba(239, 68, 68, 0.25);
+  background: #fee2e2;
 }
 
 /* Status Banner */
@@ -933,19 +940,19 @@ onMounted(() => {
   border-radius: 12px;
   margin-bottom: 1.5rem;
   font-size: 0.95rem;
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .status-banner.success {
-  background: rgba(16, 185, 129, 0.15);
-  border: 1px solid rgba(16, 185, 129, 0.3);
-  color: #34d399;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  color: #047857;
 }
 
 .status-banner.error {
-  background: rgba(239, 68, 68, 0.15);
-  border: 1px solid rgba(239, 68, 68, 0.3);
-  color: #f87171;
+  background: #fef2f2;
+  border: 1px solid #fca5a5;
+  color: #b91c1c;
 }
 
 /* Loading Overlay */
@@ -955,8 +962,8 @@ onMounted(() => {
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: rgba(11, 17, 32, 0.85);
-  backdrop-filter: blur(8px);
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(6px);
   z-index: 999;
   display: flex;
   align-items: center;
@@ -964,19 +971,20 @@ onMounted(() => {
 }
 
 .spinner-card {
-  background: #1e293b;
-  border: 1px solid #334155;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
   padding: 2.5rem 3rem;
   border-radius: 20px;
   text-align: center;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  color: #0f172a;
 }
 
 .spinner-large {
   width: 50px;
   height: 50px;
-  border: 4px solid rgba(56, 189, 248, 0.2);
-  border-top-color: #38bdf8;
+  border: 4px solid #e2e8f0;
+  border-top-color: #0284c7;
   border-radius: 50%;
   animation: spin 1s infinite linear;
   margin: 0 auto 1.5rem auto;
@@ -995,21 +1003,21 @@ onMounted(() => {
 }
 
 .kpi-card {
-  background: rgba(30, 41, 59, 0.7);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
   border-radius: 16px;
   padding: 1.25rem 1.5rem;
   display: flex;
   align-items: center;
   gap: 1rem;
-
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
 }
 
-.kpi-card.primary { border-left: 4px solid #3b82f6; }
+.kpi-card.primary { border-left: 4px solid #2563eb; }
 .kpi-card.info { border-left: 4px solid #10b981; }
 .kpi-card.warning { border-left: 4px solid #f59e0b; }
 .kpi-card.night { border-left: 4px solid #8b5cf6; }
-.kpi-card.success-card { border-left: 4px solid #06b6d4; background: linear-gradient(135deg, rgba(6, 182, 212, 0.15), rgba(30, 41, 59, 0.8)); }
+.kpi-card.success-card { border-left: 4px solid #0284c7; background: linear-gradient(135deg, #f0f9ff, #ffffff); }
 
 .kpi-icon {
   font-size: 2rem;
@@ -1021,27 +1029,27 @@ onMounted(() => {
 }
 
 .kpi-label {
-  font-size: 0.8rem;
-  color: #94a3b8;
+  font-size: 0.78rem;
+  color: #64748b;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .kpi-value {
   font-size: 1.5rem;
   font-weight: 800;
-  color: #ffffff;
+  color: #0f172a;
 }
 
 .kpi-value small {
   font-size: 0.85rem;
-  color: #cbd5e1;
+  color: #475569;
 }
 
 .kpi-sub {
   font-size: 0.75rem;
-  color: #94a3b8;
+  color: #64748b;
   margin-top: 0.2rem;
 }
 
@@ -1050,7 +1058,7 @@ onMounted(() => {
   display: flex;
   gap: 0.75rem;
   margin-bottom: 1.5rem;
-  border-bottom: 1px solid #334155;
+  border-bottom: 2px solid #e2e8f0;
   padding-bottom: 0.5rem;
   overflow-x: auto;
 }
@@ -1058,7 +1066,7 @@ onMounted(() => {
 .tab-btn {
   background: transparent;
   border: none;
-  color: #94a3b8;
+  color: #64748b;
   font-weight: 600;
   font-size: 0.95rem;
   padding: 0.75rem 1.25rem;
@@ -1069,23 +1077,24 @@ onMounted(() => {
 }
 
 .tab-btn:hover {
-  color: #ffffff;
-  background: rgba(255, 255, 255, 0.05);
+  color: #0f172a;
+  background: #e2e8f0;
 }
 
 .tab-btn.active {
-  color: #38bdf8;
-  background: rgba(56, 189, 248, 0.12);
-  border-bottom: 2px solid #38bdf8;
+  color: #0284c7;
+  background: #e0f2fe;
+  font-weight: 700;
+  border-bottom: 2px solid #0284c7;
 }
 
 /* Card General */
 .card {
-  background: #1e293b;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
   border-radius: 16px;
   padding: 1.5rem;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
 }
 
 .card-header-inner {
@@ -1100,41 +1109,42 @@ onMounted(() => {
 .card-header-inner h3 {
   font-size: 1.25rem;
   margin: 0 0 0.3rem 0;
-  color: #ffffff;
+  color: #0f172a;
+  font-weight: 700;
 }
 
 .table-sub-desc {
   font-size: 0.85rem;
-  color: #94a3b8;
+  color: #64748b;
   margin: 0;
 }
 
 .badge-days-count {
-  background: rgba(59, 130, 246, 0.15);
-  color: #60a5fa;
-  border: 1px solid rgba(59, 130, 246, 0.3);
+  background: #eff6ff;
+  color: #2563eb;
+  border: 1px solid #bfdbfe;
   padding: 0.4rem 0.8rem;
   border-radius: 20px;
   font-size: 0.8rem;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 /* ESTILOS DE LA PESTAÑA PASTE */
 .paste-card {
-  background: #1e293b;
-  border: 1px solid rgba(56, 189, 248, 0.3);
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
 }
 
 .paste-instruction-box {
-  background: rgba(15, 23, 42, 0.8);
-  border: 1px dashed rgba(56, 189, 248, 0.4);
+  background: #f8fafc;
+  border: 1px dashed #94a3b8;
   border-radius: 12px;
   padding: 1rem 1.25rem;
   margin-bottom: 1.25rem;
 }
 
 .instruction-header {
-  color: #38bdf8;
+  color: #0284c7;
   font-size: 0.9rem;
   margin-bottom: 0.5rem;
 }
@@ -1142,8 +1152,9 @@ onMounted(() => {
 .instruction-format {
   font-family: 'Fira Code', 'Courier New', monospace;
   font-size: 0.85rem;
-  color: #cbd5e1;
-  background: #0f172a;
+  color: #1e293b;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
   padding: 0.75rem 1rem;
   border-radius: 8px;
   line-height: 1.5;
@@ -1155,18 +1166,18 @@ onMounted(() => {
 
 .textarea-label {
   display: block;
-  font-weight: 600;
+  font-weight: 700;
   font-size: 0.9rem;
-  color: #f1f5f9;
+  color: #0f172a;
   margin-bottom: 0.5rem;
 }
 
 .paste-textarea {
   width: 100%;
-  background: #0f172a;
-  border: 1px solid #334155;
+  background: #ffffff;
+  border: 2px solid #cbd5e1;
   border-radius: 12px;
-  color: #38bdf8;
+  color: #0f172a;
   font-family: 'Fira Code', 'Courier New', monospace;
   font-size: 0.9rem;
   padding: 1rem;
@@ -1176,13 +1187,13 @@ onMounted(() => {
 }
 
 .paste-textarea:focus {
-  border-color: #38bdf8;
-  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
+  border-color: #0284c7;
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
 }
 
 .preview-section {
-  background: #0f172a;
-  border: 1px solid #334155;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
   border-radius: 14px;
   padding: 1.25rem;
 }
@@ -1198,18 +1209,19 @@ onMounted(() => {
 
 .preview-header h4 {
   margin: 0 0 0.2rem 0;
-  color: #ffffff;
+  color: #0f172a;
   font-size: 1.1rem;
+  font-weight: 700;
 }
 
 .badge-preview {
-  background: rgba(16, 185, 129, 0.15);
-  color: #34d399;
-  border: 1px solid rgba(16, 185, 129, 0.3);
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
   padding: 0.25rem 0.6rem;
   border-radius: 12px;
   font-size: 0.8rem;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .btn-save-paste {
@@ -1221,13 +1233,13 @@ onMounted(() => {
   border-radius: 10px;
   border: none;
   cursor: pointer;
-  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
   transition: all 0.2s ease;
 }
 
 .btn-save-paste:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 18px rgba(16, 185, 129, 0.6);
+  box-shadow: 0 6px 16px rgba(16, 185, 129, 0.5);
 }
 
 .preview-table {
@@ -1237,21 +1249,22 @@ onMounted(() => {
 }
 
 .preview-table th {
-  background: #1e293b;
-  color: #94a3b8;
+  background: #e2e8f0;
+  color: #334155;
   font-weight: 700;
   text-align: left;
   padding: 0.75rem 1rem;
-  border-bottom: 1px solid #334155;
+  border-bottom: 2px solid #cbd5e1;
 }
 
 .preview-table td {
   padding: 0.65rem 1rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid #e2e8f0;
+  color: #0f172a;
 }
 
 .even-row {
-  background: rgba(255, 255, 255, 0.02);
+  background: #ffffff;
 }
 
 .turno-badge {
@@ -1263,18 +1276,18 @@ onMounted(() => {
 }
 
 .day-badge {
-  background: rgba(245, 158, 11, 0.2);
-  color: #fbbf24;
+  background: #fef3c7;
+  color: #d97706;
 }
 
 .night-badge {
-  background: rgba(139, 92, 246, 0.2);
-  color: #c084fc;
+  background: #f3e8ff;
+  color: #7e22ce;
 }
 
-.cell-dp { color: #60a5fa; font-weight: 600; }
-.cell-dl { color: #34d399; font-weight: 600; }
-.cell-tot { color: #f59e0b; font-weight: 700; }
+.cell-dp { color: #1d4ed8; font-weight: 700; }
+.cell-dl { color: #047857; font-weight: 700; }
+.cell-tot { color: #d97706; font-weight: 800; }
 
 /* Tabla Matriz */
 .table-wrapper-responsive {
@@ -1295,59 +1308,60 @@ onMounted(() => {
   letter-spacing: 0.5px;
 }
 
-.date-hdr { background: #334155; color: #f1f5f9; }
-.dp-hdr { background: #1e3a8a; color: #93c5fd; }
-.dl-hdr { background: #064e3b; color: #6ee7b7; }
-.tot-hdr { background: #78350f; color: #fde68a; }
-.act-hdr { background: #1e293b; color: #94a3b8; }
+.date-hdr { background: #e2e8f0; color: #0f172a; }
+.dp-hdr { background: #dbeafe; color: #1e40af; }
+.dl-hdr { background: #d1fae5; color: #065f46; }
+.tot-hdr { background: #fef3c7; color: #92400e; }
+.act-hdr { background: #f1f5f9; color: #475569; }
 
 .header-sub-row th {
-  background: #0f172a;
-  color: #94a3b8;
+  background: #f8fafc;
+  color: #475569;
   padding: 0.75rem 0.5rem;
-  border-bottom: 2px solid #334155;
+  border-bottom: 2px solid #cbd5e1;
   font-size: 0.75rem;
   font-weight: 700;
 }
 
 .row-daily {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid #e2e8f0;
   transition: background 0.15s;
 }
 
 .row-daily:hover {
-  background: rgba(59, 130, 246, 0.05);
+  background: #f0f9ff;
 }
 
 .row-empty-warning {
-  background: rgba(239, 68, 68, 0.05);
+  background: #fff1f2;
 }
 
-.cell-num { text-align: center; color: #94a3b8; }
-.cell-date { white-space: nowrap; font-weight: 500; }
+.cell-num { text-align: center; color: #64748b; }
+.cell-date { white-space: nowrap; font-weight: 600; color: #0f172a; }
 .empty-badge {
   font-size: 0.7rem;
-  background: rgba(239, 68, 68, 0.2);
-  color: #f87171;
+  background: #fee2e2;
+  color: #dc2626;
   padding: 0.15rem 0.4rem;
   border-radius: 6px;
   margin-left: 0.4rem;
+  font-weight: 700;
 }
 
 .cell-val { text-align: right; padding: 0.6rem 0.75rem; }
-.dp-a, .dp-b { color: #93c5fd; }
-.dp-tot { color: #3b82f6; background: rgba(59, 130, 246, 0.08); }
-.dl-a, .dl-b { color: #6ee7b7; }
-.dl-tot { color: #10b981; background: rgba(16, 185, 129, 0.08); }
-.tot-a { color: #fbbf24; }
-.tot-b { color: #c084fc; }
-.grand-tot { color: #f59e0b; background: rgba(245, 158, 11, 0.12); font-size: 0.9rem; }
+.dp-a, .dp-b { color: #1e40af; }
+.dp-tot { color: #1d4ed8; background: #eff6ff; }
+.dl-a, .dl-b { color: #065f46; }
+.dl-tot { color: #047857; background: #ecfdf5; }
+.tot-a { color: #d97706; }
+.tot-b { color: #7e22ce; }
+.grand-tot { color: #b45309; background: #fef3c7; font-size: 0.9rem; font-weight: 800; }
 
 .cell-act { text-align: center; }
 .btn-edit-row {
-  background: rgba(59, 130, 246, 0.15);
-  border: 1px solid rgba(59, 130, 246, 0.3);
-  color: #60a5fa;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #2563eb;
   padding: 0.25rem 0.5rem;
   border-radius: 6px;
   cursor: pointer;
@@ -1355,16 +1369,16 @@ onMounted(() => {
 }
 
 .btn-edit-row:hover {
-  background: rgba(59, 130, 246, 0.3);
+  background: #dbeafe;
   transform: scale(1.1);
 }
 
 .summary-foot-row {
-  background: #0f172a;
-  border-top: 2px solid #334155;
+  background: #f1f5f9;
+  border-top: 2px solid #cbd5e1;
 }
 
-.foot-label { text-align: left; padding: 0.75rem 1rem; color: #f1f5f9; }
+.foot-label { text-align: left; padding: 0.75rem 1rem; color: #0f172a; }
 
 /* Gráfico Comparativo Bars */
 .chart-bars-wrap {
@@ -1373,7 +1387,7 @@ onMounted(() => {
   gap: 0.4rem;
   height: 280px;
   padding: 1.5rem 0 1rem 0;
-  border-bottom: 1px solid #334155;
+  border-bottom: 1px solid #e2e8f0;
   overflow-x: auto;
 }
 
@@ -1411,14 +1425,14 @@ onMounted(() => {
   transform: translateX(-50%);
   font-size: 0.65rem;
   font-weight: 700;
-  color: #cbd5e1;
+  color: #475569;
 }
 
 .day-label {
   font-size: 0.7rem;
-  color: #94a3b8;
+  color: #64748b;
   margin-top: 0.4rem;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .chart-legend {
@@ -1433,7 +1447,8 @@ onMounted(() => {
   align-items: center;
   gap: 0.5rem;
   font-size: 0.85rem;
-  color: #cbd5e1;
+  color: #334155;
+  font-weight: 600;
 }
 
 .legend-box {
@@ -1449,34 +1464,35 @@ onMounted(() => {
 .modal-backdrop {
   position: fixed;
   top: 0; left: 0; width: 100vw; height: 100vh;
-  background: rgba(11, 17, 32, 0.8);
-  backdrop-filter: blur(6px);
+  background: rgba(15, 23, 42, 0.5);
+  backdrop-filter: blur(4px);
   z-index: 1000;
   display: flex; align-items: center; justify-content: center;
   padding: 1rem;
 }
 
 .modal-card {
-  background: #1e293b;
-  border: 1px solid #334155;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
   border-radius: 20px;
   width: 100%;
   max-width: 520px;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
   overflow: hidden;
 }
 
 .modal-header {
   display: flex; justify-content: space-between; align-items: center;
   padding: 1.25rem 1.5rem;
-  border-bottom: 1px solid #334155;
+  border-bottom: 1px solid #e2e8f0;
+  background: #f8fafc;
 }
 
-.modal-header h3 { margin: 0; font-size: 1.1rem; color: #ffffff; }
-.btn-close-modal { background: none; border: none; color: #94a3b8; font-size: 1.2rem; cursor: pointer; }
+.modal-header h3 { margin: 0; font-size: 1.1rem; color: #0f172a; font-weight: 700; }
+.btn-close-modal { background: none; border: none; color: #64748b; font-size: 1.2rem; cursor: pointer; }
 
 .modal-body { padding: 1.5rem; }
-.modal-desc { font-size: 0.85rem; color: #94a3b8; margin: 0 0 1.25rem 0; }
+.modal-desc { font-size: 0.85rem; color: #64748b; margin: 0 0 1.25rem 0; }
 
 .edit-section-box {
   border-radius: 12px;
@@ -1484,51 +1500,51 @@ onMounted(() => {
   margin-bottom: 1rem;
 }
 
-.edit-section-box.blue { background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.2); }
-.edit-section-box.green { background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2); }
+.edit-section-box.blue { background: #eff6ff; border: 1px solid #bfdbfe; }
+.edit-section-box.green { background: #ecfdf5; border: 1px solid #a7f3d0; }
 
-.edit-section-box h4 { margin: 0 0 0.75rem 0; font-size: 0.95rem; color: #ffffff; }
+.edit-section-box h4 { margin: 0 0 0.75rem 0; font-size: 0.95rem; color: #0f172a; font-weight: 700; }
 .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
 .form-group { display: flex; flex-direction: column; gap: 0.3rem; }
-.form-label { font-size: 0.78rem; color: #cbd5e1; font-weight: 600; }
+.form-label { font-size: 0.78rem; color: #475569; font-weight: 700; }
 .form-input {
-  background: #0f172a;
-  border: 1px solid #334155;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
   border-radius: 8px;
-  color: #38bdf8;
+  color: #0284c7;
   padding: 0.5rem 0.75rem;
-  font-weight: 600;
+  font-weight: 700;
   outline: none;
 }
-.form-input:focus { border-color: #38bdf8; }
+.form-input:focus { border-color: #0284c7; }
 
 .sub-total-row {
   margin-top: 0.6rem;
   text-align: right;
   font-size: 0.8rem;
-  color: #94a3b8;
+  color: #64748b;
 }
 
 .grand-total-summary-card {
-  background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(30, 41, 59, 0.9));
-  border: 1px solid rgba(245, 158, 11, 0.3);
+  background: #fef3c7;
+  border: 1px solid #fde68a;
   border-radius: 12px;
   padding: 1rem;
   text-align: center;
 }
 
-.gt-title { font-size: 0.8rem; color: #fbbf24; font-weight: 700; text-transform: uppercase; }
-.gt-value { font-size: 1.4rem; font-weight: 800; color: #ffffff; }
-.gt-value small { font-size: 0.8rem; color: #cbd5e1; }
+.gt-title { font-size: 0.8rem; color: #b45309; font-weight: 800; text-transform: uppercase; }
+.gt-value { font-size: 1.4rem; font-weight: 800; color: #78350f; }
+.gt-value small { font-size: 0.8rem; color: #92400e; }
 
 .modal-footer {
   display: flex; justify-content: flex-end; gap: 0.75rem;
   padding: 1rem 1.5rem;
-  border-top: 1px solid #334155;
-  background: #0f172a;
+  border-top: 1px solid #e2e8f0;
+  background: #f8fafc;
 }
 
-.btn-cancel { background: transparent; border: 1px solid #334155; color: #94a3b8; padding: 0.6rem 1.25rem; border-radius: 8px; cursor: pointer; }
-.btn-save-edit { background: #3b82f6; border: none; color: #ffffff; font-weight: 600; padding: 0.6rem 1.25rem; border-radius: 8px; cursor: pointer; }
-.btn-save-edit:hover { background: #2563eb; }
+.btn-cancel { background: #ffffff; border: 1px solid #cbd5e1; color: #64748b; padding: 0.6rem 1.25rem; border-radius: 8px; cursor: pointer; font-weight: 600; }
+.btn-save-edit { background: #2563eb; border: none; color: #ffffff; font-weight: 700; padding: 0.6rem 1.25rem; border-radius: 8px; cursor: pointer; }
+.btn-save-edit:hover { background: #1d4ed8; }
 </style>
