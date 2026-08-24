@@ -128,13 +128,6 @@
             📊 Matriz Mensual (Día 01 - 31)
           </button>
           <button 
-            v-if="dashboardData"
-            :class="['tab-btn', { active: activeTab === 'chart' }]" 
-            @click="activeTab = 'chart'"
-          >
-            📈 Comparativo Visual (Turno A vs B)
-          </button>
-          <button 
             :class="['tab-btn', { active: activeTab === 'annual' }]" 
             @click="openAnnualTab"
           >
@@ -318,53 +311,6 @@
                   </tr>
                 </tfoot>
               </table>
-            </div>
-          </div>
-        </div>
-
-        <!-- TAB 2: COMPARATIVO VISUAL (BARRAS A VS B) -->
-        <div v-if="activeTab === 'chart' && dashboardData" class="tab-pane">
-          <div class="card chart-card">
-            <div class="card-header-inner">
-              <div>
-                <h3>📈 Comparativo Diario: Turno A vs Turno B</h3>
-                <p class="table-sub-desc">Contribución de producción (TM Secas) por guardia en Dique Principal y Dique Lateral</p>
-              </div>
-            </div>
-
-            <div class="chart-bars-wrap">
-              <div v-for="d in dashboardData.dailyReports" :key="d.id" class="day-bar-column">
-                <div class="bar-pair">
-                  <!-- Barra Turno A -->
-                  <div 
-                    class="bar bar-a" 
-                    :style="{ height: getBarHeight((d.dpArenasGuardiaA || 0) + (d.dlArenasGuardiaA || 0)) }"
-                    :title="`Día ${d.dayNumber} Turno A: ${formatNumber((d.dpArenasGuardiaA || 0) + (d.dlArenasGuardiaA || 0))} TM`"
-                  >
-                    <span v-if="((d.dpArenasGuardiaA || 0) + (d.dlArenasGuardiaA || 0)) > 0" class="bar-val">
-                      {{ formatK((d.dpArenasGuardiaA || 0) + (d.dlArenasGuardiaA || 0)) }}
-                    </span>
-                  </div>
-
-                  <!-- Barra Turno B -->
-                  <div 
-                    class="bar bar-b" 
-                    :style="{ height: getBarHeight((d.dpArenasGuardiaB || 0) + (d.dlArenasGuardiaB || 0)) }"
-                    :title="`Día ${d.dayNumber} Turno B: ${formatNumber((d.dpArenasGuardiaB || 0) + (d.dlArenasGuardiaB || 0))} TM`"
-                  >
-                    <span v-if="((d.dpArenasGuardiaB || 0) + (d.dlArenasGuardiaB || 0)) > 0" class="bar-val">
-                      {{ formatK((d.dpArenasGuardiaB || 0) + (d.dlArenasGuardiaB || 0)) }}
-                    </span>
-                  </div>
-                </div>
-
-                <div class="day-label">{{ d.dayNumber }}</div>
-              </div>
-            </div>
-
-            <div class="chart-legend">
-              <div class="legend-item"><span class="legend-box turn-a"></span> ☀️ Turno A (Día)</div>
-              <div class="legend-item"><span class="legend-box turn-b"></span> 🌙 Turno B (Noche)</div>
             </div>
           </div>
         </div>
