@@ -27,7 +27,7 @@
         <div class="status-sub">
           <span v-if="status.llmAvailable">Responde con síntesis por IA y citas oficiales</span>
           <span v-else>Recuperando fuentes y documentos de D:\ISO 45001 (Configure GEMINI_API_KEY)</span>
-        <div v-if="authStore.isAdmin" class="admin-actions">
+        <div class="admin-actions">
           <input type="file" ref="zipInputRef" accept=".zip" @change="onZipSelected" style="display: none;" />
           <button @click="triggerZipUpload" :disabled="uploadingZip || indexing" class="btn-upload">
             <span v-if="uploadingZip">⏳ Subiendo y Procesando ZIP...</span>
