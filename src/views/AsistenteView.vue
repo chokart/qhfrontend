@@ -1,5 +1,7 @@
 <template>
-  <div class="asistente-container">
+  <div class="asistente-page">
+    <AppNavbar />
+    <div class="asistente-container">
     <!-- Header Hero -->
     <header class="hero-header">
       <div class="hero-content">
@@ -164,12 +166,14 @@
       </form>
     </main>
   </div>
+  </div>
 </template>
 
 <script setup>
 import { ref, onMounted, nextTick } from 'vue';
 import api from '../api';
 import { useAuthStore } from '../stores/auth';
+import AppNavbar from '../components/AppNavbar.vue';
 
 const authStore = useAuthStore();
 
