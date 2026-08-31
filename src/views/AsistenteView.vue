@@ -33,7 +33,7 @@
         <div class="admin-actions">
           <input type="file" ref="zipInputRef" accept=".zip" @change="onZipSelected" style="display: none;" />
           <button @click="triggerZipUpload" :disabled="uploadingZip || indexing" class="btn-upload">
-            <span v-if="uploadingZip">⏳ Subiendo y Procesando ZIP...</span>
+            <span v-if="uploadingZip">⏳ {{ uploadStatusText || 'Subiendo y Procesando ZIP...' }}</span>
             <span v-else>📦 Subir ISO 45001 (.zip)</span>
           </button>
           <button @click="handleReindex" :disabled="indexing || uploadingZip" class="btn-reindex">
@@ -187,6 +187,9 @@ const zipInputRef = ref(null);
 
 const selectedCategory = ref('ALL');
 
+const uploadProgress = ref(0);
+const uploadStatusText = ref('');
+
 const triggerZipUpload = () => {
   if (zipInputRef.value) {
     zipInputRef.value.click();
@@ -201,17 +204,42 @@ const onZipSelected = async (event) => {
   formData.append('file', file);
 
   uploadingZip.value = true;
+  uploadProgress.value = 0;
+  uploadStatusText.value = 'Subiendo ZIP al servidor... 0%';
+
   try {
     const res = await api.post('/api/v1/assistant/upload-zip', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 600000, // 10 minutos para procesar ~145 PDFs pesados
+      onUploadProgress: (progressEvent) => {
+        if (progressEvent.total) {
+          const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+          uploadProgress.value = percent;
+          if (percent < 100) {
+            uploadStatusText.value = `Subiendo ZIP... ${percent}%`;
+          } else {
+            uploadStatusText.value = `⚙️ Procesando e indexando PDFs en Hostinger...`;
+          }
+        }
+      }
     });
     alert(`🎉 ¡Éxito! ${res.data.message}\nSe extrajeron ${res.data.pdfExtractedCount} PDFs y se crearon ${res.data.totalChunksIndexed} fragmentos indexados en el servidor Hostinger.`);
     await fetchStatus();
   } catch (err) {
     console.error('Error al subir archivo ZIP:', err);
-    alert('Ocurrió un error al subir o procesar el archivo ZIP.');
+    let errMsg = 'Ocurrió un error al subir o procesar el archivo ZIP.';
+    if (err.response && err.response.status === 413) {
+      errMsg = 'El archivo ZIP supera el límite permitido por el servidor. Por favor intenta subir un ZIP comprimido de menor tamaño o comunícate con soporte.';
+    } else if (err.code === 'ECONNABORTED') {
+      errMsg = 'La operación superó el tiempo de espera (Timeout). Comprueba el estado presionando Sincronizar ISO 45001.';
+    } else if (err.response && err.response.data && err.response.data.message) {
+      errMsg = err.response.data.message;
+    }
+    alert(errMsg);
   } finally {
     uploadingZip.value = false;
+    uploadProgress.value = 0;
+    uploadStatusText.value = '';
     if (event.target) event.target.value = '';
   }
 };
