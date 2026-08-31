@@ -27,6 +27,7 @@
         <div class="status-sub">
           <span v-if="status.llmAvailable">Responde con síntesis por IA y citas oficiales</span>
           <span v-else>Recuperando fuentes y documentos de D:\ISO 45001 (Configure GEMINI_API_KEY)</span>
+        </div>
         <div class="admin-actions">
           <input type="file" ref="zipInputRef" accept=".zip" @change="onZipSelected" style="display: none;" />
           <button @click="triggerZipUpload" :disabled="uploadingZip || indexing" class="btn-upload">
@@ -842,25 +843,52 @@ onMounted(() => {
 .admin-actions {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.75rem;
   flex-wrap: wrap;
-  margin-top: 0.25rem;
+  margin-top: 0.5rem;
 }
 
 .btn-upload {
-  background: #10b981;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: #ffffff;
+  border: 1px solid #34d399;
+  padding: 0.55rem 1rem;
+  border-radius: 10px;
+  font-weight: 800;
+  font-size: 0.85rem;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.btn-upload:hover:not(:disabled) {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
+}
+
+.btn-upload:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-reindex {
+  background: rgba(255, 255, 255, 0.15);
   color: white;
-  border: none;
-  padding: 0.45rem 0.85rem;
-  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  padding: 0.55rem 1rem;
+  border-radius: 10px;
   font-weight: 700;
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
-.btn-upload:hover {
-  background: #059669;
+.btn-reindex:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.25);
 }
 
 @media (max-width: 768px) {
