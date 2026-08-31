@@ -27,11 +27,17 @@
         <div class="status-sub">
           <span v-if="status.llmAvailable">Responde con síntesis por IA y citas oficiales</span>
           <span v-else>Recuperando fuentes y documentos de D:\ISO 45001 (Configure GEMINI_API_KEY)</span>
+        <div v-if="authStore.isAdmin" class="admin-actions">
+          <input type="file" ref="zipInputRef" accept=".zip" @change="onZipSelected" style="display: none;" />
+          <button @click="triggerZipUpload" :disabled="uploadingZip || indexing" class="btn-upload">
+            <span v-if="uploadingZip">⏳ Subiendo y Procesando ZIP...</span>
+            <span v-else>📦 Subir ISO 45001 (.zip)</span>
+          </button>
+          <button @click="handleReindex" :disabled="indexing || uploadingZip" class="btn-reindex">
+            <span v-if="indexing">⏳ Indexando...</span>
+            <span v-else>🔄 Sincronizar ISO 45001</span>
+          </button>
         </div>
-        <button v-if="authStore.isAdmin" @click="handleReindex" :disabled="indexing" class="btn-reindex">
-          <span v-if="indexing">⏳ Indexando...</span>
-          <span v-else>🔄 Sincronizar ISO 45001</span>
-        </button>
       </div>
     </header>
 
@@ -169,10 +175,41 @@ const authStore = useAuthStore();
 const userQuery = ref('');
 const loading = ref(false);
 const indexing = ref(false);
+const uploadingZip = ref(false);
 const chatBoxRef = ref(null);
 const inputRef = ref(null);
+const zipInputRef = ref(null);
 
 const selectedCategory = ref('ALL');
+
+const triggerZipUpload = () => {
+  if (zipInputRef.value) {
+    zipInputRef.value.click();
+  }
+};
+
+const onZipSelected = async (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const formData = new FormData();
+  formData.append('file', file);
+
+  uploadingZip.value = true;
+  try {
+    const res = await api.post('/api/v1/assistant/upload-zip', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+    alert(`🎉 ¡Éxito! ${res.data.message}\nSe extrajeron ${res.data.pdfExtractedCount} PDFs y se crearon ${res.data.totalChunksIndexed} fragmentos indexados en el servidor Hostinger.`);
+    await fetchStatus();
+  } catch (err) {
+    console.error('Error al subir archivo ZIP:', err);
+    alert('Ocurrió un error al subir o procesar el archivo ZIP.');
+  } finally {
+    uploadingZip.value = false;
+    if (event.target) event.target.value = '';
+  }
+};
 
 const status = ref({
   llmAvailable: false,
@@ -800,6 +837,30 @@ onMounted(() => {
 .btn-send:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.admin-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: 0.25rem;
+}
+
+.btn-upload {
+  background: #10b981;
+  color: white;
+  border: none;
+  padding: 0.45rem 0.85rem;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-upload:hover {
+  background: #059669;
 }
 
 @media (max-width: 768px) {
