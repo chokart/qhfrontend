@@ -41,9 +41,13 @@
             <span v-if="uploadingJson">⏳ Cargando JSON...</span>
             <span v-else>📄 Subir Base Preprocesada (.json)</span>
           </button>
-          <button @click="handleReindex" :disabled="indexing || uploadingZip || uploadingJson" class="btn-reindex">
+          <button @click="handleReindex" :disabled="indexing || uploadingZip || uploadingJson || clearing" class="btn-reindex">
             <span v-if="indexing">⏳ Indexando...</span>
             <span v-else>🔄 Sincronizar ISO 45001</span>
+          </button>
+          <button @click="handleClearData" :disabled="clearing || indexing || uploadingZip || uploadingJson" class="btn-clear">
+            <span v-if="clearing">⏳ Limpiando...</span>
+            <span v-else>🗑️ Limpiar Base de Datos</span>
           </button>
         </div>
       </div>
@@ -187,10 +191,28 @@ const loading = ref(false);
 const indexing = ref(false);
 const uploadingZip = ref(false);
 const uploadingJson = ref(false);
+const clearing = ref(false);
 const chatBoxRef = ref(null);
 const inputRef = ref(null);
 const zipInputRef = ref(null);
 const jsonInputRef = ref(null);
+
+const handleClearData = async () => {
+  if (!confirm('⚠️ ¿Estás seguro de que deseas eliminar toda la base de datos de fragmentos y archivos subidos de ISO 45001? esta acción dejará la base de datos en 0.')) {
+    return;
+  }
+  clearing.value = true;
+  try {
+    const res = await api.post('/api/v1/assistant/clear');
+    alert(`🗑️ ¡Éxito! ${res.data.message}\nSe eliminaron ${res.data.chunksDeleted} fragmentos y ${res.data.filesDeleted} archivos del servidor.`);
+    await fetchStatus();
+  } catch (err) {
+    console.error('Error al limpiar base de datos:', err);
+    alert('Ocurrió un error al intentar limpiar la base de datos.');
+  } finally {
+    clearing.value = false;
+  }
+};
 
 const selectedCategory = ref('ALL');
 
@@ -980,6 +1002,33 @@ onMounted(() => {
 
 .btn-reindex:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.25);
+}
+
+.btn-clear {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: #ffffff;
+  border: 1px solid #f87171;
+  padding: 0.55rem 1rem;
+  border-radius: 10px;
+  font-weight: 800;
+  font-size: 0.85rem;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.btn-clear:hover:not(:disabled) {
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(239, 68, 68, 0.4);
+}
+
+.btn-clear:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 @media (max-width: 768px) {
