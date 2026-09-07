@@ -341,10 +341,16 @@ const sendMessage = async () => {
   loading.value = true;
   await scrollToBottom();
 
+  const historyPayload = messages.value.slice(-7, -1).map(m => ({
+    sender: m.sender,
+    text: m.text
+  }));
+
   try {
     const res = await api.post('/api/v1/assistant/chat', {
       message: queryText,
-      categoryFilter: selectedCategory.value
+      categoryFilter: selectedCategory.value,
+      history: historyPayload
     });
 
     const data = res.data;
