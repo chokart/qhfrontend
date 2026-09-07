@@ -351,7 +351,7 @@ const sendMessage = async () => {
       message: queryText,
       categoryFilter: selectedCategory.value,
       history: historyPayload
-    });
+    }, { timeout: 90000 });
 
     const data = res.data;
 
