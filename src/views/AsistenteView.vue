@@ -55,38 +55,6 @@
 
     <!-- Main Content Area -->
     <main class="chat-wrapper">
-      <!-- Quick Prompts Chips -->
-      <div class="quick-prompts">
-        <span class="prompts-label">Preguntas rápidas:</span>
-        <button 
-          v-for="(prompt, idx) in samplePrompts" 
-          :key="idx" 
-          @click="useSamplePrompt(prompt.text)" 
-          class="prompt-chip"
-        >
-          <span class="chip-icon">{{ prompt.icon }}</span>
-          <span>{{ prompt.label }}</span>
-        </button>
-      </div>
-
-      <!-- Filter Controls -->
-      <div class="filters-bar">
-        <div class="filter-group">
-          <label class="filter-label">Filtrar por documento:</label>
-          <div class="filter-pills">
-            <button 
-              v-for="cat in categories" 
-              :key="cat.id"
-              @click="selectedCategory = cat.id"
-              :class="['pill-btn', { active: selectedCategory === cat.id }]"
-            >
-              <span>{{ cat.icon }}</span>
-              <span>{{ cat.label }}</span>
-            </button>
-          </div>
-        </div>
-      </div>
-
       <!-- Chat History Box -->
       <div class="chat-box" ref="chatBoxRef">
         <div v-if="messages.length === 0" class="welcome-card">
