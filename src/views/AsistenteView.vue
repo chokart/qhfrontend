@@ -315,14 +315,15 @@ const categories = [
   { id: 'PETS', label: 'PETS (Procedimientos)', icon: '📋' },
   { id: 'IPERC', label: 'IPERC (Riesgos)', icon: '🛡️' },
   { id: 'ESTANDAR_OPERATIVO', label: 'Estándares Operativos', icon: '⚙️' },
-  { id: 'ESTANDAR_SEGURIDAD', label: 'Estándares de Seguridad', icon: '🦺' }
+  { id: 'ESTANDAR_SEGURIDAD', label: 'Estándares de Seguridad', icon: '🦺' },
+  { id: 'LEYES', label: 'Leyes & Normativa (D.S. 024-2016-EM)', icon: '⚖️' }
 ];
 
 const samplePrompts = [
   { label: 'PETS Preparación de Canchas', icon: '🚧', text: '¿Cuáles son las indicaciones del PETS.021 para preparación de canchas en diques?' },
   { label: 'Pega de Tubería HDPE', icon: '🔧', text: '¿Qué EPP y procedimiento se requiere para el corte y pega de tuberías HDPE?' },
   { label: 'IPERC de Equipos Livianos', icon: '🛻', text: '¿Qué peligros y controles establece el IPERC-004 para conducción de equipos livianos?' },
-  { label: 'Estándar LOTO & Altura', icon: '🔒', text: '¿Cuáles son los requisitos de Bloqueo y Etiquetado (LOTO) y Trabajos en Altura?' }
+  { label: 'Marco Legal D.S. 024-2016-EM', icon: '⚖️', text: '¿Cuáles son las obligaciones del titular minero según el Reglamento D.S. 024-2016-EM?' }
 ];
 
 const messages = ref([]);
