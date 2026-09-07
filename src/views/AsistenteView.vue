@@ -32,11 +32,16 @@
         </div>
         <div class="admin-actions">
           <input type="file" ref="zipInputRef" accept=".zip" @change="onZipSelected" style="display: none;" />
-          <button @click="triggerZipUpload" :disabled="uploadingZip || indexing" class="btn-upload">
+          <input type="file" ref="jsonInputRef" accept=".json" @change="onJsonSelected" style="display: none;" />
+          <button @click="triggerZipUpload" :disabled="uploadingZip || uploadingJson || indexing" class="btn-upload">
             <span v-if="uploadingZip">⏳ {{ uploadStatusText || 'Subiendo y Procesando ZIP...' }}</span>
-            <span v-else>📦 Subir ISO 45001 (.zip)</span>
+            <span v-else>📦 Subir PDFs (.zip)</span>
           </button>
-          <button @click="handleReindex" :disabled="indexing || uploadingZip" class="btn-reindex">
+          <button @click="triggerJsonUpload" :disabled="uploadingZip || uploadingJson || indexing" class="btn-upload-json">
+            <span v-if="uploadingJson">⏳ Cargando JSON...</span>
+            <span v-else>📄 Subir Base Preprocesada (.json)</span>
+          </button>
+          <button @click="handleReindex" :disabled="indexing || uploadingZip || uploadingJson" class="btn-reindex">
             <span v-if="indexing">⏳ Indexando...</span>
             <span v-else>🔄 Sincronizar ISO 45001</span>
           </button>
@@ -181,9 +186,11 @@ const userQuery = ref('');
 const loading = ref(false);
 const indexing = ref(false);
 const uploadingZip = ref(false);
+const uploadingJson = ref(false);
 const chatBoxRef = ref(null);
 const inputRef = ref(null);
 const zipInputRef = ref(null);
+const jsonInputRef = ref(null);
 
 const selectedCategory = ref('ALL');
 
@@ -193,6 +200,36 @@ const uploadStatusText = ref('');
 const triggerZipUpload = () => {
   if (zipInputRef.value) {
     zipInputRef.value.click();
+  }
+};
+
+const triggerJsonUpload = () => {
+  if (jsonInputRef.value) {
+    jsonInputRef.value.click();
+  }
+};
+
+const onJsonSelected = async (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const formData = new FormData();
+  formData.append('file', file);
+
+  uploadingJson.value = true;
+  try {
+    const res = await api.post('/api/v1/assistant/upload-json', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 300000
+    });
+    alert(`🎉 ¡Éxito! ${res.data.message}\nSe cargaron e indexaron ${res.data.totalChunksIndexed} bloques semánticos preprocesados.`);
+    await fetchStatus();
+  } catch (err) {
+    console.error('Error al subir JSON preprocesado:', err);
+    alert('Ocurrió un error al subir el archivo JSON de conocimiento.');
+  } finally {
+    uploadingJson.value = false;
+    if (event.target) event.target.value = '';
   }
 };
 
@@ -902,7 +939,29 @@ onMounted(() => {
   box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
 }
 
-.btn-upload:disabled {
+.btn-upload-json {
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+  color: #ffffff;
+  border: 1px solid #38bdf8;
+  padding: 0.55rem 1rem;
+  border-radius: 10px;
+  font-weight: 800;
+  font-size: 0.85rem;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3);
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.btn-upload-json:hover:not(:disabled) {
+  background: linear-gradient(135deg, #0369a1 0%, #075985 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(2, 132, 199, 0.4);
+}
+
+.btn-upload-json:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
