@@ -94,7 +94,9 @@
                   <th style="width: 50px;">#</th>
                   <th style="width: 100px;">CÓDIGO</th>
                   <th>NOMBRE COMPLETO</th>
-                  <th style="width: 160px;">ROL / CARGO</th>
+                  <th style="width: 150px;">ROL / CARGO</th>
+                  <th style="width: 140px;">EQUIPO</th>
+                  <th style="width: 150px;">ACTIVIDAD</th>
                   <th style="width: 150px;">GUARDIA / GRUPO</th>
                   <th style="width: 90px; text-align: center;">ESTADO</th>
                   <th style="width: 320px; text-align: center;">ACCIONES</th>
@@ -112,6 +114,14 @@
                     <span class="role-pill" @click="openRoleModal(op)" title="Clic para editar rol">
                       🏷️ {{ op.role || 'OPERADOR' }}
                     </span>
+                  </td>
+                  <td class="col-equipment">
+                    <span v-if="op.equipment" class="equipment-badge">🚜 {{ op.equipment }}</span>
+                    <span v-else class="no-detail">-</span>
+                  </td>
+                  <td class="col-activity">
+                    <span v-if="op.activity" class="activity-badge">⚡ {{ op.activity }}</span>
+                    <span v-else class="no-detail">-</span>
                   </td>
                   <td class="col-guardia">
                     <div class="guardia-cell-wrapper">
@@ -375,6 +385,16 @@
           <div v-if="createOpForm.role === 'OTRO'" class="form-group">
             <label class="form-label">Especificar Cargo Personalizado:</label>
             <input type="text" v-model="createOpForm.customRole" placeholder="Ej. Técnico Mecánico" class="form-input-text" />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Equipo / Maquinaria Inicial (Opcional):</label>
+            <input type="text" v-model="createOpForm.equipment" placeholder="Ej. TRACTOR D8-01, CIS-01" class="form-input-text" />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Actividad / Tarea Inicial (Opcional):</label>
+            <input type="text" v-model="createOpForm.activity" placeholder="Ej. Apilado de mineral, Riego de cancha" class="form-input-text" />
           </div>
 
           <div class="form-group">
@@ -698,8 +718,11 @@ const filteredOperators = computed(() => {
   return operators.value.filter(op => {
     const nameMatch = op.name && op.name.toLowerCase().includes(q);
     const codeMatch = op.code && op.code.toLowerCase().includes(q);
+    const roleMatch = op.role && op.role.toLowerCase().includes(q);
+    const equipmentMatch = op.equipment && op.equipment.toLowerCase().includes(q);
+    const activityMatch = op.activity && op.activity.toLowerCase().includes(q);
     const groupMatch = op.group && op.group.name && op.group.name.toLowerCase().includes(q);
-    return nameMatch || codeMatch || groupMatch;
+    return nameMatch || codeMatch || roleMatch || equipmentMatch || activityMatch || groupMatch;
   });
 });
 
@@ -711,6 +734,8 @@ const createOpForm = reactive({
   name: '',
   role: 'PAT',
   customRole: '',
+  equipment: '',
+  activity: '',
   groupId: null
 });
 
@@ -719,6 +744,8 @@ const openCreateOperatorModal = () => {
   createOpForm.name = '';
   createOpForm.role = 'PAT';
   createOpForm.customRole = '';
+  createOpForm.equipment = '';
+  createOpForm.activity = '';
   createOpForm.groupId = null;
   showCreateOperatorModal.value = true;
 };
@@ -736,6 +763,8 @@ const saveNewOperator = async () => {
       code: createOpForm.code.trim(),
       name: createOpForm.name.trim(),
       role: finalRole || 'OPERADOR',
+      equipment: createOpForm.equipment ? createOpForm.equipment.trim() : null,
+      activity: createOpForm.activity ? createOpForm.activity.trim() : null,
       groupId: createOpForm.groupId
     });
 
@@ -1547,6 +1576,33 @@ const deleteOperatorConfirmed = async () => {
 .btn-save-vacation:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+.equipment-badge {
+  display: inline-block;
+  padding: 0.2rem 0.55rem;
+  background: #fef3c7;
+  color: #92400e;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.activity-badge {
+  display: inline-block;
+  padding: 0.2rem 0.55rem;
+  background: #dcfce7;
+  color: #166534;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.no-detail {
+  color: #cbd5e1;
+  font-size: 0.8rem;
 }
 
 @media (max-width: 768px) {

@@ -132,6 +132,9 @@
           <tr>
             <th class="sticky-col col-code-hdr">CÓDIGO</th>
             <th class="sticky-col col-name-hdr">NOMBRES Y APELLIDOS</th>
+            <th class="sticky-col col-role-hdr">ROL / CARGO</th>
+            <th class="sticky-col col-equipment-hdr">EQUIPO</th>
+            <th class="sticky-col col-activity-hdr">ACTIVIDAD</th>
             <th class="sticky-col col-guardia-hdr">GUARDIA</th>
             <th 
               v-for="d in calendarDays" 
@@ -157,7 +160,21 @@
                 <span v-if="op.onlyDayShift" class="sun-icon-inline" title="Operador en modalidad Solo Día (convierte turnos Noche 'N' a Día 'D')">☀️</span>
               </div>
             </td>
-            <!-- Columna 3: GUARDIA -->
+            <!-- Columna 3: ROL -->
+            <td class="sticky-col col-role-cell" @click="openEditDetailsModal(op, 'role')" title="Clic para editar Rol">
+              <span class="role-pill-table">🏷️ {{ op.role || 'OPERADOR' }}</span>
+            </td>
+            <!-- Columna 4: EQUIPO -->
+            <td class="sticky-col col-equipment-cell" @click="openEditDetailsModal(op, 'equipment')" title="Clic para editar Equipo asignado">
+              <span v-if="op.equipment" class="equipment-pill-table">🚜 {{ op.equipment }}</span>
+              <span v-else class="no-detail-tag">+ Asignar Equipo</span>
+            </td>
+            <!-- Columna 5: ACTIVIDAD -->
+            <td class="sticky-col col-activity-cell" @click="openEditDetailsModal(op, 'activity')" title="Clic para editar Actividad asignada">
+              <span v-if="op.activity" class="activity-pill-table">⚡ {{ op.activity }}</span>
+              <span v-else class="no-detail-tag">+ Asignar Actividad</span>
+            </td>
+            <!-- Columna 6: GUARDIA -->
             <td class="sticky-col col-guardia-cell">
               <span 
                 class="op-guardia-tag" 
@@ -190,7 +207,7 @@
         <!-- Fila de Resumen Diario de Cobertura -->
         <tfoot>
           <tr class="summary-row">
-            <td colspan="3" class="sticky-col col-operator summary-label">
+            <td colspan="6" class="sticky-col col-operator summary-label">
               <b>TOTAL DÍA (☀️)</b>
             </td>
             <td v-for="d in calendarDays" :key="d.key" class="col-summary count-d">
@@ -198,7 +215,7 @@
             </td>
           </tr>
           <tr class="summary-row">
-            <td colspan="3" class="sticky-col col-operator summary-label">
+            <td colspan="6" class="sticky-col col-operator summary-label">
               <b>TOTAL NOCHE (🌙)</b>
             </td>
             <td v-for="d in calendarDays" :key="d.key" class="col-summary count-n">
@@ -206,7 +223,7 @@
             </td>
           </tr>
           <tr class="summary-row">
-            <td colspan="3" class="sticky-col col-operator summary-label">
+            <td colspan="6" class="sticky-col col-operator summary-label">
               <b>TOTAL LIBRES (🏖️)</b>
             </td>
             <td v-for="d in calendarDays" :key="d.key" class="col-summary count-l">
@@ -214,7 +231,7 @@
             </td>
           </tr>
           <tr class="summary-row">
-            <td colspan="3" class="sticky-col col-operator summary-label">
+            <td colspan="6" class="sticky-col col-operator summary-label">
               <b>VACACIONES (🌴)</b>
             </td>
             <td v-for="d in calendarDays" :key="d.key" class="col-summary count-v">
@@ -222,7 +239,7 @@
             </td>
           </tr>
           <tr class="summary-row">
-            <td colspan="3" class="sticky-col col-operator summary-label">
+            <td colspan="6" class="sticky-col col-operator summary-label">
               <b>SOBRETIEMPO DÍA (☀️⏰)</b>
             </td>
             <td v-for="d in calendarDays" :key="d.key" class="col-summary count-st-d">
@@ -230,7 +247,7 @@
             </td>
           </tr>
           <tr class="summary-row">
-            <td colspan="3" class="sticky-col col-operator summary-label">
+            <td colspan="6" class="sticky-col col-operator summary-label">
               <b>SOBRETIEMPO NOCHE (🌙⏰)</b>
             </td>
             <td v-for="d in calendarDays" :key="d.key" class="col-summary count-st-n">
@@ -238,7 +255,7 @@
             </td>
           </tr>
           <tr class="summary-row">
-            <td colspan="3" class="sticky-col col-operator summary-label">
+            <td colspan="6" class="sticky-col col-operator summary-label">
               <b>DESCANSO MÉDICO (🩺)</b>
             </td>
             <td v-for="d in calendarDays" :key="d.key" class="col-summary count-dm">
@@ -309,6 +326,69 @@
         </div>
       </div>
     </div>
+
+    <!-- Modal Modificar Detalles de Operador (Rol, Equipo, Actividad) -->
+    <div v-if="showDetailsModal" class="modal-backdrop" @click.self="showDetailsModal = false">
+      <div class="override-modal-card">
+        <h3>🏷️ Modificar Asignación de Trabajador</h3>
+        <p class="modal-op-name" v-if="selectedOpForDetails">
+          <b>{{ selectedOpForDetails.name }}</b> 
+          <span v-if="selectedOpForDetails.code" class="code-badge">({{ selectedOpForDetails.code }})</span>
+        </p>
+
+        <div class="form-group-modal">
+          <label>Rol / Cargo:</label>
+          <select v-model="editRole" class="input-modal-select">
+            <option v-for="r in rolePresetOptions" :key="r" :value="r">{{ r }}</option>
+          </select>
+          <input 
+            v-if="editRole === 'OTRO'" 
+            type="text" 
+            v-model="customRole" 
+            placeholder="Especificar rol personalizado..." 
+            class="input-modal-text margin-top-sm" 
+          />
+        </div>
+
+        <div class="form-group-modal">
+          <label>Equipo / Maquinaria Asignada:</label>
+          <select v-model="editEquipment" class="input-modal-select">
+            <option value="">-- Sin Equipo Asignado --</option>
+            <option v-for="eq in registeredEquipmentList" :key="eq" :value="eq">🚜 {{ eq }}</option>
+            <option value="OTRO">✏️ Otro / Equipo Personalizado</option>
+          </select>
+          <input 
+            v-if="editEquipment === 'OTRO'" 
+            type="text" 
+            v-model="customEquipment" 
+            placeholder="Ej. TRACTOR D8-01, CIS-01..." 
+            class="input-modal-text margin-top-sm" 
+          />
+        </div>
+
+        <div class="form-group-modal">
+          <label>Actividad / Tarea Asignada:</label>
+          <select v-model="editActivity" class="input-modal-select">
+            <option value="">-- Sin Actividad Asignada --</option>
+            <option v-for="act in activityPresetOptions" :key="act" :value="act">⚡ {{ act }}</option>
+          </select>
+          <input 
+            v-if="editActivity === 'OTRO'" 
+            type="text" 
+            v-model="customActivity" 
+            placeholder="Especificar actividad personalizada..." 
+            class="input-modal-text margin-top-sm" 
+          />
+        </div>
+
+        <div class="modal-actions">
+          <button @click="showDetailsModal = false" class="btn-modal-cancel">Cancelar</button>
+          <button @click="saveOperatorDetails" :disabled="savingDetails" class="btn-modal-save">
+            {{ savingDetails ? 'Guardando...' : '💾 Guardar Cambios' }}
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -340,6 +420,117 @@ const selectedShiftFilter = ref('ALL');
 const searchQuery = ref('');
 const loading = ref(true);
 const groups = ref([]);
+
+// Modal Modificar Detalles (Rol, Equipo, Actividad)
+const showDetailsModal = ref(false);
+const selectedOpForDetails = ref(null);
+const editRole = ref('OPERADOR');
+const customRole = ref('');
+const editEquipment = ref('');
+const customEquipment = ref('');
+const editActivity = ref('');
+const customActivity = ref('');
+const savingDetails = ref(false);
+const registeredEquipmentList = ref([]);
+
+const rolePresetOptions = [
+  'PAT',
+  '2101',
+  'QH6',
+  'CICLONEROL',
+  'CICLONEROP',
+  'ESPESADOR',
+  'SUPERVISOR',
+  'SALA',
+  'OPERADOR TRACTOR',
+  'OPERADOR EXCAVADORA',
+  'OPERADOR RODILLO',
+  'FILTRERO',
+  'OTRO'
+];
+
+const activityPresetOptions = [
+  'Apilado de mineral',
+  'Riego de cancha',
+  'Acondicionamiento de dique',
+  'Mantenimiento de vía',
+  'Soporte de mina',
+  'Operación de hidrociclón',
+  'Manejo de filtros',
+  'Traslado de tubería HDPE',
+  'Limpieza y desbroce',
+  'Supervisión de turno',
+  'OTRO'
+];
+
+const fetchEquipmentList = async () => {
+  try {
+    const res = await api.get('/api/v1/equipment');
+    registeredEquipmentList.value = res.data.map(e => e.shortCode || e.name);
+  } catch (err) {
+    console.error("Error al cargar lista de equipos:", err);
+  }
+};
+
+const openEditDetailsModal = (op, focusField = 'role') => {
+  selectedOpForDetails.value = op;
+  const currentRole = op.role || 'OPERADOR';
+  if (rolePresetOptions.includes(currentRole)) {
+    editRole.value = currentRole;
+    customRole.value = '';
+  } else {
+    editRole.value = 'OTRO';
+    customRole.value = currentRole;
+  }
+
+  const currentEq = op.equipment || '';
+  if (registeredEquipmentList.value.includes(currentEq) || !currentEq) {
+    editEquipment.value = currentEq;
+    customEquipment.value = '';
+  } else {
+    editEquipment.value = 'OTRO';
+    customEquipment.value = currentEq;
+  }
+
+  const currentAct = op.activity || '';
+  if (activityPresetOptions.includes(currentAct) || !currentAct) {
+    editActivity.value = currentAct;
+    customActivity.value = '';
+  } else {
+    editActivity.value = 'OTRO';
+    customActivity.value = currentAct;
+  }
+
+  showDetailsModal.value = true;
+};
+
+const saveOperatorDetails = async () => {
+  if (!selectedOpForDetails.value) return;
+
+  const finalRole = editRole.value === 'OTRO' ? customRole.value.trim() : editRole.value;
+  const finalEquipment = editEquipment.value === 'OTRO' ? customEquipment.value.trim() : editEquipment.value;
+  const finalActivity = editActivity.value === 'OTRO' ? customActivity.value.trim() : editActivity.value;
+
+  savingDetails.value = true;
+  try {
+    const res = await api.put(`/api/v1/operators/${selectedOpForDetails.value.operatorId}/details`, {
+      role: finalRole,
+      equipment: finalEquipment,
+      activity: finalActivity
+    });
+
+    selectedOpForDetails.value.role = res.data.role;
+    selectedOpForDetails.value.equipment = res.data.equipment;
+    selectedOpForDetails.value.activity = res.data.activity;
+
+    showDetailsModal.value = false;
+  } catch (err) {
+    console.error("Error al guardar detalles de operador:", err);
+    alert("Ocurrió un error al guardar Rol, Equipo y Actividad.");
+  } finally {
+    savingDetails.value = false;
+  }
+};
 
 const matrixData = ref({
   year: 2026,
@@ -429,6 +620,8 @@ const fetchMatrix = async () => {
           code: op.code,
           name: op.name,
           role: op.role,
+          equipment: op.equipment,
+          activity: op.activity,
           groupId: op.groupId,
           groupName: op.groupName,
           groupColor: op.groupColor,
@@ -451,6 +644,7 @@ const fetchMatrix = async () => {
 
 onMounted(() => {
   fetchGroups();
+  fetchEquipmentList();
   fetchMatrix();
   window.addEventListener('click', handleOutsideClick);
 });
@@ -644,23 +838,35 @@ const exportToPDF = () => {
     '#',
     'CÓD',
     'NOMBRES Y APELLIDOS',
+    'ROL',
+    'EQUIPO',
+    'ACTIVIDAD',
     'GUA',
     ...calendarDays.value.map(d => `${d.dayNum}\n${d.dayName.substring(0, 1)}`)
   ];
 
-  const headD = ['', '', 'TOTAL DÍA (☀️)', '', ...calendarDays.value.map(d => dailySummary.value[d.key]?.D || 0)];
-  const headN = ['', '', 'TOTAL NOCHE (🌙)', '', ...calendarDays.value.map(d => dailySummary.value[d.key]?.N || 0)];
-  const headSTD = ['', '', 'ST DÍA (☀️⏰)', '', ...calendarDays.value.map(d => dailySummary.value[d.key]?.['ST-D'] || 0)];
-  const headSTN = ['', '', 'ST NOCHE (🌙⏰)', '', ...calendarDays.value.map(d => dailySummary.value[d.key]?.['ST-N'] || 0)];
-  const headV = ['', '', 'VACACIONES (🌴)', '', ...calendarDays.value.map(d => dailySummary.value[d.key]?.V || 0)];
-  const headDM = ['', '', 'DM (🩺)', '', ...calendarDays.value.map(d => dailySummary.value[d.key]?.DM || 0)];
-  const headL = ['', '', 'LIBRES (🏖️)', '', ...calendarDays.value.map(d => dailySummary.value[d.key]?.L || 0)];
+  const headD = ['', '', 'TOTAL DÍA (☀️)', '', '', '', '', ...calendarDays.value.map(d => dailySummary.value[d.key]?.D || 0)];
+  const headN = ['', '', 'TOTAL NOCHE (🌙)', '', '', '', '', ...calendarDays.value.map(d => dailySummary.value[d.key]?.N || 0)];
+  const headSTD = ['', '', 'ST DÍA (☀️⏰)', '', '', '', '', ...calendarDays.value.map(d => dailySummary.value[d.key]?.['ST-D'] || 0)];
+  const headSTN = ['', '', 'ST NOCHE (🌙⏰)', '', '', '', '', ...calendarDays.value.map(d => dailySummary.value[d.key]?.['ST-N'] || 0)];
+  const headV = ['', '', 'VACACIONES (🌴)', '', '', '', '', ...calendarDays.value.map(d => dailySummary.value[d.key]?.V || 0)];
+  const headDM = ['', '', 'DM (🩺)', '', '', '', '', ...calendarDays.value.map(d => dailySummary.value[d.key]?.DM || 0)];
+  const headL = ['', '', 'LIBRES (🏖️)', '', '', '', '', ...calendarDays.value.map(d => dailySummary.value[d.key]?.L || 0)];
 
   const bodyRows = filteredOperators.value.map((op, idx) => {
     const dayValues = calendarDays.value.map(d => {
       return (op.shifts && op.shifts[d.key]) ? op.shifts[d.key] : 'L';
     });
-    return [idx + 1, op.code || '-', op.name, op.groupName || '-', ...dayValues];
+    return [
+      idx + 1, 
+      op.code || '-', 
+      op.name, 
+      op.role || 'OPERADOR', 
+      op.equipment || '-', 
+      op.activity || '-', 
+      op.groupName || '-', 
+      ...dayValues
+    ];
   });
 
   autoTable(doc, {
@@ -1538,6 +1744,63 @@ th.sticky-col {
   padding: 0.6rem 1.25rem;
   border-radius: 8px;
   font-weight: 700;
+  cursor: pointer;
+}
+
+.input-modal-select {
+  padding: 0.6rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  outline: none;
+  background: white;
+}
+
+.margin-top-sm {
+  margin-top: 0.4rem;
+}
+
+.role-pill-table {
+  display: inline-block;
+  padding: 0.2rem 0.5rem;
+  background: #e0e7ff;
+  color: #3730a3;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.equipment-pill-table {
+  display: inline-block;
+  padding: 0.2rem 0.5rem;
+  background: #fef3c7;
+  color: #92400e;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.activity-pill-table {
+  display: inline-block;
+  padding: 0.2rem 0.5rem;
+  background: #dcfce7;
+  color: #166534;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.no-detail-tag {
+  display: inline-block;
+  color: #94a3b8;
+  font-size: 0.7rem;
+  font-style: italic;
   cursor: pointer;
 }
 </style>
