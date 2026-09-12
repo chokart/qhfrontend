@@ -451,18 +451,22 @@ const savingDetails = ref(false);
 const registeredEquipmentList = ref([]);
 
 const rolePresetOptions = [
-  'PAT',
-  '2101',
-  'QH6',
-  'CICLONEROL',
-  'CICLONEROP',
-  'ESPESADOR',
   'SUPERVISOR',
-  'SALA',
-  'OPERADOR TRACTOR',
-  'OPERADOR EXCAVADORA',
-  'OPERADOR RODILLO',
-  'FILTRERO',
+  'SALA CONTROL',
+  'CICLONERO PRINCIPAL',
+  'TRACTOR PRINCIPAL',
+  'EXCAVADORA PRINCIPAL',
+  'RODILLO PRINCIPAL',
+  'CICLONERO LATERAL',
+  'TRACTOR LATERAL',
+  'EXCAVADORA LATERAL',
+  'RODILLO LATERAL',
+  'PAT',
+  'QH6',
+  '2101',
+  'ESPESADOR',
+  'FILTRADO',
+  'MISCELANEOS',
   'OTRO'
 ];
 

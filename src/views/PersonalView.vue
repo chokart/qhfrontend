@@ -483,18 +483,22 @@ const customRole = ref('');
 const savingRole = ref(false);
 
 const rolePresetOptions = [
-  'PAT',
-  '2101',
-  'QH6',
-  'CICLONEROL',
-  'CICLONEROP',
-  'ESPESADOR',
   'SUPERVISOR',
-  'SALA',
-  'OPERADOR TRACTOR',
-  'OPERADOR EXCAVADORA',
-  'OPERADOR RODILLO',
-  'FILTRERO',
+  'SALA CONTROL',
+  'CICLONERO PRINCIPAL',
+  'TRACTOR PRINCIPAL',
+  'EXCAVADORA PRINCIPAL',
+  'RODILLO PRINCIPAL',
+  'CICLONERO LATERAL',
+  'TRACTOR LATERAL',
+  'EXCAVADORA LATERAL',
+  'RODILLO LATERAL',
+  'PAT',
+  'QH6',
+  '2101',
+  'ESPESADOR',
+  'FILTRADO',
+  'MISCELANEOS',
   'OTRO'
 ];
 
@@ -732,7 +736,7 @@ const savingCreateOperator = ref(false);
 const createOpForm = reactive({
   code: '',
   name: '',
-  role: 'PAT',
+  role: 'SUPERVISOR',
   customRole: '',
   equipment: '',
   activity: '',
@@ -742,7 +746,7 @@ const createOpForm = reactive({
 const openCreateOperatorModal = () => {
   createOpForm.code = '';
   createOpForm.name = '';
-  createOpForm.role = 'PAT';
+  createOpForm.role = 'SUPERVISOR';
   createOpForm.customRole = '';
   createOpForm.equipment = '';
   createOpForm.activity = '';
