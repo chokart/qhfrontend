@@ -400,14 +400,31 @@ import api from '../api';
 
 const emit = defineEmits(['openGroupManager']);
 
+const getTodayStr = () => {
+  const d = new Date();
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+};
+
+const getFutureDateStr = (days = 14) => {
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+};
+
 const now = new Date();
 const currentRealMonth = now.getMonth() + 1;
 const currentMonth = ref(currentRealMonth >= 1 && currentRealMonth <= 12 ? currentRealMonth : 8);
 
 // Selección de Modo de Fecha (Mes vs Rango Personalizado)
 const dateSelectionMode = ref('month'); // 'month' | 'range'
-const rangeStartDate = ref(`2026-08-01`);
-const rangeEndDate = ref(`2026-08-20`);
+const rangeStartDate = ref(getTodayStr());
+const rangeEndDate = ref(getFutureDateStr(14));
 
 // Filtro Multiselección de Guardias
 const selectedGroupIds = ref([]); // Lista de IDs de guardias seleccionadas (vacío = todas)
@@ -651,6 +668,13 @@ onMounted(() => {
 
 onUnmounted(() => {
   window.removeEventListener('click', handleOutsideClick);
+});
+
+watch(dateSelectionMode, (newMode) => {
+  if (newMode === 'range') {
+    rangeStartDate.value = getTodayStr();
+    rangeEndDate.value = getFutureDateStr(14);
+  }
 });
 
 watch([currentMonth, dateSelectionMode], () => {
