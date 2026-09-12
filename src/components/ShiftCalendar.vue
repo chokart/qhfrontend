@@ -859,7 +859,29 @@ const exportToPDF = () => {
     groupText = selectedNames.join(", ");
   }
 
-  doc.text(`Período: ${periodText}  |  Guardias: ${groupText}  |  Personal: ${filteredOperators.value.length}  |  Emisión: ${new Date().toLocaleDateString('es-PE')}`, 10, 15);
+  const getOperatorSector = (op) => {
+    const text = `${op.role || ''} ${op.activity || ''} ${op.equipment || ''}`;
+    if (/\b(PRINCIPAL|DP|DIQUE PRINCIPAL)\b/i.test(text)) {
+      return 'PRINCIPAL';
+    }
+    if (/\b(LATERAL|DL|DIQUE LATERAL)\b/i.test(text)) {
+      return 'LATERAL';
+    }
+    return 'OTROS';
+  };
+
+  const diquePrincipalOps = [];
+  const diqueLateralOps = [];
+  const otrosOps = [];
+
+  filteredOperators.value.forEach((op) => {
+    const sector = getOperatorSector(op);
+    if (sector === 'PRINCIPAL') diquePrincipalOps.push(op);
+    else if (sector === 'LATERAL') diqueLateralOps.push(op);
+    else otrosOps.push(op);
+  });
+
+  doc.text(`Período: ${periodText}  |  Dique Principal: ${diquePrincipalOps.length}  |  Dique Lateral: ${diqueLateralOps.length}  |  Otros: ${otrosOps.length}  |  Total: ${filteredOperators.value.length}  |  Emisión: ${new Date().toLocaleDateString('es-PE')}`, 10, 15);
 
   // Filas de Cabecera y Totales Diarios para autoTable
   const headDaysRow = [
@@ -881,21 +903,98 @@ const exportToPDF = () => {
   const headDM = ['', '', 'DM (🩺)', '', '', '', '', ...calendarDays.value.map(d => dailySummary.value[d.key]?.DM || 0)];
   const headL = ['', '', 'LIBRES (🏖️)', '', '', '', '', ...calendarDays.value.map(d => dailySummary.value[d.key]?.L || 0)];
 
-  const bodyRows = filteredOperators.value.map((op, idx) => {
-    const dayValues = calendarDays.value.map(d => {
-      return (op.shifts && op.shifts[d.key]) ? op.shifts[d.key] : 'L';
+  const totalCols = headDaysRow.length;
+  const bodyRows = [];
+
+  // SECTOR 1: DIQUE PRINCIPAL
+  if (diquePrincipalOps.length > 0) {
+    bodyRows.push([
+      {
+        content: `🏗️ SECTOR: DIQUE PRINCIPAL (${diquePrincipalOps.length} Trabajadores)`,
+        colSpan: totalCols,
+        styles: {
+          fillColor: [30, 41, 59], // Slate 800
+          textColor: [255, 255, 255],
+          fontStyle: 'bold',
+          halign: 'left',
+          fontSize: 6
+        }
+      }
+    ]);
+    diquePrincipalOps.forEach((op, idx) => {
+      const dayValues = calendarDays.value.map(d => (op.shifts && op.shifts[d.key]) ? op.shifts[d.key] : 'L');
+      bodyRows.push([
+        idx + 1,
+        op.code || '-',
+        op.name,
+        op.role || 'OPERADOR',
+        op.equipment || '-',
+        op.activity || '-',
+        op.groupName || '-',
+        ...dayValues
+      ]);
     });
-    return [
-      idx + 1, 
-      op.code || '-', 
-      op.name, 
-      op.role || 'OPERADOR', 
-      op.equipment || '-', 
-      op.activity || '-', 
-      op.groupName || '-', 
-      ...dayValues
-    ];
-  });
+  }
+
+  // SECTOR 2: DIQUE LATERAL
+  if (diqueLateralOps.length > 0) {
+    bodyRows.push([
+      {
+        content: `🚧 SECTOR: DIQUE LATERAL (${diqueLateralOps.length} Trabajadores)`,
+        colSpan: totalCols,
+        styles: {
+          fillColor: [15, 118, 110], // Teal 700
+          textColor: [255, 255, 255],
+          fontStyle: 'bold',
+          halign: 'left',
+          fontSize: 6
+        }
+      }
+    ]);
+    diqueLateralOps.forEach((op, idx) => {
+      const dayValues = calendarDays.value.map(d => (op.shifts && op.shifts[d.key]) ? op.shifts[d.key] : 'L');
+      bodyRows.push([
+        idx + 1,
+        op.code || '-',
+        op.name,
+        op.role || 'OPERADOR',
+        op.equipment || '-',
+        op.activity || '-',
+        op.groupName || '-',
+        ...dayValues
+      ]);
+    });
+  }
+
+  // SECTOR 3: OTROS
+  if (otrosOps.length > 0) {
+    bodyRows.push([
+      {
+        content: `📋 SECTOR: OTROS (${otrosOps.length} Trabajadores)`,
+        colSpan: totalCols,
+        styles: {
+          fillColor: [71, 85, 105], // Slate 600
+          textColor: [255, 255, 255],
+          fontStyle: 'bold',
+          halign: 'left',
+          fontSize: 6
+        }
+      }
+    ]);
+    otrosOps.forEach((op, idx) => {
+      const dayValues = calendarDays.value.map(d => (op.shifts && op.shifts[d.key]) ? op.shifts[d.key] : 'L');
+      bodyRows.push([
+        idx + 1,
+        op.code || '-',
+        op.name,
+        op.role || 'OPERADOR',
+        op.equipment || '-',
+        op.activity || '-',
+        op.groupName || '-',
+        ...dayValues
+      ]);
+    });
+  }
 
   autoTable(doc, {
     head: [headDaysRow, headD, headN, headSTD, headSTN, headV, headDM, headL],
@@ -953,7 +1052,7 @@ const exportToPDF = () => {
           data.cell.styles.textColor = [100, 116, 139];
         }
       }
-      if (data.section === 'body' && data.column.index >= 4) {
+      if (data.section === 'body' && data.column.index >= 7) {
         const val = data.cell.raw;
         if (val === 'D') {
           data.cell.styles.fillColor = [255, 230, 0];
@@ -971,7 +1070,7 @@ const exportToPDF = () => {
           data.cell.styles.fillColor = [225, 29, 72];
           data.cell.styles.textColor = [255, 255, 255];
           data.cell.styles.fontStyle = 'bold';
-        } else if (val && val.startsWith('ST')) {
+        } else if (val && typeof val === 'string' && val.startsWith('ST')) {
           data.cell.styles.fillColor = [2, 132, 199];
           data.cell.styles.textColor = [255, 255, 255];
           data.cell.styles.fontStyle = 'bold';
