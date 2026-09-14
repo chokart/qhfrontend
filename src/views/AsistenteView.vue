@@ -74,8 +74,13 @@
 
           <div class="bubble-content">
             <div class="sender-name">
-              {{ msg.sender === 'user' ? 'Tú' : 'Asistente ISO 45001' }}
+              {{ msg.sender === 'user' ? 'Tú' : 'Asistente ISO 45001 (RAG V2)' }}
               <span class="timestamp">{{ msg.timestamp }}</span>
+            </div>
+
+            <!-- Intent Detected Badge -->
+            <div v-if="msg.intentDetected" class="intent-badge">
+              🎯 <strong>Intención Detectada:</strong> {{ msg.intentDetected }}
             </div>
 
             <!-- Formatted Message Body -->
@@ -97,14 +102,19 @@
               <div v-if="msg.showSources" class="sources-list">
                 <div v-for="(src, sIdx) in msg.sources" :key="sIdx" class="source-card">
                   <div class="source-header">
-                    <span class="doc-code">{{ src.documentCode || 'ISO Doc' }}</span>
+                    <span class="doc-code">
+                      {{ src.documentCode || 'ISO Doc' }}
+                      <span class="rev-badge" v-if="src.revision">Rev. {{ src.revision }}</span>
+                    </span>
                     <span class="doc-name">{{ src.documentName }}</span>
                     <span class="score-badge" v-if="src.score">
-                      {{ Math.round(src.score * 100) }}% Relevancia
+                      Relevancia de la Fuente: {{ Math.round(src.score * 100) }}%
                     </span>
                   </div>
                   <div class="source-meta">
                     <span class="meta-tag">Categoría: {{ src.category }}</span>
+                    <span class="meta-tag" v-if="src.section">§ {{ src.section }}: {{ src.sectionTitle || 'General' }}</span>
+                    <span class="meta-tag" v-if="src.area">🏢 {{ src.area }}</span>
                     <span class="meta-tag" v-if="src.pageNumber">Pág. {{ src.pageNumber }}</span>
                   </div>
                   <p class="source-excerpt">"{{ src.excerpt }}"</p>
@@ -354,12 +364,16 @@ const sendMessage = async () => {
     }, { timeout: 90000 });
 
     const data = res.data;
+    const detectedIntent = (data.sources && data.sources.length > 0 && data.sources[0].intentDetected) 
+      ? data.sources[0].intentDetected 
+      : null;
 
     messages.value.push({
       sender: 'assistant',
       text: data.answer,
       llmAvailable: data.llmAvailable,
       sources: data.sources || [],
+      intentDetected: detectedIntent,
       showSources: false,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     });
@@ -791,13 +805,38 @@ onMounted(() => {
   margin-bottom: 0.25rem;
 }
 
+.intent-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: #e0e7ff;
+  color: #3730a3;
+  border: 1px solid #c7d2fe;
+  padding: 0.25rem 0.65rem;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  margin-bottom: 0.6rem;
+}
+
+.rev-badge {
+  background: rgba(255, 255, 255, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  padding: 0.05rem 0.3rem;
+  border-radius: 4px;
+  font-size: 0.65rem;
+  margin-left: 0.3rem;
+}
+
 .doc-code {
   background: #4338ca;
   color: white;
-  padding: 0.1rem 0.4rem;
-  border-radius: 4px;
+  padding: 0.15rem 0.5rem;
+  border-radius: 6px;
   font-weight: 800;
-  font-size: 0.7rem;
+  font-size: 0.72rem;
+  display: inline-flex;
+  align-items: center;
 }
 
 .doc-name {
