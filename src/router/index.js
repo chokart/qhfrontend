@@ -7,7 +7,6 @@ import CanchasView from '../views/CanchasView.vue';
 import PersonalView from '../views/PersonalView.vue';
 import UserManagement from '../views/UserManagement.vue';
 import ReporteView from '../views/ReporteView.vue';
-import AsistenteView from '../views/AsistenteView.vue';
 
 const routes = [
   { 
@@ -38,12 +37,6 @@ const routes = [
     path: '/reporte',
     component: ReporteView,
     name: 'Reporte',
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/asistente',
-    component: AsistenteView,
-    name: 'Asistente',
     meta: { requiresAuth: true }
   },
   {
