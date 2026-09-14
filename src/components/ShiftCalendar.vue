@@ -829,18 +829,18 @@ const exportToPDF = () => {
   }
 
   const doc = new jsPDF({
-    orientation: 'portrait',
+    orientation: 'landscape',
     unit: 'mm',
     format: 'a4'
   });
 
   // Encabezado
-  doc.setFontSize(11);
+  doc.setFontSize(13);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(15, 23, 42);
-  doc.text("ROL DE TURNOS Y PROGRAMACIÓN DE PERSONAL", 10, 10);
+  doc.text("ROL DE TURNOS Y PROGRAMACIÓN DE PERSONAL", 6, 8);
 
-  doc.setFontSize(7);
+  doc.setFontSize(8);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(100, 116, 139);
 
@@ -881,7 +881,7 @@ const exportToPDF = () => {
     else otrosOps.push(op);
   });
 
-  doc.text(`Período: ${periodText}  |  Dique Principal: ${diquePrincipalOps.length}  |  Dique Lateral: ${diqueLateralOps.length}  |  Otros: ${otrosOps.length}  |  Total: ${filteredOperators.value.length}  |  Emisión: ${new Date().toLocaleDateString('es-PE')}`, 10, 15);
+  doc.text(`Período: ${periodText}  |  Dique Principal: ${diquePrincipalOps.length}  |  Dique Lateral: ${diqueLateralOps.length}  |  Otros: ${otrosOps.length}  |  Total: ${filteredOperators.value.length}  |  Emisión: ${new Date().toLocaleDateString('es-PE')}`, 6, 13);
 
   // Filas de Cabecera y Totales Diarios para autoTable
   const headDaysRow = [
@@ -917,7 +917,7 @@ const exportToPDF = () => {
           textColor: [255, 255, 255],
           fontStyle: 'bold',
           halign: 'left',
-          fontSize: 6
+          fontSize: 7.5
         }
       }
     ]);
@@ -947,7 +947,7 @@ const exportToPDF = () => {
           textColor: [255, 255, 255],
           fontStyle: 'bold',
           halign: 'left',
-          fontSize: 6
+          fontSize: 7.5
         }
       }
     ]);
@@ -977,7 +977,7 @@ const exportToPDF = () => {
           textColor: [255, 255, 255],
           fontStyle: 'bold',
           halign: 'left',
-          fontSize: 6
+          fontSize: 7.5
         }
       }
     ]);
@@ -999,12 +999,12 @@ const exportToPDF = () => {
   autoTable(doc, {
     head: [headDaysRow, headD, headN, headSTD, headSTN, headV, headDM, headL],
     body: bodyRows,
-    startY: 18,
-    margin: { left: 8, right: 8 },
+    startY: 15,
+    margin: { left: 6, right: 6 },
     theme: 'grid',
     styles: {
-      fontSize: 4.8,
-      cellPadding: 0.5,
+      fontSize: 6.8,
+      cellPadding: 0.7,
       alignment: 'center',
       valign: 'middle',
       font: 'helvetica'
@@ -1013,13 +1013,17 @@ const exportToPDF = () => {
       fillColor: [241, 245, 249],
       textColor: [51, 65, 85],
       fontStyle: 'bold',
+      fontSize: 6.8,
       lineWidth: 0.05
     },
     columnStyles: {
-      0: { cellWidth: 5, halign: 'center' },
-      1: { cellWidth: 10, halign: 'center' },
-      2: { cellWidth: 32, halign: 'left' },
-      3: { cellWidth: 11, halign: 'center' }
+      0: { cellWidth: 6, halign: 'center' },
+      1: { cellWidth: 12, halign: 'center' },
+      2: { cellWidth: 40, halign: 'left' },
+      3: { cellWidth: 20, halign: 'left' },
+      4: { cellWidth: 18, halign: 'left' },
+      5: { cellWidth: 22, halign: 'left' },
+      6: { cellWidth: 12, halign: 'center' }
     },
     didParseCell: (data) => {
       if (data.section === 'head') {
