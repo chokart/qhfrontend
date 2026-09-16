@@ -860,7 +860,26 @@ const exportToPDF = () => {
   }
 
   const getOperatorSector = (op) => {
-    const text = `${op.role || ''} ${op.activity || ''} ${op.equipment || ''}`;
+    const text = `${op.role || ''} ${op.activity || ''} ${op.equipment || ''}`.toUpperCase();
+
+    // 1. Si el rol, actividad o equipo indica Vacaciones, DM o Descanso Médico
+    if (/\b(VACACIONES|VACACIONAL|DESCANSO MEDICO|DESCANSO MÉDICO|\bDM\b)\b/i.test(text)) {
+      return 'VACACIONES_DM';
+    }
+
+    // 2. Si en el período sus turnos son mayoritariamente / totalmente Vacaciones (V) o Descanso Médico (DM)
+    if (op.shifts) {
+      const shiftValues = Object.values(op.shifts);
+      const vOrDmCount = shiftValues.filter(s => s === 'V' || s === 'DM').length;
+      const workCount = shiftValues.filter(s => s === 'D' || s === 'N' || s === 'ST-D' || s === 'ST-N' || s === 'ST').length;
+
+      // Si tiene registros de V o DM y no asistió a días de trabajo normal D/N (o V/DM >= días de trabajo)
+      if (vOrDmCount > 0 && (workCount === 0 || vOrDmCount >= workCount)) {
+        return 'VACACIONES_DM';
+      }
+    }
+
+    // 3. Sectores de trabajo normal
     if (/\b(PRINCIPAL|DP|DIQUE PRINCIPAL)\b/i.test(text)) {
       return 'PRINCIPAL';
     }
@@ -873,15 +892,17 @@ const exportToPDF = () => {
   const diquePrincipalOps = [];
   const diqueLateralOps = [];
   const otrosOps = [];
+  const vacacionesDmOps = [];
 
   filteredOperators.value.forEach((op) => {
     const sector = getOperatorSector(op);
-    if (sector === 'PRINCIPAL') diquePrincipalOps.push(op);
+    if (sector === 'VACACIONES_DM') vacacionesDmOps.push(op);
+    else if (sector === 'PRINCIPAL') diquePrincipalOps.push(op);
     else if (sector === 'LATERAL') diqueLateralOps.push(op);
     else otrosOps.push(op);
   });
 
-  doc.text(`Período: ${periodText}  |  Dique Principal: ${diquePrincipalOps.length}  |  Dique Lateral: ${diqueLateralOps.length}  |  Otros: ${otrosOps.length}  |  Total: ${filteredOperators.value.length}  |  Emisión: ${new Date().toLocaleDateString('es-PE')}`, 5, 13);
+  doc.text(`Período: ${periodText}  |  Dique Principal: ${diquePrincipalOps.length}  |  Dique Lateral: ${diqueLateralOps.length}  |  Otros: ${otrosOps.length}  |  Vacaciones/DM: ${vacacionesDmOps.length}  |  Total: ${filteredOperators.value.length}  |  Emisión: ${new Date().toLocaleDateString('es-PE')}`, 5, 13);
 
   // Filas de Cabecera y Totales Diarios para autoTable
   const headDaysRow = [
@@ -982,6 +1003,36 @@ const exportToPDF = () => {
       }
     ]);
     otrosOps.forEach((op, idx) => {
+      const dayValues = calendarDays.value.map(d => (op.shifts && op.shifts[d.key]) ? op.shifts[d.key] : 'L');
+      bodyRows.push([
+        idx + 1,
+        op.code || '-',
+        op.name,
+        op.role || 'OPERADOR',
+        op.equipment || '-',
+        op.activity || '-',
+        op.groupName || '-',
+        ...dayValues
+      ]);
+    });
+  }
+
+  // SECTOR 4: VACACIONES O DESCANSO MÉDICO
+  if (vacacionesDmOps.length > 0) {
+    bodyRows.push([
+      {
+        content: `🌴 SECTOR: VACACIONES O DESCANSO MÉDICO (${vacacionesDmOps.length} Trabajadores)`,
+        colSpan: totalCols,
+        styles: {
+          fillColor: [180, 83, 9], // Amber 700 / Calido
+          textColor: [255, 255, 255],
+          fontStyle: 'bold',
+          halign: 'left',
+          fontSize: 6.2
+        }
+      }
+    ]);
+    vacacionesDmOps.forEach((op, idx) => {
       const dayValues = calendarDays.value.map(d => (op.shifts && op.shifts[d.key]) ? op.shifts[d.key] : 'L');
       bodyRows.push([
         idx + 1,
