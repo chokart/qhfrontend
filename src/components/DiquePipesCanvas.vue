@@ -3,10 +3,10 @@
     <!-- Encabezado y Control de Lienzo a Escala -->
     <div class="canvas-header">
       <div class="header-info">
-        <div class="title-badge">📐 Plano a Escala 8:1</div>
+        <div class="title-badge">📐 Escala 8:1 (4.0 km × 0.5 km)</div>
         <div>
-          <h3 class="canvas-title">Lienzo de Tuberías - Dique Principal</h3>
-          <p class="canvas-subtitle">Dimensiones Reales: <b>4.0 km (4,000 m) de largo × 0.5 km (500 m) de alto</b></p>
+          <h3 class="canvas-title">Lienzo de Tuberías con Curvas - Dique Principal</h3>
+          <p class="canvas-subtitle">Dimensiones Reales: <b>4,000 m de largo × 500 m de alto</b> | Trazo mediante puntos de inflexión y curvas suaves</p>
         </div>
       </div>
 
@@ -15,23 +15,32 @@
         <div class="tool-btn-group">
           <button 
             :class="['btn-tool', { active: currentTool === 'select' }]" 
-            @click="currentTool = 'select'"
-            title="Seleccionar o mover tuberías"
+            @click="setTool('select')"
+            title="Seleccionar o editar nodos de tuberías"
           >
             👆 Seleccionar
           </button>
           <button 
             :class="['btn-tool btn-draw', { active: currentTool === 'draw' }]" 
-            @click="startDrawingTool"
-            title="Trazar nueva tubería a escala"
+            @click="setTool('draw')"
+            title="Trazar tubería con curvas (Haz clic para agregar puntos)"
           >
-            ✏️ Trazar Tubería
+            ✏️ Trazar Tubería Curva
           </button>
         </div>
 
+        <button 
+          v-if="isDrawing" 
+          @click="finishCurrentDrawing" 
+          class="btn-finish-draw"
+          title="Finalizar el trazo de la tubería actual"
+        >
+          ✓ Finalizar Trazo ({{ activeDrawingPoints.length }} pts)
+        </button>
+
         <div class="v-divider"></div>
 
-        <!-- Filtro por Estado de Tubería -->
+        <!-- Filtro por Estado -->
         <select v-model="filterStatus" class="select-pipe-filter">
           <option value="ALL">📋 Todas las Tuberías ({{ pipes.length }})</option>
           <option value="ACTIVA">🟢 Activas</option>
@@ -40,17 +49,17 @@
           <option value="PROYECTADA">🔵 Proyectadas</option>
         </select>
 
-        <button @click="showHelpModal = true" class="btn-help-pipes" title="Ayuda sobre la escala y uso">
-          ❓ Ayuda Escala
+        <button @click="showHelpModal = true" class="btn-help-pipes">
+          ❓ Ayuda Trazo
         </button>
 
-        <button @click="resetPipes" class="btn-clear-pipes" title="Restablecer tuberías de ejemplo">
+        <button @click="resetPipes" class="btn-clear-pipes">
           🔄 Reiniciar
         </button>
       </div>
     </div>
 
-    <!-- RECTÁNGULO PRINCIPAL A ESCALA 8:1 (4.0 KM x 0.5 KM) -->
+    <!-- RECTÁNGULO PRINCIPAL A ESCALA (ALINEADO EN ANCHO CON LAS CANCHAS DE ABAJO) -->
     <div class="scaled-viewport-wrapper">
       <!-- Regla Superior X (0 a 4000 metros / 4 km) -->
       <div class="ruler-x">
@@ -69,13 +78,14 @@
           </div>
         </div>
 
-        <!-- Lienzo SVG Interactivo -->
+        <!-- Lienzo SVG Interactivo sin canchas internas -->
         <div 
           ref="svgContainerRef" 
           class="svg-canvas-container"
           @mousemove="handleMouseMove"
           @mouseleave="handleMouseLeave"
           @click="handleCanvasClick"
+          @dblclick="handleCanvasDblClick"
         >
           <svg 
             class="pipes-svg"
@@ -84,60 +94,19 @@
           >
             <!-- Fondo Grilla a Escala (bloques de 500m x 100m) -->
             <defs>
-              <pattern id="gridPattern" width="500" height="100" patternUnits="userSpaceOnUse">
+              <pattern id="gridPatternCurved" width="500" height="100" patternUnits="userSpaceOnUse">
                 <path d="M 500 0 L 0 0 0 100" fill="none" stroke="#e2e8f0" stroke-width="2" stroke-dasharray="4,4"/>
               </pattern>
-              <!-- Marcador de Flechas para sentido de flujo -->
-              <marker id="arrowHead" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <!-- Flecha indicadora de sentido -->
+              <marker id="arrowHeadCurved" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
                 <path d="M 0 0 L 10 5 L 0 10 z" fill="#0284c7" />
               </marker>
             </defs>
 
             <rect width="4000" height="500" fill="#f8fafc" />
-            <rect width="4000" height="500" fill="url(#gridPattern)" />
+            <rect width="4000" height="500" fill="url(#gridPatternCurved)" />
 
-            <!-- Franjas de Canchas Dique Principal repartidas a lo largo de los 4 km -->
-            <g class="canchas-regions-group">
-              <g 
-                v-for="(cancha, idx) in canchasRegionList" 
-                :key="'c_reg_'+cancha.id"
-                :class="['cancha-region', { active: selectedCanchaId === cancha.id }]"
-                @click.stop="selectCanchaRegion(cancha)"
-              >
-                <rect 
-                  :x="cancha.x" 
-                  y="10" 
-                  :width="cancha.width" 
-                  height="480" 
-                  :fill="selectedCanchaId === cancha.id ? 'rgba(56, 189, 248, 0.15)' : (idx % 2 === 0 ? 'rgba(241, 245, 249, 0.6)' : 'rgba(255, 255, 255, 0.4)')"
-                  :stroke="selectedCanchaId === cancha.id ? '#0284c7' : '#cbd5e1'"
-                  stroke-width="2"
-                  stroke-dasharray="6,4"
-                  rx="6"
-                />
-                <text 
-                  :x="cancha.x + cancha.width / 2" 
-                  y="35" 
-                  text-anchor="middle" 
-                  fill="#475569" 
-                  font-size="22" 
-                  font-weight="bold"
-                >
-                  Cancha #{{ cancha.number }}
-                </text>
-                <text 
-                  :x="cancha.x + cancha.width / 2" 
-                  y="60" 
-                  text-anchor="middle" 
-                  fill="#64748b" 
-                  font-size="16"
-                >
-                  ({{ Math.round(cancha.x) }}m - {{ Math.round(cancha.x + cancha.width) }}m)
-                </text>
-              </g>
-            </g>
-
-            <!-- Renderizado de Tuberías Dibujadas -->
+            <!-- Renderizado de Tuberías Dibujadas con Curvas Suaves -->
             <g class="pipes-layer">
               <g 
                 v-for="pipe in visiblePipes" 
@@ -145,71 +114,93 @@
                 :class="['pipe-group', { selected: selectedPipeId === pipe.id }]"
                 @click.stop="selectPipe(pipe)"
               >
-                <!-- Línea Sombra para Selección / Interacción -->
-                <line 
-                  :x1="pipe.x1" :y1="pipe.y1" 
-                  :x2="pipe.x2" :y2="pipe.y2" 
-                  stroke="rgba(2, 132, 199, 0.3)" 
-                  :stroke-width="getPipeStrokeWidth(pipe.diameter) + 12" 
+                <!-- Trazo Sombra Resaltado de Selección -->
+                <path 
+                  :d="getSmoothPathD(pipe.points)" 
+                  fill="none"
+                  stroke="rgba(2, 132, 199, 0.25)" 
+                  :stroke-width="getPipeStrokeWidth(pipe.diameter) + 14" 
                   stroke-linecap="round"
+                  stroke-linejoin="round"
                   v-if="selectedPipeId === pipe.id"
                 />
 
-                <!-- Línea Principal de Tubería -->
-                <line 
-                  :x1="pipe.x1" :y1="pipe.y1" 
-                  :x2="pipe.x2" :y2="pipe.y2" 
+                <!-- Trazo de la Tubería Curva -->
+                <path 
+                  :d="getSmoothPathD(pipe.points)" 
+                  fill="none"
                   :stroke="getPipeColor(pipe.status)" 
                   :stroke-width="getPipeStrokeWidth(pipe.diameter)" 
-                  :stroke-dasharray="pipe.status === 'MANTENIMIENTO' ? '12,8' : (pipe.status === 'PROYECTADA' ? '6,6' : 'none')"
+                  :stroke-dasharray="pipe.status === 'MANTENIMIENTO' ? '14,8' : (pipe.status === 'PROYECTADA' ? '8,8' : 'none')"
                   stroke-linecap="round"
-                  marker-end="url(#arrowHead)"
+                  stroke-linejoin="round"
+                  marker-end="url(#arrowHeadCurved)"
                 />
 
-                <!-- Puntos Terminales (Nodos Origen y Fin) -->
-                <circle :cx="pipe.x1" :cy="pipe.y1" r="10" :fill="getPipeColor(pipe.status)" stroke="#ffffff" stroke-width="3" />
-                <circle :cx="pipe.x2" :cy="pipe.y2" r="10" :fill="getPipeColor(pipe.status)" stroke="#ffffff" stroke-width="3" />
+                <!-- Nodos / Puntos Control de la Curva (si está seleccionada) -->
+                <g v-if="selectedPipeId === pipe.id" class="control-nodes">
+                  <circle 
+                    v-for="(pt, pIdx) in pipe.points" 
+                    :key="'pt_'+pIdx"
+                    :cx="pt.x" :cy="pt.y" r="12" 
+                    fill="#ffffff" 
+                    :stroke="getPipeColor(pipe.status)" 
+                    stroke-width="4"
+                    class="node-handle"
+                    @mousedown.stop="startDragNode(pipe, pIdx, $event)"
+                  />
+                </g>
 
-                <!-- Etiqueta de la Tubería con Longitud Calculada a Escala -->
-                <g :transform="`translate(${(pipe.x1 + pipe.x2) / 2}, ${(pipe.y1 + pipe.y2) / 2 - 14})`">
+                <!-- Etiqueta con Nombre y Longitud Curva a Escala -->
+                <g v-if="pipe.points && pipe.points.length >= 2" :transform="getPipeLabelTransform(pipe.points)">
                   <rect 
-                    x="-65" y="-18" width="130" height="26" 
+                    x="-70" y="-18" width="140" height="28" 
                     fill="#ffffff" 
                     stroke="#cbd5e1" 
                     rx="6" 
-                    shadow="0 2px 4px rgba(0,0,0,0.1)"
                   />
                   <text 
-                    x="0" y="-1" 
+                    x="0" y="1" 
                     text-anchor="middle" 
                     fill="#0f172a" 
                     font-size="14" 
                     font-weight="bold"
                   >
-                    {{ pipe.name || 'Tubería' }} ({{ formatDistanceKm(getPipeDistance(pipe)) }})
+                    {{ pipe.name || 'Tubería' }} ({{ formatDistanceKm(calculatePathDistance(pipe.points)) }})
                   </text>
                 </g>
               </g>
             </g>
 
-            <!-- Previsualización de Trazo al Dibujar Nueva Tubería -->
-            <g v-if="isDrawing && drawStartPoint" class="drawing-preview-group">
-              <line 
-                :x1="drawStartPoint.x" :y1="drawStartPoint.y" 
-                :x2="mouseRealCoords.x" :y2="mouseRealCoords.y" 
+            <!-- Previsualización del Trazo de la Tubería Curva en Construcción -->
+            <g v-if="isDrawing && activeDrawingPoints.length > 0" class="drawing-preview-group">
+              <!-- Camino Curvo de los puntos ya colocados + el cursor -->
+              <path 
+                :d="getSmoothPathD([...activeDrawingPoints, mouseRealCoords])" 
+                fill="none"
                 stroke="#0284c7" 
-                stroke-width="6" 
+                stroke-width="7" 
                 stroke-dasharray="8,6"
                 stroke-linecap="round"
+                stroke-linejoin="round"
               />
-              <circle :cx="drawStartPoint.x" :cy="drawStartPoint.y" r="12" fill="#0284c7" stroke="#ffffff" stroke-width="3" />
-              <circle :cx="mouseRealCoords.x" :cy="mouseRealCoords.y" r="12" fill="#0284c7" stroke="#ffffff" stroke-width="3" />
 
-              <!-- Tooltip flotante de longitud mientras dibuja -->
-              <g :transform="`translate(${(drawStartPoint.x + mouseRealCoords.x) / 2}, ${(drawStartPoint.y + mouseRealCoords.y) / 2 - 20})`">
-                <rect x="-80" y="-20" width="160" height="30" fill="#0f172a" rx="8" opacity="0.9" />
+              <!-- Puntos de inflexión colocados -->
+              <circle 
+                v-for="(pt, idx) in activeDrawingPoints" 
+                :key="'active_pt_'+idx"
+                :cx="pt.x" :cy="pt.y" r="10" 
+                fill="#0284c7" stroke="#ffffff" stroke-width="3"
+              />
+
+              <!-- Punto Flotante del Cursor -->
+              <circle :cx="mouseRealCoords.x" :cy="mouseRealCoords.y" r="10" fill="#38bdf8" stroke="#ffffff" stroke-width="3" />
+
+              <!-- Tooltip Flotante de Longitud Total de la Curva -->
+              <g :transform="`translate(${mouseRealCoords.x}, ${mouseRealCoords.y - 25})`">
+                <rect x="-90" y="-20" width="180" height="30" fill="#0f172a" rx="8" opacity="0.9" />
                 <text x="0" y="0" text-anchor="middle" fill="#ffffff" font-size="15" font-weight="bold">
-                  Largo: {{ formatDistanceKm(calculateDistance(drawStartPoint, mouseRealCoords)) }}
+                  Largo Curvo: {{ formatDistanceKm(calculatePathDistance([...activeDrawingPoints, mouseRealCoords])) }}
                 </text>
               </g>
             </g>
@@ -223,23 +214,26 @@
       </div>
     </div>
 
-    <!-- PANEL INFERIOR: FORMULARIO DE PROPIEDADES DE TUBERÍA SELECCIONADA O NUEVA -->
+    <!-- PANEL INFERIOR: FORMULARIO DE PROPIEDADES DE TUBERÍA SELECCIONADA -->
     <div v-if="selectedPipe" class="pipe-editor-card card">
       <div class="card-header-inner">
         <div>
           <h4>✏️ Propiedades de Tubería: {{ selectedPipe.name }}</h4>
           <p class="table-sub-desc">
-            Longitud Calculada a Escala: <b>{{ formatDistanceKm(getPipeDistance(selectedPipe)) }}</b> 
-            ({{ Math.round(getPipeDistance(selectedPipe)) }} metros)
+            Longitud Total de la Curva a Escala: <b>{{ formatDistanceKm(calculatePathDistance(selectedPipe.points)) }}</b> 
+            ({{ Math.round(calculatePathDistance(selectedPipe.points)) }} metros) | Puntos de inflexión: {{ selectedPipe.points ? selectedPipe.points.length : 0 }}
           </p>
         </div>
-        <button class="btn-delete-pipe" @click="deleteSelectedPipe">🗑️ Eliminar Tubería</button>
+        <div class="editor-actions">
+          <button class="btn-add-node" @click="addNodeToSelectedPipe" title="Agregar un nuevo punto de curva">➕ Añadir Punto</button>
+          <button class="btn-delete-pipe" @click="deleteSelectedPipe">🗑️ Eliminar Tubería</button>
+        </div>
       </div>
 
       <div class="pipe-form-grid">
         <div class="form-group">
           <label class="form-label">Nombre / Código:</label>
-          <input type="text" v-model="selectedPipe.name" class="form-input" placeholder="Ej. Línea Principal Arenas" />
+          <input type="text" v-model="selectedPipe.name" class="form-input" placeholder="Ej. Línea Curva Principal Arenas" />
         </div>
 
         <div class="form-group">
@@ -273,16 +267,6 @@
             <option value="PROYECTADA">🔵 Proyectada / En construcción</option>
           </select>
         </div>
-
-        <div class="form-group">
-          <label class="form-label">Cancha Asociada:</label>
-          <select v-model="selectedPipe.canchaId" class="form-select">
-            <option :value="null">-- Ninguna / Transversal --</option>
-            <option v-for="c in canchasRegionList" :key="'opt_c_'+c.id" :value="c.id">
-              Cancha #{{ c.number }} ({{ Math.round(c.x) }}m - {{ Math.round(c.x + c.width) }}m)
-            </option>
-          </select>
-        </div>
       </div>
     </div>
 
@@ -290,16 +274,16 @@
     <div v-if="showHelpModal" class="modal-backdrop" @click.self="showHelpModal = false">
       <div class="modal-card">
         <div class="modal-header">
-          <h3>📐 Escala Reales del Dique Principal</h3>
+          <h3>📐 Trazo de Tuberías con Curvas (4.0 km × 0.5 km)</h3>
           <button class="btn-close-modal" @click="showHelpModal = false">✕</button>
         </div>
         <div class="modal-body">
-          <p>Este lienzo interactivo representa las dimensiones reales del <b>Dique Principal</b> en escala proporcional <b>8:1</b>:</p>
+          <p>Instrucciones para trazar tuberías con curvas a escala:</p>
           <ul class="help-list">
-            <li><b>Largo Horizontal (X):</b> 4,000 metros (4.0 kilómetros).</li>
-            <li><b>Alto / Profundidad Vertical (Y):</b> 500 metros (0.5 kilómetros).</li>
-            <li><b>Trazo de Tuberías:</b> Haz clic en <b>"✏️ Trazar Tubería"</b>, luego haz clic en el punto de origen en el lienzo y un segundo clic en el punto de destino. La longitud real en metros y kilómetros se calcula automáticamente a escala.</li>
-            <li><b>Canchas Asignadas:</b> Cada cancha de Dique Principal está representada en su franja correspondiente de 0 a 4.0 km.</li>
+            <li><b>Trazo de Curvas:</b> Haz clic en <b>"✏️ Trazar Tubería Curva"</b>. Haz un primer clic en el punto de origen y continúa haciendo clics en los puntos de curva deseados.</li>
+            <li><b>Finalizar Trazo:</b> Presiona el botón verde <b>"✓ Finalizar Trazo"</b> o haz doble clic en el lienzo.</li>
+            <li><b>Alineación:</b> El ancho del lienzo coincide horizontalmente con el contenedor de canchas de abajo.</li>
+            <li><b>Edición de Curva:</b> Selecciona una tubería existente y arrastra cualquiera de sus nodos (puntos blancos) para modificar la forma de la curva en tiempo real.</li>
           </ul>
         </div>
         <div class="modal-footer">
@@ -325,7 +309,6 @@ const emit = defineEmits(['selectCancha']);
 const currentTool = ref('select'); // 'select' | 'draw'
 const filterStatus = ref('ALL');
 const selectedPipeId = ref(null);
-const selectedCanchaId = ref(null);
 const showHelpModal = ref(false);
 
 const svgContainerRef = ref(null);
@@ -333,8 +316,12 @@ const mouseHovering = ref(false);
 const mouseClientPos = reactive({ x: 0, y: 0 });
 const mouseRealCoords = reactive({ x: 0, y: 0 });
 
+// Puntos del trazo actual en modo dibujo
 const isDrawing = ref(false);
-const drawStartPoint = ref(null);
+const activeDrawingPoints = ref([]);
+
+// Arrastre de nodos de curva
+const draggingNodeInfo = ref(null);
 
 // Reglas graduadas
 const xRulerMarks = [
@@ -357,83 +344,64 @@ const yRulerMarks = [
   { m: 500, label: '500 m (0.5 km)', pct: 100 }
 ];
 
-// Canchas mapeadas a lo largo de los 4,000 metros del Dique Principal
-const canchasRegionList = computed(() => {
-  const list = props.canchasNiveles && props.canchasNiveles.length > 0
-    ? props.canchasNiveles
-    : [
-        { id: 101, number: 1 }, { id: 102, number: 2 }, { id: 103, number: 3 }, { id: 104, number: 4 },
-        { id: 105, number: 5 }, { id: 106, number: 6 }, { id: 107, number: 7 }, { id: 108, number: 8 }
-      ];
-
-  const total = list.length;
-  const regionWidth = 4000 / total;
-
-  return list.map((c, idx) => ({
-    id: c.id,
-    number: c.number,
-    x: idx * regionWidth,
-    width: regionWidth
-  }));
-});
-
-// Tuberías guardadas
+// Tuberías de ejemplo con curvas
 const pipes = ref([
   {
     id: 1,
-    name: 'Línea de Arenas A-01',
+    name: 'Línea de Arenas Principal Curva',
     material: 'HDPE PE100',
     diameter: '16',
     status: 'ACTIVA',
-    canchaId: null,
-    x1: 200,
-    y1: 80,
-    x2: 2400,
-    y2: 120
+    points: [
+      { x: 100, y: 80 },
+      { x: 800, y: 220 },
+      { x: 1800, y: 120 },
+      { x: 2900, y: 340 },
+      { x: 3900, y: 260 }
+    ]
   },
   {
     id: 2,
-    name: 'Alimentación Secundaria Cancha #3',
+    name: 'Alimentación Curva Secundaria',
     material: 'HDPE PE100',
     diameter: '12',
     status: 'MANTENIMIENTO',
-    canchaId: 103,
-    x1: 1200,
-    y1: 140,
-    x2: 1800,
-    y2: 380
+    points: [
+      { x: 1200, y: 140 },
+      { x: 1500, y: 320 },
+      { x: 1900, y: 380 }
+    ]
   },
   {
     id: 3,
-    name: 'Línea de Rebose Dique Principal',
+    name: 'Línea de Rebose Curva',
     material: 'Acero Carbono',
     diameter: '24',
     status: 'PROYECTADA',
-    canchaId: null,
-    x1: 2500,
-    y1: 220,
-    x2: 3900,
-    y2: 250
+    points: [
+      { x: 2500, y: 420 },
+      { x: 3200, y: 180 },
+      { x: 3850, y: 150 }
+    ]
   }
 ]);
 
-// Cargar y guardar en LocalStorage
 const loadPipesFromStorage = () => {
   try {
-    const saved = localStorage.getItem('dique_principal_pipes_v1');
+    const saved = localStorage.getItem('dique_principal_pipes_curved_v2');
     if (saved) {
       pipes.value = JSON.parse(saved);
     }
   } catch (e) {
-    console.error("Error al cargar tuberías:", e);
+    console.error("Error al cargar tuberías curvas:", e);
   }
 };
 
 const savePipesToStorage = () => {
   try {
-    localStorage.setItem('dique_principal_pipes_v1', JSON.stringify(pipes.value));
+    localStorage.setItem('dique_principal_pipes_curved_v2', JSON.stringify(pipes.value));
   } catch (e) {
-    console.error("Error al guardar tuberías:", e);
+    console.error("Error al guardar tuberías curvas:", e);
   }
 };
 
@@ -450,11 +418,15 @@ const selectedPipe = computed(() => {
   return pipes.value.find(p => p.id === selectedPipeId.value) || null;
 });
 
-const startDrawingTool = () => {
-  currentTool.value = 'draw';
-  isDrawing.value = false;
-  drawStartPoint.value = null;
-  selectedPipeId.value = null;
+const setTool = (tool) => {
+  currentTool.value = tool;
+  if (tool === 'draw') {
+    isDrawing.value = true;
+    activeDrawingPoints.value = [];
+    selectedPipeId.value = null;
+  } else {
+    finishCurrentDrawing();
+  }
 };
 
 const handleMouseMove = (e) => {
@@ -467,43 +439,55 @@ const handleMouseMove = (e) => {
   mouseClientPos.x = mouseX;
   mouseClientPos.y = mouseY;
 
-  // Convertir a coordenadas reales a escala (4000m x 500m)
   mouseRealCoords.x = Math.max(0, Math.min(4000, (mouseX / rect.width) * 4000));
   mouseRealCoords.y = Math.max(0, Math.min(500, (mouseY / rect.height) * 500));
+
+  // Si se está arrastrando un nodo de la curva seleccionada
+  if (draggingNodeInfo.value) {
+    const { pipe, pIdx } = draggingNodeInfo.value;
+    if (pipe && pipe.points && pipe.points[pIdx]) {
+      pipe.points[pIdx].x = Math.round(mouseRealCoords.x);
+      pipe.points[pIdx].y = Math.round(mouseRealCoords.y);
+    }
+  }
 };
 
 const handleMouseLeave = () => {
   mouseHovering.value = false;
+  draggingNodeInfo.value = null;
 };
 
 const handleCanvasClick = (e) => {
   if (currentTool.value === 'draw') {
-    if (!isDrawing.value) {
-      // Iniciar punto de origen
-      isDrawing.value = true;
-      drawStartPoint.value = { x: mouseRealCoords.x, y: mouseRealCoords.y };
-    } else {
-      // Punto final: Crear nueva tubería
-      const newPipe = {
-        id: Date.now(),
-        name: `Tubería #${pipes.value.length + 1}`,
-        material: 'HDPE PE100',
-        diameter: '16',
-        status: 'ACTIVA',
-        canchaId: null,
-        x1: Math.round(drawStartPoint.value.x),
-        y1: Math.round(drawStartPoint.value.y),
-        x2: Math.round(mouseRealCoords.x),
-        y2: Math.round(mouseRealCoords.y)
-      };
-
-      pipes.value.push(newPipe);
-      selectedPipeId.value = newPipe.id;
-      isDrawing.value = false;
-      drawStartPoint.value = null;
-      currentTool.value = 'select';
-    }
+    activeDrawingPoints.value.push({
+      x: Math.round(mouseRealCoords.x),
+      y: Math.round(mouseRealCoords.y)
+    });
   }
+};
+
+const handleCanvasDblClick = () => {
+  if (currentTool.value === 'draw') {
+    finishCurrentDrawing();
+  }
+};
+
+const finishCurrentDrawing = () => {
+  if (activeDrawingPoints.value.length >= 2) {
+    const newPipe = {
+      id: Date.now(),
+      name: `Tubería Curva #${pipes.value.length + 1}`,
+      material: 'HDPE PE100',
+      diameter: '16',
+      status: 'ACTIVA',
+      points: [...activeDrawingPoints.value]
+    };
+    pipes.value.push(newPipe);
+    selectedPipeId.value = newPipe.id;
+  }
+  isDrawing.value = false;
+  activeDrawingPoints.value = [];
+  currentTool.value = 'select';
 };
 
 const selectPipe = (pipe) => {
@@ -512,9 +496,23 @@ const selectPipe = (pipe) => {
   }
 };
 
-const selectCanchaRegion = (cancha) => {
-  selectedCanchaId.value = cancha.id;
-  emit('selectCancha', cancha.id);
+const startDragNode = (pipe, pIdx, e) => {
+  draggingNodeInfo.value = { pipe, pIdx };
+  const onMouseUp = () => {
+    draggingNodeInfo.value = null;
+    window.removeEventListener('mouseup', onMouseUp);
+  };
+  window.addEventListener('mouseup', onMouseUp);
+};
+
+const addNodeToSelectedPipe = () => {
+  if (!selectedPipe.value || !selectedPipe.value.points || selectedPipe.value.points.length < 1) return;
+  const pts = selectedPipe.value.points;
+  const lastPt = pts[pts.length - 1];
+  pts.push({
+    x: Math.min(4000, lastPt.x + 150),
+    y: Math.min(500, lastPt.y + 50)
+  });
 };
 
 const deleteSelectedPipe = () => {
@@ -524,26 +522,59 @@ const deleteSelectedPipe = () => {
 };
 
 const resetPipes = () => {
-  if (confirm("¿Deseas restablecer las tuberías de ejemplo?")) {
+  if (confirm("¿Deseas restablecer las tuberías con curvas de ejemplo?")) {
     pipes.value = [
-      { id: 1, name: 'Línea de Arenas A-01', material: 'HDPE PE100', diameter: '16', status: 'ACTIVA', canchaId: null, x1: 200, y1: 80, x2: 2400, y2: 120 },
-      { id: 2, name: 'Alimentación Cancha #3', material: 'HDPE PE100', diameter: '12', status: 'MANTENIMIENTO', canchaId: 103, x1: 1200, y1: 140, x2: 1800, y2: 380 },
-      { id: 3, name: 'Línea de Rebose Dique Principal', material: 'Acero Carbono', diameter: '24', status: 'PROYECTADA', canchaId: null, x1: 2500, y1: 220, x2: 3900, y2: 250 }
+      { id: 1, name: 'Línea de Arenas Principal Curva', material: 'HDPE PE100', diameter: '16', status: 'ACTIVA', points: [{ x: 100, y: 80 }, { x: 800, y: 220 }, { x: 1800, y: 120 }, { x: 2900, y: 340 }, { x: 3900, y: 260 }] },
+      { id: 2, name: 'Alimentación Curva Secundaria', material: 'HDPE PE100', diameter: '12', status: 'MANTENIMIENTO', points: [{ x: 1200, y: 140 }, { x: 1500, y: 320 }, { x: 1900, y: 380 }] },
+      { id: 3, name: 'Línea de Rebose Curva', material: 'Acero Carbono', diameter: '24', status: 'PROYECTADA', points: [{ x: 2500, y: 420 }, { x: 3200, y: 180 }, { x: 3850, y: 150 }] }
     ];
     selectedPipeId.value = null;
   }
 };
 
-// Utilidades de cálculo geométrico a escala
-const calculateDistance = (p1, p2) => {
-  const dx = p2.x - p1.x;
-  const dy = p2.y - p1.y;
-  return Math.sqrt(dx * dx + dy * dy);
+// Generación de ruta suave Bézier suavizada
+const getSmoothPathD = (points) => {
+  if (!points || points.length === 0) return '';
+  if (points.length === 1) return `M ${points[0].x},${points[0].y}`;
+  if (points.length === 2) {
+    return `M ${points[0].x},${points[0].y} L ${points[1].x},${points[1].y}`;
+  }
+
+  let d = `M ${points[0].x},${points[0].y}`;
+  for (let i = 0; i < points.length - 1; i++) {
+    const p0 = points[i === 0 ? i : i - 1];
+    const p1 = points[i];
+    const p2 = points[i + 1];
+    const p3 = points[i + 2 < points.length ? i + 2 : i + 1];
+
+    const cp1x = p1.x + (p2.x - p0.x) / 6;
+    const cp1y = p1.y + (p2.y - p0.y) / 6;
+
+    const cp2x = p2.x - (p3.x - p1.x) / 6;
+    const cp2y = p2.y - (p3.y - p1.y) / 6;
+
+    d += ` C ${cp1x},${cp1y} ${cp2x},${cp2y} ${p2.x},${p2.y}`;
+  }
+  return d;
 };
 
-const getPipeDistance = (pipe) => {
-  if (!pipe) return 0;
-  return calculateDistance({ x: pipe.x1, y: pipe.y1 }, { x: pipe.x2, y: pipe.y2 });
+// Cálculo de distancia a lo largo del trazo curvo
+const calculatePathDistance = (points) => {
+  if (!points || points.length < 2) return 0;
+  let total = 0;
+  for (let i = 0; i < points.length - 1; i++) {
+    const dx = points[i+1].x - points[i].x;
+    const dy = points[i+1].y - points[i].y;
+    total += Math.sqrt(dx * dx + dy * dy);
+  }
+  return total;
+};
+
+const getPipeLabelTransform = (points) => {
+  if (!points || points.length === 0) return 'translate(0,0)';
+  const midIdx = Math.floor(points.length / 2);
+  const pt = points[midIdx];
+  return `translate(${pt.x}, ${pt.y - 18})`;
 };
 
 const formatDistanceKm = (meters) => {
@@ -556,10 +587,10 @@ const formatDistanceKm = (meters) => {
 
 const getPipeColor = (status) => {
   switch (status) {
-    case 'ACTIVA': return '#10b981'; // Verde
-    case 'MANTENIMIENTO': return '#f59e0b'; // Amarillo / Naranja
-    case 'INACTIVA': return '#ef4444'; // Rojo
-    case 'PROYECTADA': return '#0284c7'; // Azul
+    case 'ACTIVA': return '#10b981';
+    case 'MANTENIMIENTO': return '#f59e0b';
+    case 'INACTIVA': return '#ef4444';
+    case 'PROYECTADA': return '#0284c7';
     default: return '#0284c7';
   }
 };
@@ -583,9 +614,10 @@ onMounted(() => {
   background: #ffffff;
   border: 1px solid #cbd5e1;
   border-radius: 16px;
-  padding: 1.5rem;
+  padding: 1.5rem 1rem;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
   margin-bottom: 1.5rem;
+  width: 100%;
 }
 
 .canvas-header {
@@ -595,6 +627,7 @@ onMounted(() => {
   margin-bottom: 1.25rem;
   flex-wrap: wrap;
   gap: 1rem;
+  padding: 0 0.5rem;
 }
 
 .header-info {
@@ -664,6 +697,18 @@ onMounted(() => {
   color: #ffffff;
 }
 
+.btn-finish-draw {
+  background: #10b981;
+  color: #ffffff;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-weight: 800;
+  font-size: 0.85rem;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);
+}
+
 .v-divider {
   width: 1px;
   height: 24px;
@@ -696,14 +741,15 @@ onMounted(() => {
   background: #e2e8f0;
 }
 
-/* VIEWPORT Y REGLAS GRADUADAS EN METROS Y KM */
+/* VIEWPORT A ESCALA ALINEADO EN ANCHO CON LAS CANCHAS ABAJO */
 .scaled-viewport-wrapper {
   background: #ffffff;
   border: 1px solid #cbd5e1;
   border-radius: 12px;
-  padding: 1rem 1rem 1rem 2.5rem;
+  padding: 1rem 0.5rem 1rem 2.2rem;
   position: relative;
   overflow: hidden;
+  width: 100%;
 }
 
 .ruler-x {
@@ -743,10 +789,10 @@ onMounted(() => {
 
 .ruler-y {
   position: absolute;
-  left: -32px;
+  left: -28px;
   top: 0;
   height: 100%;
-  width: 30px;
+  width: 26px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -774,7 +820,7 @@ onMounted(() => {
   background: #94a3b8;
 }
 
-/* LIENZO SVG PROPORCIÓN 8:1 */
+/* LIENZO SVG PROPORCIÓN 8:1 (SIN CANCHAS INTERNAS) */
 .svg-canvas-container {
   width: 100%;
   aspect-ratio: 8 / 1;
@@ -797,17 +843,18 @@ onMounted(() => {
   transition: opacity 0.2s;
 }
 
-.pipe-group:hover line {
-  stroke-width: 12px;
+.pipe-group:hover path {
+  stroke-width: 14px;
 }
 
-.cancha-region {
-  cursor: pointer;
-  transition: all 0.2s;
+.node-handle {
+  cursor: grab;
+  transition: r 0.2s;
 }
 
-.cancha-region:hover rect {
-  fill: rgba(2, 132, 199, 0.1);
+.node-handle:hover {
+  r: 16px;
+  cursor: grabbing;
 }
 
 .cursor-tooltip {
@@ -830,6 +877,22 @@ onMounted(() => {
   border: 1px solid #cbd5e1;
 }
 
+.editor-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.btn-add-node {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #0284c7;
+  font-weight: 700;
+  font-size: 0.82rem;
+  padding: 0.4rem 0.8rem;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
 .btn-delete-pipe {
   background: #fef2f2;
   border: 1px solid #fca5a5;
@@ -839,10 +902,6 @@ onMounted(() => {
   padding: 0.4rem 0.8rem;
   border-radius: 8px;
   cursor: pointer;
-}
-
-.btn-delete-pipe:hover {
-  background: #fee2e2;
 }
 
 .pipe-form-grid {
@@ -872,10 +931,6 @@ onMounted(() => {
   font-weight: 700;
   color: #0f172a;
   outline: none;
-}
-
-.form-input:focus, .form-select:focus {
-  border-color: #0284c7;
 }
 
 /* Modal Help */
