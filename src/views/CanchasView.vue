@@ -1355,7 +1355,7 @@ h1 { font-size: 1.5rem; font-weight: 800; color: #0f172a; margin: 0; }
 .parallel-container {
   background: white;
   border-radius: 16px;
-  padding: 1.5rem 1rem;
+  padding: 1.25rem 0.5rem 1.25rem 2.2rem;
   overflow-x: auto;
   box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
   border: 1px solid #e2e8f0;
@@ -1373,14 +1373,11 @@ h1 { font-size: 1.5rem; font-weight: 800; color: #0f172a; margin: 0; }
 .canchas-parallel {
   display: flex;
   flex-direction: row-reverse;
-  gap: 6px;
-  min-width: max-content;
+  gap: 2px;
+  width: 100%;
+  min-width: 0;
   padding-bottom: 0.5rem;
-  justify-content: center;
-}
-
-@media (max-width: 1200px) {
-  .canchas-parallel { justify-content: flex-start; }
+  justify-content: space-between;
 }
 
 .canchas-capas-parallel {

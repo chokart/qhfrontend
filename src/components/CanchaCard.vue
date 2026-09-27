@@ -79,7 +79,10 @@ const formatShort3 = (text) => {
 
 <style scoped>
 .cancha-card {
-  width: 48px;
+  flex: 1 1 0%;
+  min-width: 18px;
+  max-width: 48px;
+  width: auto;
   min-height: 330px;
   background: white;
   border: 2px solid #e2e8f0;
@@ -89,8 +92,7 @@ const formatShort3 = (text) => {
   position: relative;
   cursor: pointer;
   transition: all 0.2s;
-  flex-shrink: 0;
-  min-width: 48px;
+  flex-shrink: 1;
   overflow: hidden;
 }
 
@@ -114,8 +116,7 @@ const formatShort3 = (text) => {
 @media (max-width: 768px) {
   .cancha-card {
     min-height: 250px;
-    width: 42px;
-    min-width: 42px;
+    min-width: 14px;
   }
 }
 
@@ -160,17 +161,17 @@ const formatShort3 = (text) => {
 }
 
 .height-text {
-  font-size: 0.65rem;
+  font-size: 0.6rem;
   font-weight: 900;
   color: #0f172a;
   transform: rotate(-90deg);
   white-space: nowrap;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.08em;
   text-shadow: 0 0 4px rgba(255, 255, 255, 0.8);
 }
 
 .cancha-label {
-  padding: 0.35rem 2px;
+  padding: 0.25rem 1px;
   background: white;
   display: flex;
   flex-direction: column;
@@ -179,18 +180,19 @@ const formatShort3 = (text) => {
   border-top: 2px solid #f1f5f9;
 }
 
-.number { font-size: 0.75rem; font-weight: 900; color: #334155; }
+.number { font-size: 0.7rem; font-weight: 900; color: #334155; }
 
 .short-badge {
-  font-size: 0.58rem;
+  font-size: 0.52rem;
   font-weight: 900;
-  padding: 1px 3px;
-  border-radius: 4px;
+  padding: 1px 2px;
+  border-radius: 3px;
   line-height: 1;
   white-space: nowrap;
   max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
+  text-align: center;
 }
 
 .eq-badge {
@@ -206,24 +208,24 @@ const formatShort3 = (text) => {
 }
 
 .status-badge {
-  font-size: 0.55rem;
+  font-size: 0.5rem;
   font-weight: 900;
-  padding: 1px 3px;
-  border-radius: 4px;
+  padding: 1px 2px;
+  border-radius: 3px;
   line-height: 1;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.01em;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
 }
 
 .comment-dot {
   position: absolute;
-  top: 5px;
-  right: 5px;
-  width: 14px;
-  height: 14px;
+  top: 3px;
+  right: 3px;
+  width: 13px;
+  height: 13px;
   background: #f59e0b;
   color: white;
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 900;
   display: flex;
   align-items: center;
@@ -234,18 +236,18 @@ const formatShort3 = (text) => {
 
 .btn-hide-card {
   position: absolute;
-  top: 4px;
-  left: 4px;
+  top: 3px;
+  left: 3px;
   z-index: 12;
   background: rgba(255, 255, 255, 0.95);
   border: 1px solid #cbd5e1;
   border-radius: 50%;
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 9px;
+  font-size: 8px;
   cursor: pointer;
   opacity: 0;
   transition: opacity 0.2s;
