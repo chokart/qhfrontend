@@ -38,6 +38,15 @@
           ✓ Finalizar Trazo ({{ activeDrawingPoints.length }} pts)
         </button>
 
+        <button 
+          v-if="selectedPipe" 
+          @click="showPipePropsModal = true" 
+          class="btn-props-pipe"
+          title="Ver o editar propiedades de la tubería seleccionada en ventana emergente"
+        >
+          ⚙️ Propiedades ({{ selectedPipe.name }})
+        </button>
+
         <div class="v-divider"></div>
 
         <!-- Filtro por Estado -->
@@ -214,58 +223,78 @@
       </div>
     </div>
 
-    <!-- PANEL INFERIOR: FORMULARIO DE PROPIEDADES DE TUBERÍA SELECCIONADA -->
-    <div v-if="selectedPipe" class="pipe-editor-card card">
-      <div class="card-header-inner">
-        <div>
-          <h4>✏️ Propiedades de Tubería: {{ selectedPipe.name }}</h4>
-          <p class="table-sub-desc">
-            Longitud Total de la Curva a Escala: <b>{{ formatDistanceKm(calculatePathDistance(selectedPipe.points)) }}</b> 
-            ({{ Math.round(calculatePathDistance(selectedPipe.points)) }} metros) | Puntos de inflexión: {{ selectedPipe.points ? selectedPipe.points.length : 0 }}
-          </p>
-        </div>
-        <div class="editor-actions">
-          <button class="btn-add-node" @click="addNodeToSelectedPipe" title="Agregar un nuevo punto de curva">➕ Añadir Punto</button>
-          <button class="btn-delete-pipe" @click="deleteSelectedPipe">🗑️ Eliminar Tubería</button>
-        </div>
-      </div>
-
-      <div class="pipe-form-grid">
-        <div class="form-group">
-          <label class="form-label">Nombre / Código:</label>
-          <input type="text" v-model="selectedPipe.name" class="form-input" placeholder="Ej. Línea Curva Principal Arenas" />
+    <!-- MODAL POPUP DE PROPIEDADES DE TUBERÍA -->
+    <div v-if="showPipePropsModal && selectedPipe" class="modal-backdrop" @click.self="showPipePropsModal = false">
+      <div class="modal-card modal-pipe-props">
+        <div class="modal-header">
+          <div class="header-title-wrap">
+            <span class="header-icon">⚙️</span>
+            <div>
+              <h3>Propiedades de Tubería: {{ selectedPipe.name }}</h3>
+              <span class="header-sub">Longitud Curva: <b>{{ formatDistanceKm(calculatePathDistance(selectedPipe.points)) }}</b> ({{ Math.round(calculatePathDistance(selectedPipe.points)) }} m)</span>
+            </div>
+          </div>
+          <button class="btn-close-modal" @click="showPipePropsModal = false">✕</button>
         </div>
 
-        <div class="form-group">
-          <label class="form-label">Material / Especificación:</label>
-          <select v-model="selectedPipe.material" class="form-select">
-            <option value="HDPE PE100">HDPE PE100 High Density</option>
-            <option value="Acero Carbono">Acero al Carbono</option>
-            <option value="PVC Schedule 80">PVC Schedule 80</option>
-            <option value="FIBRA DE VIDRIO">Fibra de Vidrio (GRP)</option>
-          </select>
+        <div class="modal-body">
+          <div class="pipe-form-grid">
+            <div class="form-group">
+              <label class="form-label">Nombre / Código:</label>
+              <input type="text" v-model="selectedPipe.name" class="form-input" placeholder="Ej. Línea Curva Principal Arenas" />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Material / Especificación:</label>
+              <select v-model="selectedPipe.material" class="form-select">
+                <option value="HDPE PE100">HDPE PE100 High Density</option>
+                <option value="Acero Carbono">Acero al Carbono</option>
+                <option value="PVC Schedule 80">PVC Schedule 80</option>
+                <option value="FIBRA DE VIDRIO">Fibra de Vidrio (GRP)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Diámetro:</label>
+              <select v-model="selectedPipe.diameter" class="form-select">
+                <option value="8">8 Pulgadas (200 mm)</option>
+                <option value="12">12 Pulgadas (300 mm)</option>
+                <option value="16">16 Pulgadas (400 mm)</option>
+                <option value="20">20 Pulgadas (500 mm)</option>
+                <option value="24">24 Pulgadas (600 mm)</option>
+                <option value="30">30 Pulgadas (750 mm)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Estado Operativo:</label>
+              <select v-model="selectedPipe.status" class="form-select">
+                <option value="ACTIVA">🟢 Activa (Operativa)</option>
+                <option value="MANTENIMIENTO">🟡 En Mantenimiento</option>
+                <option value="INACTIVA">🔴 Inactiva / Fuera de servicio</option>
+                <option value="PROYECTADA">🔵 Proyectada / En construcción</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="pipe-info-summary">
+            <div class="info-item">
+              <span class="info-lbl">Puntos de inflexión:</span>
+              <span class="info-val">{{ selectedPipe.points ? selectedPipe.points.length : 0 }} nodos</span>
+            </div>
+            <div class="info-item">
+              <span class="info-lbl">Distancia Total Curva:</span>
+              <span class="info-val highlight">{{ formatDistanceKm(calculatePathDistance(selectedPipe.points)) }}</span>
+            </div>
+          </div>
         </div>
 
-        <div class="form-group">
-          <label class="form-label">Diámetro:</label>
-          <select v-model="selectedPipe.diameter" class="form-select">
-            <option value="8">8 Pulgadas (200 mm)</option>
-            <option value="12">12 Pulgadas (300 mm)</option>
-            <option value="16">16 Pulgadas (400 mm)</option>
-            <option value="20">20 Pulgadas (500 mm)</option>
-            <option value="24">24 Pulgadas (600 mm)</option>
-            <option value="30">30 Pulgadas (750 mm)</option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label class="form-label">Estado Operativo:</label>
-          <select v-model="selectedPipe.status" class="form-select">
-            <option value="ACTIVA">🟢 Activa (Operativa)</option>
-            <option value="MANTENIMIENTO">🟡 En Mantenimiento</option>
-            <option value="INACTIVA">🔴 Inactiva / Fuera de servicio</option>
-            <option value="PROYECTADA">🔵 Proyectada / En construcción</option>
-          </select>
+        <div class="modal-footer modal-footer-actions">
+          <button class="btn-delete-pipe" @click="deleteSelectedPipeFromModal">🗑️ Eliminar Tubería</button>
+          <div class="footer-right-actions">
+            <button class="btn-add-node" @click="addNodeToSelectedPipe" title="Agregar un nuevo punto de curva">➕ Añadir Punto</button>
+            <button class="btn-save-edit" @click="showPipePropsModal = false">✓ Guardar y Cerrar</button>
+          </div>
         </div>
       </div>
     </div>
@@ -310,6 +339,7 @@ const currentTool = ref('select'); // 'select' | 'draw'
 const filterStatus = ref('ALL');
 const selectedPipeId = ref(null);
 const showHelpModal = ref(false);
+const showPipePropsModal = ref(false);
 
 const svgContainerRef = ref(null);
 const mouseHovering = ref(false);
@@ -484,6 +514,7 @@ const finishCurrentDrawing = () => {
     };
     pipes.value.push(newPipe);
     selectedPipeId.value = newPipe.id;
+    showPipePropsModal.value = true;
   }
   isDrawing.value = false;
   activeDrawingPoints.value = [];
@@ -493,6 +524,7 @@ const finishCurrentDrawing = () => {
 const selectPipe = (pipe) => {
   if (currentTool.value === 'select') {
     selectedPipeId.value = pipe.id;
+    showPipePropsModal.value = true;
   }
 };
 
@@ -519,6 +551,13 @@ const deleteSelectedPipe = () => {
   if (!selectedPipeId.value) return;
   pipes.value = pipes.value.filter(p => p.id !== selectedPipeId.value);
   selectedPipeId.value = null;
+};
+
+const deleteSelectedPipeFromModal = () => {
+  if (confirm("¿Seguro que deseas eliminar esta tubería?")) {
+    deleteSelectedPipe();
+    showPipePropsModal.value = false;
+  }
 };
 
 const resetPipes = () => {
@@ -976,4 +1015,89 @@ onMounted(() => {
 }
 
 .btn-save-edit { background: #0284c7; border: none; color: #ffffff; font-weight: 700; padding: 0.6rem 1.25rem; border-radius: 8px; cursor: pointer; }
+
+/* Estilos de Modal Emergente de Propiedades de Tubería */
+.modal-pipe-props {
+  max-width: 620px;
+}
+
+.header-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.header-icon {
+  font-size: 1.5rem;
+}
+
+.header-sub {
+  font-size: 0.78rem;
+  color: #64748b;
+  font-weight: 500;
+  display: block;
+}
+
+.pipe-info-summary {
+  display: flex;
+  gap: 1.5rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  margin-top: 1.25rem;
+}
+
+.info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.info-lbl {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+}
+
+.info-val {
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.info-val.highlight {
+  color: #0284c7;
+}
+
+.modal-footer-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.footer-right-actions {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.btn-props-pipe {
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  color: #0284c7;
+  font-weight: 700;
+  font-size: 0.82rem;
+  padding: 0.4rem 0.8rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-props-pipe:hover {
+  background: #0284c7;
+  color: #ffffff;
+}
 </style>
