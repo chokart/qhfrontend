@@ -184,6 +184,14 @@
               </div>
             </div>
 
+            <!-- PLANO A ESCALA DE TUBERÍAS (DIQUE PRINCIPAL 4.0 KM x 0.5 KM) -->
+            <div class="pipes-canvas-section">
+              <DiquePipesCanvas 
+                :canchasNiveles="canchasNiveles"
+                @selectCancha="handleCanchaSelectedFromCanvas"
+              />
+            </div>
+
             <!-- VISTA DE TARJETAS PARALELAS -->
             <div v-if="viewMode === 'cards'" class="parallel-container">
               <div v-if="filteredNiveles.length > 0" class="canchas-parallel">
@@ -451,6 +459,7 @@ import CanchaCard from '../components/CanchaCard.vue';
 import CanchaCapaCard from '../components/CanchaCapaCard.vue';
 import CanchaModal from '../components/CanchaModal.vue';
 import CanchaCapaModal from '../components/CanchaCapaModal.vue';
+import DiquePipesCanvas from '../components/DiquePipesCanvas.vue';
 import { generateCanchasPDF } from '../utils/reportGenerator';
 import { getStatusColor, formatStatusText, getStatusShortText } from '../utils/canchaColors';
 
@@ -463,6 +472,16 @@ const selectedCanchaNivel = ref(null);
 
 const showModalCapa = ref(false);
 const selectedCanchaCapa = ref(null);
+
+// Plano a escala de tuberías (Dique Principal 4 km x 0.5 km)
+const showPipesCanvasPrincipal = ref(true);
+
+const handleCanchaSelectedFromCanvas = (canchaId) => {
+  const cancha = canchasNiveles.value.find(c => c.id === canchaId);
+  if (cancha) {
+    openModalNivel(cancha);
+  }
+};
 
 // Modo de Vista ('cards' | 'list')
 const viewMode = ref('cards');

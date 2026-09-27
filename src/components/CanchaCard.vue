@@ -4,6 +4,11 @@
     :class="{ 'observed': cancha.status === 'OBSERVADA' }"
     :style="{ borderColor: statusColor }"
   >
+    <!-- Rectángulo a escala (4.0 km x 0.5 km) encima de la cancha para tuberías -->
+    <div class="pipe-mini-rect" title="Plano a escala de tuberías (4.0 km × 0.5 km)">
+      <span class="pipe-icon-indicator">🚰</span>
+    </div>
+
     <button class="btn-hide-card" @click.stop="$emit('hide')" title="Ocultar esta cancha">🙈</button>
     <div class="level-indicator">
       <div 
@@ -87,6 +92,23 @@ const formatShort3 = (text) => {
   flex-shrink: 0;
   min-width: 48px;
   overflow: hidden;
+}
+
+.pipe-mini-rect {
+  width: 100%;
+  height: 18px;
+  background: linear-gradient(135deg, #0284c7, #0369a1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-size: 0.65rem;
+  font-weight: 800;
+  border-bottom: 1px solid #0284c7;
+}
+
+.pipe-icon-indicator {
+  font-size: 0.7rem;
 }
 
 @media (max-width: 768px) {
