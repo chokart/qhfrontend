@@ -67,7 +67,10 @@ const formatShort3 = (text) => {
 
 <style scoped>
 .cancha-card {
-  width: 48px;
+  flex: 1 1 0%;
+  min-width: 18px;
+  max-width: 48px;
+  width: auto;
   min-height: 330px;
   background: white;
   border: 2px solid #e2e8f0;
@@ -78,15 +81,13 @@ const formatShort3 = (text) => {
   cursor: pointer;
   transition: all 0.2s;
   flex-shrink: 1;
-  min-width: 42px;
   overflow: hidden;
 }
 
 @media (max-width: 768px) {
   .cancha-card {
     min-height: 250px;
-    width: 42px;
-    min-width: 38px;
+    min-width: 14px;
   }
 }
 

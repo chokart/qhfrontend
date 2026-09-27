@@ -184,9 +184,11 @@
               </div>
             </div>
 
-            <!-- PLANO A ESCALA DE TUBERÍAS (DIQUE PRINCIPAL 4.0 KM x 0.5 KM) -->
+            <!-- PLANO A ESCALA DE TUBERÍAS (DIQUE PRINCIPAL - SUPERIOR 4.0 KM x 0.5 KM) -->
             <div class="pipes-canvas-section">
               <DiquePipesCanvas 
+                title="Lienzo de Tuberías (Superior) - Dique Principal"
+                storageKey="dique_principal_pipes_top"
                 :canchasNiveles="canchasNiveles"
                 @selectCancha="handleCanchaSelectedFromCanvas"
               />
@@ -273,6 +275,16 @@
                 No hay canchas visibles en esta sección (ocultadas o filtradas).
               </div>
             </div>
+
+            <!-- PLANO A ESCALA DE TUBERÍAS (DIQUE PRINCIPAL - INFERIOR 4.0 KM x 0.5 KM) -->
+            <div class="pipes-canvas-section" style="margin-top: 1rem;">
+              <DiquePipesCanvas 
+                title="Lienzo de Tuberías (Inferior) - Dique Principal"
+                storageKey="dique_principal_pipes_bottom"
+                :canchasNiveles="canchasNiveles"
+                @selectCancha="handleCanchaSelectedFromCanvas"
+              />
+            </div>
           </div>
         </transition>
 
@@ -298,6 +310,16 @@
                   <b>{{ item.count }}</b> {{ formatStatusText(item.status) }}
                 </span>
               </div>
+            </div>
+
+            <!-- PLANO A ESCALA DE TUBERÍAS (DIQUE LATERAL - SUPERIOR 4.0 KM x 0.5 KM) -->
+            <div class="pipes-canvas-section" style="margin-top: 0.5rem;">
+              <DiquePipesCanvas 
+                title="Lienzo de Tuberías (Superior) - Dique Lateral"
+                storageKey="dique_lateral_pipes_top"
+                :canchasNiveles="canchasCapas"
+                @selectCancha="handleCanchaSelectedFromCanvas"
+              />
             </div>
 
             <!-- VISTA DE TARJETAS PARALELAS -->
@@ -380,6 +402,16 @@
               <div v-else class="empty-section-msg">
                 No hay canchas visibles en esta sección (ocultadas o filtradas).
               </div>
+            </div>
+
+            <!-- PLANO A ESCALA DE TUBERÍAS (DIQUE LATERAL - INFERIOR 4.0 KM x 0.5 KM) -->
+            <div class="pipes-canvas-section" style="margin-top: 1rem;">
+              <DiquePipesCanvas 
+                title="Lienzo de Tuberías (Inferior) - Dique Lateral"
+                storageKey="dique_lateral_pipes_bottom"
+                :canchasNiveles="canchasCapas"
+                @selectCancha="handleCanchaSelectedFromCanvas"
+              />
             </div>
           </div>
         </transition>

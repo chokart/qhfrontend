@@ -5,7 +5,7 @@
       <div class="header-info">
         <div class="title-badge">📐 Escala 8:1 (4.0 km × 0.5 km)</div>
         <div>
-          <h3 class="canvas-title">Lienzo de Tuberías con Curvas - Dique Principal</h3>
+          <h3 class="canvas-title">{{ title }}</h3>
           <p class="canvas-subtitle">Dimensiones Reales: <b>4,000 m de largo × 500 m de alto</b> | Trazo mediante puntos de inflexión y curvas suaves</p>
         </div>
       </div>
@@ -327,6 +327,14 @@
 import { ref, reactive, computed, onMounted, watch } from 'vue';
 
 const props = defineProps({
+  title: {
+    type: String,
+    default: 'Lienzo de Tuberías con Curvas - Dique Principal'
+  },
+  storageKey: {
+    type: String,
+    default: 'dique_principal_pipes_curved_v2'
+  },
   canchasNiveles: {
     type: Array,
     default: () => []
@@ -418,7 +426,7 @@ const pipes = ref([
 
 const loadPipesFromStorage = () => {
   try {
-    const saved = localStorage.getItem('dique_principal_pipes_curved_v2');
+    const saved = localStorage.getItem(props.storageKey) || (props.storageKey === 'dique_principal_pipes_top' ? localStorage.getItem('dique_principal_pipes_curved_v2') : null);
     if (saved) {
       pipes.value = JSON.parse(saved);
     }
@@ -429,7 +437,7 @@ const loadPipesFromStorage = () => {
 
 const savePipesToStorage = () => {
   try {
-    localStorage.setItem('dique_principal_pipes_curved_v2', JSON.stringify(pipes.value));
+    localStorage.setItem(props.storageKey, JSON.stringify(pipes.value));
   } catch (e) {
     console.error("Error al guardar tuberías curvas:", e);
   }
