@@ -65,11 +65,15 @@
         <button @click="resetPipes" class="btn-clear-pipes">
           🔄 Reiniciar
         </button>
+
+        <button @click="isCollapsed = !isCollapsed" class="btn-toggle-canvas" title="Plegar o desplegar el lienzo de tuberías">
+          {{ isCollapsed ? '🔽 Mostrar Lienzo' : '🔼 Plegar Lienzo' }}
+        </button>
       </div>
     </div>
 
     <!-- RECTÁNGULO PRINCIPAL A ESCALA (ALINEADO EN ANCHO CON LAS CANCHAS DE ABAJO) -->
-    <div class="scaled-viewport-wrapper">
+    <div v-if="!isCollapsed" class="scaled-viewport-wrapper">
       <!-- Regla Superior X (0 a 4000 metros / 4 km) -->
       <div class="ruler-x">
         <div v-for="mark in xRulerMarks" :key="'rx_'+mark.m" class="ruler-x-mark" :style="{ left: mark.pct + '%' }">
@@ -134,7 +138,7 @@
                   v-if="selectedPipeId === pipe.id"
                 />
 
-                <!-- Trazo de la Tubería Curva -->
+                <!-- Trazo de la Tubería Curva Base -->
                 <path 
                   :d="getSmoothPathD(pipe.points)" 
                   fill="none"
@@ -144,6 +148,19 @@
                   stroke-linecap="round"
                   stroke-linejoin="round"
                   marker-end="url(#arrowHeadCurved)"
+                />
+
+                <!-- Animación de Flujo Líquido para Tuberías Activas -->
+                <path 
+                  v-if="pipe.status === 'ACTIVA'"
+                  :d="getSmoothPathD(pipe.points)" 
+                  fill="none"
+                  stroke="#ffffff" 
+                  :stroke-width="Math.max(2, getPipeStrokeWidth(pipe.diameter) - 4)" 
+                  stroke-dasharray="10,12"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  class="pipe-active-flow"
                 />
 
                 <!-- Nodos / Puntos Control de la Curva (si está seleccionada) -->
@@ -348,6 +365,7 @@ const filterStatus = ref('ALL');
 const selectedPipeId = ref(null);
 const showHelpModal = ref(false);
 const showPipePropsModal = ref(false);
+const isCollapsed = ref(false);
 
 const svgContainerRef = ref(null);
 const mouseHovering = ref(false);
@@ -1107,5 +1125,34 @@ onMounted(() => {
 .btn-props-pipe:hover {
   background: #0284c7;
   color: #ffffff;
+}
+
+.btn-toggle-canvas {
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  color: #475569;
+  font-weight: 700;
+  font-size: 0.8rem;
+  padding: 0.4rem 0.75rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-toggle-canvas:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+/* Animación de Flujo Líquido para Tuberías Activas */
+@keyframes pipeFlowAnim {
+  from { stroke-dashoffset: 22; }
+  to { stroke-dashoffset: 0; }
+}
+
+.pipe-active-flow {
+  animation: pipeFlowAnim 1.4s linear infinite;
+  opacity: 0.85;
+  pointer-events: none;
 }
 </style>

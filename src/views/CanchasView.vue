@@ -5,13 +5,9 @@
     <div class="canchas-container">
       <div class="sub-header">
         <div class="title-section">
-          <h1>Canchas</h1>
+          <h1>Modulo de Canchas</h1>
         </div>
         <div class="stats-bar">
-          <div class="stat-item">
-            <span class="stat-label">Canchas Observadas:</span>
-            <span class="stat-value error">{{ observedCount }}</span>
-          </div>
           <button class="btn-pdf" @click="downloadReport" :disabled="loading">
             <span>📄</span> Exportar PDF
           </button>
@@ -23,6 +19,41 @@
             <span>📋</span> {{ uploadingReportType === 'canchas' ? 'Procesando...' : 'Subir Canchas (Estados)' }}
             <input type="file" accept=".pdf" @change="onCanchasSelected" hidden :disabled="uploadingReport || loading" />
           </label>
+        </div>
+      </div>
+
+      <!-- TARJETAS DE INDICADORES CLAVE (KPIs) -->
+      <div class="kpi-summary-grid">
+        <div class="kpi-card">
+          <div class="kpi-icon-badge bg-blue">🏗️</div>
+          <div class="kpi-content">
+            <span class="kpi-value">{{ totalCanchasCount }}</span>
+            <span class="kpi-label">Total Canchas</span>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-icon-badge bg-green">⚡</div>
+          <div class="kpi-content">
+            <span class="kpi-value green">{{ cicloneandoCount }}</span>
+            <span class="kpi-label">En Cicloneo</span>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-icon-badge bg-indigo">🚜</div>
+          <div class="kpi-content">
+            <span class="kpi-value indigo">{{ compactadoCount }}</span>
+            <span class="kpi-label">Compactadas</span>
+          </div>
+        </div>
+
+        <div class="kpi-card" :class="{ alert: observedCount > 0 }">
+          <div class="kpi-icon-badge bg-red">⚠️</div>
+          <div class="kpi-content">
+            <span class="kpi-value red">{{ observedCount }}</span>
+            <span class="kpi-label">Observadas</span>
+          </div>
         </div>
       </div>
 
@@ -71,18 +102,35 @@
               :class="{ active: showSectionPrincipal }"
               @click="showSectionPrincipal = !showSectionPrincipal"
             >
-              {{ showSectionPrincipal ? '👁️ Principal' : '🙈 Principal' }}
+              {{ showSectionPrincipal ? '👁️ Dique Principal' : '🙈 Dique Principal' }}
             </button>
             <button 
               class="btn-toggle-section" 
               :class="{ active: showSectionLateral }"
               @click="showSectionLateral = !showSectionLateral"
             >
-              {{ showSectionLateral ? '👁️ Lateral' : '🙈 Lateral' }}
+              {{ showSectionLateral ? '👁️ Dique Lateral' : '🙈 Dique Lateral' }}
             </button>
 
             <button v-if="totalHiddenCount > 0" class="btn-reset-visibility" @click="showAllCanchas">
               🔄 Mostrar Todas
+            </button>
+          </div>
+        </div>
+
+        <!-- Leyenda Visual Interactiva de Estados Operativos -->
+        <div class="color-legend-card">
+          <span class="legend-title">Leyenda de Estados (Clic para filtrar):</span>
+          <div class="legend-chips-wrap">
+            <button 
+              v-for="st in statusOptions.filter(o => o.value !== 'ALL')" 
+              :key="'leg_'+st.value"
+              :class="['legend-chip', { active: isStatusSelected(st.value) }]"
+              @click="toggleStatusFilter(st.value)"
+              :title="'Filtrar por ' + st.label"
+            >
+              <span class="dot" :style="{ backgroundColor: getStatusColor(st.value) }"></span>
+              <span class="legend-name">{{ st.label }}</span>
             </button>
           </div>
         </div>
@@ -761,6 +809,20 @@ const avgHeight = computed(() => {
   return sum / filteredNiveles.value.length;
 });
 
+const totalCanchasCount = computed(() => canchasNiveles.value.length + canchasCapas.value.length);
+
+const cicloneandoCount = computed(() => {
+  const p = canchasNiveles.value.filter(c => c.status === 'CICLONEANDO').length;
+  const l = canchasCapas.value.filter(c => c.status === 'CICLONEANDO').length;
+  return p + l;
+});
+
+const compactadoCount = computed(() => {
+  const p = canchasNiveles.value.filter(c => c.status === 'COMPACTADO').length;
+  const l = canchasCapas.value.filter(c => c.status === 'COMPACTADO').length;
+  return p + l;
+});
+
 const avgCapa = computed(() => {
   if (filteredCapas.value.length === 0) return 0;
   const sum = filteredCapas.value.reduce((acc, c) => acc + (c.currentCapa || 0), 0);
@@ -823,6 +885,132 @@ onMounted(() => {
   flex-wrap: wrap;
   gap: 1rem;
   margin-bottom: 1.25rem;
+}
+
+/* TARJETAS DE INDICADORES CLAVE (KPIs) */
+.kpi-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.kpi-card {
+  background: white;
+  border-radius: 16px;
+  padding: 1.1rem 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  border: 1px solid #e2e8f0;
+  transition: all 0.2s ease;
+}
+
+.kpi-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
+}
+
+.kpi-card.alert {
+  border-color: #fecaca;
+  background: #fff5f5;
+}
+
+.kpi-icon-badge {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.bg-blue { background: #eff6ff; color: #1d4ed8; }
+.bg-green { background: #f0fdf4; color: #15803d; }
+.bg-indigo { background: #e0e7ff; color: #4338ca; }
+.bg-red { background: #fef2f2; color: #dc2626; }
+
+.kpi-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.kpi-value {
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: #0f172a;
+  line-height: 1.1;
+}
+
+.kpi-value.green { color: #16a34a; }
+.kpi-value.indigo { color: #4f46e5; }
+.kpi-value.red { color: #dc2626; }
+
+.kpi-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+/* LEYENDA VISUAL INTERACTIVA */
+.color-legend-card {
+  margin-top: 0.85rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid #f1f5f9;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.legend-title {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.legend-chips-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.legend-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 8px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #334155;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.legend-chip:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.legend-chip.active {
+  background: #4f46e5;
+  border-color: #4f46e5;
+  color: white;
+}
+
+.legend-chip .dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
 }
 
 @media (max-width: 600px) {
