@@ -46,6 +46,15 @@
           ⚙️ Propiedades ({{ selectedPipe.name }})
         </button>
 
+        <button 
+          v-if="selectedText" 
+          @click="showTextPropsModal = true" 
+          class="btn-props-pipe btn-props-text"
+          title="Editar tamaño, color o eliminar este texto"
+        >
+          🔤 Texto ({{ selectedText.text }})
+        </button>
+
         <div class="v-divider"></div>
 
         <!-- Filtro por Estado -->
@@ -206,17 +215,19 @@
                 class="text-annotation-group"
                 :class="{ selected: selectedTextId === txt.id }"
                 @mousedown.stop="startDragText(txt, $event)"
-                @click.stop="selectedTextId = txt.id"
-                @dblclick.stop="editTextAnnotation(txt)"
+                @click.stop="selectText(txt, $event)"
+                @dblclick.stop="openTextPropsModal(txt)"
               >
+                <!-- Fondo tipo pill configurable -->
                 <rect 
-                  :x="-((txt.text.length * 10) / 2) - 10" 
-                  y="-20" 
-                  :width="(txt.text.length * 10) + 20" 
-                  height="30" 
-                  fill="#ffffff" 
+                  v-if="txt.bgColor !== 'transparent'"
+                  :x="-((txt.text.length * (txt.fontSize || 17) * 0.55) / 2) - 10" 
+                  :y="-((txt.fontSize || 17) * 0.7)" 
+                  :width="(txt.text.length * (txt.fontSize || 17) * 0.55) + 20" 
+                  :height="(txt.fontSize || 17) * 1.4" 
+                  :fill="txt.bgColor || '#ffffff'" 
                   :stroke="selectedTextId === txt.id ? '#0284c7' : '#94a3b8'" 
-                  stroke-width="2.5" 
+                  :stroke-width="selectedTextId === txt.id ? 3 : 2" 
                   rx="6" 
                   opacity="0.95"
                 />
@@ -231,8 +242,15 @@
                 >
                   {{ txt.text }}
                 </text>
-                <g v-if="selectedTextId === txt.id" :transform="`translate(${(txt.text.length * 10) / 2 + 16}, -12)`" @click.stop="deleteTextAnnotation(txt.id)">
-                  <circle r="10" fill="#ef4444" />
+                <!-- Botón eliminar rojo directo -->
+                <g 
+                  v-if="selectedTextId === txt.id" 
+                  :transform="`translate(${(txt.text.length * (txt.fontSize || 17) * 0.55) / 2 + 16}, -${(txt.fontSize || 17) * 0.5})`" 
+                  @mousedown.stop.prevent="deleteTextAnnotation(txt.id)"
+                  @click.stop.prevent="deleteTextAnnotation(txt.id)"
+                  style="cursor: pointer;"
+                >
+                  <circle r="11" fill="#ef4444" stroke="#ffffff" stroke-width="2" />
                   <text x="0" y="1" text-anchor="middle" fill="#ffffff" font-size="12" font-weight="bold" dominant-baseline="middle">✕</text>
                 </g>
               </g>
@@ -356,6 +374,72 @@
       </div>
     </div>
 
+    <!-- MODAL POPUP DE PROPIEDADES DE TEXTO -->
+    <div v-if="showTextPropsModal && selectedText" class="modal-backdrop" @click.self="showTextPropsModal = false">
+      <div class="modal-card modal-text-props">
+        <div class="modal-header">
+          <div class="header-title-wrap">
+            <span class="header-icon">🔤</span>
+            <div>
+              <h3>Propiedades de Texto del Lienzo</h3>
+              <span class="header-sub">Posición: X: <b>{{ selectedText.x }} m</b> | Y: <b>{{ selectedText.y }} m</b></span>
+            </div>
+          </div>
+          <button class="btn-close-modal" @click="showTextPropsModal = false">✕</button>
+        </div>
+
+        <div class="modal-body">
+          <div class="pipe-form-grid">
+            <div class="form-group" style="grid-column: span 2;">
+              <label class="form-label">Contenido del Texto:</label>
+              <input type="text" v-model="selectedText.text" class="form-input" placeholder="Ej. Válvula de presión N° 2" />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Tamaño de Fuente (px):</label>
+              <select v-model.number="selectedText.fontSize" class="form-select">
+                <option :value="12">12 px (Muy Pequeño)</option>
+                <option :value="16">16 px (Normal)</option>
+                <option :value="20">20 px (Mediano)</option>
+                <option :value="26">26 px (Grande)</option>
+                <option :value="34">34 px (Muy Grande)</option>
+                <option :value="46">46 px (Gigante)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Color de Texto:</label>
+              <select v-model="selectedText.color" class="form-select">
+                <option value="#0f172a">⚫ Oscuro / Negro</option>
+                <option value="#0284c7">🔵 Azul Ciel</option>
+                <option value="#16a34a">🟢 Verde Esmeralda</option>
+                <option value="#dc2626">🔴 Rojo Alerta</option>
+                <option value="#d97706">🟠 Naranja</option>
+                <option value="#7c3aed">🟣 Púrpura</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Fondo del Globo:</label>
+              <select v-model="selectedText.bgColor" class="form-select">
+                <option value="#ffffff">⚪ Blanco (Defecto)</option>
+                <option value="#fef9c3">🟡 Amarillo Suave</option>
+                <option value="#e0f2fe">🔵 Azul Suave</option>
+                <option value="#dcfce7">🟢 Verde Suave</option>
+                <option value="#fee2e2">🔴 Rojo Suave</option>
+                <option value="transparent">⚪ Transparente (Sin fondo)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer modal-footer-actions">
+          <button class="btn-delete-pipe" @click="deleteSelectedTextFromModal">🗑️ Eliminar Texto</button>
+          <button class="btn-save-edit" @click="showTextPropsModal = false">✓ Guardar y Cerrar</button>
+        </div>
+      </div>
+    </div>
+
     <!-- MODAL DE AYUDA Y ESCALA -->
     <div v-if="showHelpModal" class="modal-backdrop" @click.self="showHelpModal = false">
       <div class="modal-card">
@@ -405,6 +489,7 @@ const filterStatus = ref('ALL');
 const selectedPipeId = ref(null);
 const showHelpModal = ref(false);
 const showPipePropsModal = ref(false);
+const showTextPropsModal = ref(false);
 const isCollapsed = ref(false);
 
 const svgContainerRef = ref(null);
@@ -424,6 +509,22 @@ const texts = ref([]);
 const selectedTextId = ref(null);
 const draggingTextInfo = ref(null);
 
+const selectedText = computed(() => {
+  return texts.value.find(t => t.id === selectedTextId.value) || null;
+});
+
+const selectText = (txt, e) => {
+  if (currentTool.value === 'select') {
+    selectedTextId.value = txt.id;
+    selectedPipeId.value = null;
+  }
+};
+
+const openTextPropsModal = (txt) => {
+  selectedTextId.value = txt.id;
+  showTextPropsModal.value = true;
+};
+
 const addTextAnnotation = (x, y) => {
   const input = prompt('Ingresa el texto para mostrar en el lienzo:', 'Válvula / Línea A');
   if (input && input.trim()) {
@@ -433,24 +534,30 @@ const addTextAnnotation = (x, y) => {
       x: x || 500,
       y: y || 250,
       fontSize: 17,
-      color: '#0f172a'
+      color: '#0f172a',
+      bgColor: '#ffffff'
     };
     texts.value.push(newText);
     selectedTextId.value = newText.id;
+    showTextPropsModal.value = true;
   }
   currentTool.value = 'select';
 };
 
-const editTextAnnotation = (txt) => {
-  const updated = prompt('Editar texto del lienzo:', txt.text);
-  if (updated && updated.trim()) {
-    txt.text = updated.trim();
+const deleteTextAnnotation = (id) => {
+  texts.value = texts.value.filter(t => t.id !== id);
+  if (selectedTextId.value === id) {
+    selectedTextId.value = null;
+    showTextPropsModal.value = false;
   }
 };
 
-const deleteTextAnnotation = (id) => {
-  texts.value = texts.value.filter(t => t.id !== id);
-  if (selectedTextId.value === id) selectedTextId.value = null;
+const deleteSelectedTextFromModal = () => {
+  if (confirm("¿Seguro que deseas eliminar este texto?")) {
+    if (selectedTextId.value) {
+      deleteTextAnnotation(selectedTextId.value);
+    }
+  }
 };
 
 const startDragText = (txt, e) => {
@@ -1243,6 +1350,21 @@ onMounted(() => {
 .btn-props-pipe:hover {
   background: #0284c7;
   color: #ffffff;
+}
+
+.btn-props-text {
+  background: #f5f3ff;
+  border-color: #ddd6fe;
+  color: #7c3aed;
+}
+
+.btn-props-text:hover {
+  background: #7c3aed;
+  color: #ffffff;
+}
+
+.modal-text-props {
+  max-width: 580px;
 }
 
 .btn-toggle-canvas {
