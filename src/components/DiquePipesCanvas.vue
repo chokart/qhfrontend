@@ -133,8 +133,19 @@
                 v-for="pipe in visiblePipes" 
                 :key="pipe.id"
                 :class="['pipe-group', { selected: selectedPipeId === pipe.id }]"
+                @mousedown.stop="startDragPipe(pipe, $event)"
                 @click.stop="selectPipe(pipe)"
               >
+                <!-- Area invisible de toque/arrastre para facilitar mover la tubería completa -->
+                <path 
+                  :d="getSmoothPathD(pipe.points)" 
+                  fill="none"
+                  stroke="transparent" 
+                  :stroke-width="Math.max(22, getPipeStrokeWidth(pipe.diameter) + 14)" 
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+
                 <!-- Trazo Sombra Resaltado de Selección -->
                 <path 
                   :d="getSmoothPathD(pipe.points)" 
@@ -504,6 +515,9 @@ const activeDrawingPoints = ref([]);
 // Arrastre de nodos de curva
 const draggingNodeInfo = ref(null);
 
+// Arrastre de tubería completa
+const draggingPipeInfo = ref(null);
+
 // Textos y anotaciones personalizadas en el lienzo
 const texts = ref([]);
 const selectedTextId = ref(null);
@@ -697,6 +711,18 @@ const handleMouseMove = (e) => {
   mouseRealCoords.x = Math.max(0, Math.min(4000, (mouseX / rect.width) * 4000));
   mouseRealCoords.y = Math.max(0, Math.min(500, (mouseY / rect.height) * 500));
 
+  // Si se está arrastrando una tubería completa
+  if (draggingPipeInfo.value) {
+    const { pipe, startCoords, initialPoints } = draggingPipeInfo.value;
+    const dx = Math.round(mouseRealCoords.x - startCoords.x);
+    const dy = Math.round(mouseRealCoords.y - startCoords.y);
+
+    pipe.points = initialPoints.map(pt => ({
+      x: Math.max(0, Math.min(4000, pt.x + dx)),
+      y: Math.max(0, Math.min(500, pt.y + dy))
+    }));
+  }
+
   // Si se está arrastrando un nodo de la curva seleccionada
   if (draggingNodeInfo.value) {
     const { pipe, pIdx } = draggingNodeInfo.value;
@@ -717,6 +743,7 @@ const handleMouseLeave = () => {
   mouseHovering.value = false;
   draggingNodeInfo.value = null;
   draggingTextInfo.value = null;
+  draggingPipeInfo.value = null;
 };
 
 const handleCanvasClick = (e) => {
@@ -762,6 +789,25 @@ const selectPipe = (pipe) => {
     selectedPipeId.value = pipe.id;
     showPipePropsModal.value = true;
   }
+};
+
+const startDragPipe = (pipe, e) => {
+  if (currentTool.value !== 'select') return;
+  selectedPipeId.value = pipe.id;
+  selectedTextId.value = null;
+
+  const initialPoints = pipe.points.map(pt => ({ x: pt.x, y: pt.y }));
+  draggingPipeInfo.value = {
+    pipe,
+    startCoords: { x: mouseRealCoords.x, y: mouseRealCoords.y },
+    initialPoints
+  };
+
+  const onMouseUp = () => {
+    draggingPipeInfo.value = null;
+    window.removeEventListener('mouseup', onMouseUp);
+  };
+  window.addEventListener('mouseup', onMouseUp);
 };
 
 const startDragNode = (pipe, pIdx, e) => {
