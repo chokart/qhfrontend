@@ -1,22 +1,14 @@
 <template>
   <div class="dique-pipes-container">
-    <!-- Encabezado y Control de Lienzo a Escala -->
+    <!-- Encabezado y Control de Lienzo a Escala Compacto y Pegado -->
     <div class="canvas-header">
-      <div class="header-info">
-        <div class="title-badge">📐 Escala 8:1 (4.0 km × 0.5 km)</div>
-        <div>
-          <h3 class="canvas-title">{{ title }}</h3>
-          <p class="canvas-subtitle">Dimensiones Reales: <b>4,000 m de largo × 500 m de alto</b> | Trazo mediante puntos de inflexión y curvas suaves</p>
-        </div>
-      </div>
-
       <div class="toolbar-actions">
         <!-- Selector de Herramienta -->
         <div class="tool-btn-group">
           <button 
             :class="['btn-tool', { active: currentTool === 'select' }]" 
             @click="setTool('select')"
-            title="Seleccionar o editar nodos de tuberías"
+            title="Seleccionar o mover tuberías / textos"
           >
             👆 Seleccionar
           </button>
@@ -25,7 +17,14 @@
             @click="setTool('draw')"
             title="Trazar tubería con curvas (Haz clic para agregar puntos)"
           >
-            ✏️ Trazar Tubería Curva
+            ✏️ Trazar Tubería
+          </button>
+          <button 
+            :class="['btn-tool btn-text', { active: currentTool === 'text' }]" 
+            @click="setTool('text')"
+            title="Escribir texto o etiqueta personalizada dentro del lienzo"
+          >
+            🔤 Escribir Texto
           </button>
         </div>
 
@@ -194,6 +193,47 @@
                   >
                     {{ pipe.name || 'Tubería' }} ({{ formatDistanceKm(calculatePathDistance(pipe.points)) }})
                   </text>
+                </g>
+              </g>
+            </g>
+
+            <!-- Capa de Textos y Anotaciones Libres en el Lienzo -->
+            <g class="texts-layer">
+              <g 
+                v-for="txt in texts" 
+                :key="'txt_'+txt.id"
+                :transform="`translate(${txt.x}, ${txt.y})`"
+                class="text-annotation-group"
+                :class="{ selected: selectedTextId === txt.id }"
+                @mousedown.stop="startDragText(txt, $event)"
+                @click.stop="selectedTextId = txt.id"
+                @dblclick.stop="editTextAnnotation(txt)"
+              >
+                <rect 
+                  :x="-((txt.text.length * 10) / 2) - 10" 
+                  y="-20" 
+                  :width="(txt.text.length * 10) + 20" 
+                  height="30" 
+                  fill="#ffffff" 
+                  :stroke="selectedTextId === txt.id ? '#0284c7' : '#94a3b8'" 
+                  stroke-width="2.5" 
+                  rx="6" 
+                  opacity="0.95"
+                />
+                <text 
+                  x="0" 
+                  y="1" 
+                  text-anchor="middle" 
+                  :fill="txt.color || '#0f172a'" 
+                  :font-size="txt.fontSize || 17" 
+                  font-weight="900"
+                  dominant-baseline="middle"
+                >
+                  {{ txt.text }}
+                </text>
+                <g v-if="selectedTextId === txt.id" :transform="`translate(${(txt.text.length * 10) / 2 + 16}, -12)`" @click.stop="deleteTextAnnotation(txt.id)">
+                  <circle r="10" fill="#ef4444" />
+                  <text x="0" y="1" text-anchor="middle" fill="#ffffff" font-size="12" font-weight="bold" dominant-baseline="middle">✕</text>
                 </g>
               </g>
             </g>
@@ -379,6 +419,51 @@ const activeDrawingPoints = ref([]);
 // Arrastre de nodos de curva
 const draggingNodeInfo = ref(null);
 
+// Textos y anotaciones personalizadas en el lienzo
+const texts = ref([]);
+const selectedTextId = ref(null);
+const draggingTextInfo = ref(null);
+
+const addTextAnnotation = (x, y) => {
+  const input = prompt('Ingresa el texto para mostrar en el lienzo:', 'Válvula / Línea A');
+  if (input && input.trim()) {
+    const newText = {
+      id: Date.now(),
+      text: input.trim(),
+      x: x || 500,
+      y: y || 250,
+      fontSize: 17,
+      color: '#0f172a'
+    };
+    texts.value.push(newText);
+    selectedTextId.value = newText.id;
+  }
+  currentTool.value = 'select';
+};
+
+const editTextAnnotation = (txt) => {
+  const updated = prompt('Editar texto del lienzo:', txt.text);
+  if (updated && updated.trim()) {
+    txt.text = updated.trim();
+  }
+};
+
+const deleteTextAnnotation = (id) => {
+  texts.value = texts.value.filter(t => t.id !== id);
+  if (selectedTextId.value === id) selectedTextId.value = null;
+};
+
+const startDragText = (txt, e) => {
+  if (currentTool.value !== 'select') return;
+  selectedTextId.value = txt.id;
+  draggingTextInfo.value = txt;
+  const onMouseUp = () => {
+    draggingTextInfo.value = null;
+    window.removeEventListener('mouseup', onMouseUp);
+  };
+  window.addEventListener('mouseup', onMouseUp);
+};
+
 // Reglas graduadas
 const xRulerMarks = [
   { m: 0, label: '0.0 km (0m)', pct: 0 },
@@ -448,20 +533,25 @@ const loadPipesFromStorage = () => {
     if (saved) {
       pipes.value = JSON.parse(saved);
     }
+    const savedTexts = localStorage.getItem(props.storageKey + '_texts');
+    if (savedTexts) {
+      texts.value = JSON.parse(savedTexts);
+    }
   } catch (e) {
-    console.error("Error al cargar tuberías curvas:", e);
+    console.error("Error al cargar tuberías/textos:", e);
   }
 };
 
 const savePipesToStorage = () => {
   try {
     localStorage.setItem(props.storageKey, JSON.stringify(pipes.value));
+    localStorage.setItem(props.storageKey + '_texts', JSON.stringify(texts.value));
   } catch (e) {
-    console.error("Error al guardar tuberías curvas:", e);
+    console.error("Error al guardar tuberías/textos:", e);
   }
 };
 
-watch(pipes, () => {
+watch([pipes, texts], () => {
   savePipesToStorage();
 }, { deep: true });
 
@@ -480,6 +570,8 @@ const setTool = (tool) => {
     isDrawing.value = true;
     activeDrawingPoints.value = [];
     selectedPipeId.value = null;
+  } else if (tool === 'text') {
+    addTextAnnotation();
   } else {
     finishCurrentDrawing();
   }
@@ -506,11 +598,18 @@ const handleMouseMove = (e) => {
       pipe.points[pIdx].y = Math.round(mouseRealCoords.y);
     }
   }
+
+  // Si se está arrastrando un texto
+  if (draggingTextInfo.value) {
+    draggingTextInfo.value.x = Math.round(mouseRealCoords.x);
+    draggingTextInfo.value.y = Math.round(mouseRealCoords.y);
+  }
 };
 
 const handleMouseLeave = () => {
   mouseHovering.value = false;
   draggingNodeInfo.value = null;
+  draggingTextInfo.value = null;
 };
 
 const handleCanvasClick = (e) => {
@@ -519,6 +618,10 @@ const handleCanvasClick = (e) => {
       x: Math.round(mouseRealCoords.x),
       y: Math.round(mouseRealCoords.y)
     });
+  } else if (currentTool.value === 'text') {
+    addTextAnnotation(Math.round(mouseRealCoords.x), Math.round(mouseRealCoords.y));
+  } else {
+    selectedTextId.value = null;
   }
 };
 
@@ -678,21 +781,36 @@ onMounted(() => {
 .dique-pipes-container {
   background: #ffffff;
   border: 1px solid #cbd5e1;
-  border-radius: 16px;
-  padding: 1.5rem 1rem;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
-  margin-bottom: 1.5rem;
+  border-radius: 12px;
+  padding: 0.5rem 0.5rem 0.4rem 0.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+  margin-bottom: 0px;
   width: 100%;
 }
 
 .canvas-header {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: center;
-  margin-bottom: 1.25rem;
+  margin-bottom: 0.4rem;
   flex-wrap: wrap;
-  gap: 1rem;
-  padding: 0 0.5rem;
+  gap: 0.5rem;
+  padding: 0 0.2rem;
+}
+
+.text-annotation-group {
+  cursor: grab;
+  user-select: none;
+}
+
+.text-annotation-group:hover rect {
+  stroke: #0284c7;
+  stroke-width: 3px;
+}
+
+.text-annotation-group.selected rect {
+  stroke: #0284c7;
+  stroke-width: 3px;
 }
 
 .header-info {

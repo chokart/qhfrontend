@@ -325,7 +325,7 @@
             </div>
 
             <!-- PLANO A ESCALA DE TUBERÍAS (DIQUE PRINCIPAL - INFERIOR 4.0 KM x 0.5 KM) -->
-            <div class="pipes-canvas-section" style="margin-top: 1rem;">
+            <div class="pipes-canvas-section" style="margin-top: 0.25rem;">
               <DiquePipesCanvas 
                 title="Lienzo de Tuberías (Inferior) - Dique Principal"
                 storageKey="dique_principal_pipes_bottom"
@@ -361,7 +361,7 @@
             </div>
 
             <!-- PLANO A ESCALA DE TUBERÍAS (DIQUE LATERAL - SUPERIOR 4.0 KM x 0.5 KM) -->
-            <div class="pipes-canvas-section" style="margin-top: 0.5rem;">
+            <div class="pipes-canvas-section" style="margin-top: 0.25rem;">
               <DiquePipesCanvas 
                 title="Lienzo de Tuberías (Superior) - Dique Lateral"
                 storageKey="dique_lateral_pipes_top"
@@ -371,7 +371,7 @@
             </div>
 
             <!-- VISTA DE TARJETAS PARALELAS -->
-            <div v-if="viewMode === 'cards'" class="parallel-container">
+            <div v-if="viewMode === 'cards'" class="parallel-container" style="margin-top: 0.25rem;">
               <div v-if="filteredCapas.length > 0" class="canchas-parallel canchas-capas-parallel">
                 <CanchaCapaCard 
                   v-for="cancha in filteredCapas" 
@@ -453,7 +453,7 @@
             </div>
 
             <!-- PLANO A ESCALA DE TUBERÍAS (DIQUE LATERAL - INFERIOR 4.0 KM x 0.5 KM) -->
-            <div class="pipes-canvas-section" style="margin-top: 1rem;">
+            <div class="pipes-canvas-section" style="margin-top: 0.25rem;">
               <DiquePipesCanvas 
                 title="Lienzo de Tuberías (Inferior) - Dique Lateral"
                 storageKey="dique_lateral_pipes_bottom"
